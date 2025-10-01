@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager • Progress Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#0b0f14">
+</head>
+<body>
+    <header class="app-header" role="banner">
+        <div class="header-left">
+            <h1 class="app-title">Task Manager</h1>
+            <span class="subtitle">with Progress Tracker</span>
+        </div>
+        <div class="header-actions">
+            <button id="themeToggle" class="icon-button" aria-label="Toggle dark mode" title="Toggle dark mode">
+                <span class="icon">🌙</span>
+            </button>
+            <button id="clearCompleted" class="ghost-button" aria-label="Clear completed tasks" title="Clear completed tasks">Clear Completed</button>
+        </div>
+    </header>
+
+    <main class="container" role="main">
+        <section class="add-task" aria-labelledby="addTaskLabel">
+            <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
+            <form id="taskForm" autocomplete="off" novalidate>
+                <input id="taskInput" type="text" name="task" placeholder="Add a task..." aria-label="Task title" required maxlength="120">
+                <button type="submit" class="primary">Add</button>
+            </form>
+        </section>
+
+        <section class="progress" aria-labelledby="progressLabel">
+            <div class="progress-header">
+                <h2 id="progressLabel">Progress</h2>
+                <span id="progressText" aria-live="polite">0% • 0/0 completed</span>
+            </div>
+            <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="progress-fill" style="width:0%"></div>
+            </div>
+        </section>
+
+        <section class="controls" aria-label="Task filters">
+            <div class="filters" role="tablist" aria-label="Filters">
+                <button class="chip active" data-filter="all" role="tab" aria-selected="true">All</button>
+                <button class="chip" data-filter="active" role="tab" aria-selected="false">Active</button>
+                <button class="chip" data-filter="completed" role="tab" aria-selected="false">Completed</button>
+            </div>
+            <div class="search">
+                <input id="searchInput" type="search" placeholder="Search tasks..." aria-label="Search tasks">
+            </div>
+        </section>
+
+        <section class="task-list" aria-labelledby="taskListLabel">
+            <h2 id="taskListLabel" class="sr-only">Task list</h2>
+            <ul id="tasks" class="tasks" aria-live="polite"></ul>
+            <p id="emptyState" class="empty" hidden>No tasks yet. Add your first task above.</p>
+        </section>
+
+        <section class="activity" aria-labelledby="activityLabel">
+            <div class="activity-header">
+                <h2 id="activityLabel">This Month</h2>
+                <span id="activityTotals" aria-live="polite">0 completed</span>
+            </div>
+            <div id="monthlyChart" class="spark" role="img" aria-label="Completed tasks per day this month"></div>
+        </section>
+    </main>
+
+    <footer class="app-footer" role="contentinfo">
+        <span>Local first • No accounts • Works offline</span>
+        <span class="creator">Created by <strong>BEBANDH</strong></span>
+    </footer>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
+
+
