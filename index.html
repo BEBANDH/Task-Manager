@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#0b0f14">
 </head>
@@ -18,6 +19,10 @@
             <span class="subtitle">with Progress Tracker</span>
         </div>
         <div class="header-actions">
+            <button id="exportBtn" class="ghost-button" aria-label="Export tasks to Excel" title="Export tasks to Excel">Export</button>
+            <button id="exportMultipleBtn" class="ghost-button" aria-label="Export multiple lists to Excel" title="Export multiple lists to Excel">Export Multiple</button>
+            <button id="importBtn" class="ghost-button" aria-label="Import tasks from Excel" title="Import tasks from Excel">Import</button>
+            <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
             <button id="themeToggle" class="icon-button" aria-label="Toggle dark mode" title="Toggle dark mode">
                 <span class="icon">🌙</span>
             </button>
@@ -26,6 +31,17 @@
     </header>
 
     <main class="container" role="main">
+        <aside class="folders-sidebar" role="complementary">
+            <div class="folders-header">
+                <h2>Lists</h2>
+                <button id="addFolderBtn" class="icon-button small" aria-label="Create new list" title="Create new list">
+                    <span class="icon">+</span>
+                </button>
+            </div>
+            <ul id="foldersList" class="folders-list" role="list"></ul>
+        </aside>
+
+        <div class="main-content">
         <section class="add-task" aria-labelledby="addTaskLabel">
             <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
             <form id="taskForm" autocomplete="off" novalidate>
@@ -50,8 +66,37 @@
                 <button class="chip" data-filter="active" role="tab" aria-selected="false">Active</button>
                 <button class="chip" data-filter="completed" role="tab" aria-selected="false">Completed</button>
             </div>
-            <div class="search">
+            <div class="search-filters">
                 <input id="searchInput" type="search" placeholder="Search tasks..." aria-label="Search tasks">
+                <select id="monthFilter" class="month-filter" aria-label="Filter by month">
+                    <option value="">All Months</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="activity" aria-labelledby="activityLabel">
+            <div class="activity-header">
+                <h2 id="activityLabel">Completed Tasks This Year</h2>
+                <span id="activityTotals" aria-live="polite">0 completed</span>
+            </div>
+            <div class="chart-container">
+                <div class="chart-y-axis">
+                    <span id="yAxisMax">0</span>
+                    <span id="yAxisMid">0</span>
+                    <span id="yAxisMin">0</span>
+                </div>
+                <div class="chart-wrapper">
+                    <svg id="monthlyChart" class="line-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:var(--accent-2);stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0.1" />
+                            </linearGradient>
+                        </defs>
+                        <g id="chartArea"></g>
+                    </svg>
+                    <div id="xAxisLabels" class="chart-x-axis"></div>
+                </div>
             </div>
         </section>
 
@@ -60,15 +105,35 @@
             <ul id="tasks" class="tasks" aria-live="polite"></ul>
             <p id="emptyState" class="empty" hidden>No tasks yet. Add your first task above.</p>
         </section>
-
-        <section class="activity" aria-labelledby="activityLabel">
-            <div class="activity-header">
-                <h2 id="activityLabel">This Month</h2>
-                <span id="activityTotals" aria-live="polite">0 completed</span>
-            </div>
-            <div id="monthlyChart" class="spark" role="img" aria-label="Completed tasks per day this month"></div>
-        </section>
+        </div>
     </main>
+
+    <!-- Folder creation modal -->
+    <div id="folderModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3 id="folderModalTitle">Create New List</h3>
+            <form id="folderForm">
+                <input id="folderNameInput" type="text" placeholder="List name..." aria-label="List name" required maxlength="50" autofocus>
+                <div class="modal-actions">
+                    <button type="button" id="folderModalCancel" class="ghost-button">Cancel</button>
+                    <button type="submit" class="primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export multiple lists modal -->
+    <div id="exportMultipleModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3>Select Lists to Export</h3>
+            <div id="exportListsContainer" class="export-lists-container"></div>
+            <div class="modal-actions">
+                <button type="button" id="exportMultipleCancel" class="ghost-button">Cancel</button>
+                <button type="button" id="exportMultipleSelectAll" class="ghost-button">Select All</button>
+                <button type="button" id="exportMultipleExport" class="primary">Export Selected</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="app-footer" role="contentinfo">
         <span>Local first • No accounts • Works offline</span>
