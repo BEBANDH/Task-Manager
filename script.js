@@ -5,19 +5,32 @@
    * Local storage keys
    */
   const STORAGE_KEYS = {
-    tasks: 'tm_tasks_v1',
+    folders: 'tm_folders_v2',
+    tasks: 'tm_tasks_v2',
+    currentFolder: 'tm_current_folder_v2',
     theme: 'tm_theme_v1',
     filter: 'tm_filter_v1',
-    search: 'tm_search_v1'
+    search: 'tm_search_v1',
+    monthFilter: 'tm_month_filter_v1'
   };
 
   /**
    * State
    */
-  /** @type {{ id: string; title: string; completed: boolean; createdAt: number; updatedAt: number; completedAt?: number | null; }[]} */
-  let tasks = [];
+  /** @type {{ id: string; name: string; createdAt: number; }[]} */
+  let folders = [];
+  /** @type {Record<string, { id: string; title: string; completed: boolean; createdAt: number; updatedAt: number; completedAt?: number | null; }[]>} */
+  let tasksByFolder = {};
+  let currentFolderId = null;
   let activeFilter = 'all'; // all | active | completed
   let searchQuery = '';
+  let selectedMonth = ''; // '' for all months, or 'YYYY-MM' format
+  
+  // Get current folder's tasks
+  const getCurrentTasks = () => {
+    if (!currentFolderId) return [];
+    return tasksByFolder[currentFolderId] || [];
+  };
 
   /**
    * DOM elements
@@ -34,8 +47,29 @@
     clearCompleted: document.getElementById('clearCompleted'),
     filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
     search: document.getElementById('searchInput'),
+    monthFilter: document.getElementById('monthFilter'),
     monthlyChart: document.getElementById('monthlyChart'),
     activityTotals: document.getElementById('activityTotals'),
+    yAxisMax: document.getElementById('yAxisMax'),
+    yAxisMid: document.getElementById('yAxisMid'),
+    yAxisMin: document.getElementById('yAxisMin'),
+    xAxisLabels: document.getElementById('xAxisLabels'),
+    exportBtn: document.getElementById('exportBtn'),
+    exportMultipleBtn: document.getElementById('exportMultipleBtn'),
+    exportMultipleModal: document.getElementById('exportMultipleModal'),
+    exportListsContainer: document.getElementById('exportListsContainer'),
+    exportMultipleCancel: document.getElementById('exportMultipleCancel'),
+    exportMultipleSelectAll: document.getElementById('exportMultipleSelectAll'),
+    exportMultipleExport: document.getElementById('exportMultipleExport'),
+    importBtn: document.getElementById('importBtn'),
+    importFile: document.getElementById('importFile'),
+    foldersList: document.getElementById('foldersList'),
+    addFolderBtn: document.getElementById('addFolderBtn'),
+    folderModal: document.getElementById('folderModal'),
+    folderForm: document.getElementById('folderForm'),
+    folderNameInput: document.getElementById('folderNameInput'),
+    folderModalCancel: document.getElementById('folderModalCancel'),
+    folderModalTitle: document.getElementById('folderModalTitle'),
   };
 
   // Utilities
@@ -76,49 +110,254 @@
     });
   }
 
+  // Folders CRUD
+  function createFolder(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    if (folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert('A list with this name already exists.');
+      return null;
+    }
+    const folder = { id: uid(), name: trimmed, createdAt: now() };
+    folders.push(folder);
+    tasksByFolder[folder.id] = [];
+    persistFolders();
+    persistTasks();
+    renderFolders();
+    switchFolder(folder.id);
+    return folder;
+  }
+
+  function renameFolder(id, newName) {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const folder = folders.find(f => f.id === id);
+    if (!folder) return;
+    if (folders.some(f => f.id !== id && f.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert('A list with this name already exists.');
+      return;
+    }
+    folder.name = trimmed;
+    persistFolders();
+    renderFolders();
+  }
+
+  function deleteFolder(id) {
+    if (folders.length <= 1) {
+      alert('You must have at least one list.');
+      return;
+    }
+    
+    const folder = folders.find(f => f.id === id);
+    const folderName = folder ? folder.name : 'this list';
+    const taskCount = tasksByFolder[id] ? tasksByFolder[id].length : 0;
+    
+    const message = taskCount > 0 
+      ? `Are you sure you want to delete "${folderName}"? This will permanently delete ${taskCount} task(s).`
+      : `Are you sure you want to delete "${folderName}"?`;
+    
+    if (!confirm(message)) {
+      return;
+    }
+    
+    folders = folders.filter(f => f.id !== id);
+    delete tasksByFolder[id];
+    if (currentFolderId === id) {
+      currentFolderId = folders[0]?.id || null;
+      writeStorage(STORAGE_KEYS.currentFolder, currentFolderId);
+    }
+    persistFolders();
+    persistTasks();
+    renderFolders();
+    render();
+  }
+
+  function switchFolder(id) {
+    if (!folders.find(f => f.id === id)) return;
+    currentFolderId = id;
+    writeStorage(STORAGE_KEYS.currentFolder, currentFolderId);
+    renderFolders();
+    render();
+  }
+
+  function persistFolders() {
+    writeStorage(STORAGE_KEYS.folders, folders);
+  }
+
+  function persistTasks() {
+    writeStorage(STORAGE_KEYS.tasks, tasksByFolder);
+  }
+
   // Tasks CRUD
   function addTask(title) {
+    if (!currentFolderId) {
+      alert('Please select or create a list first.');
+      return;
+    }
     const trimmed = title.trim();
     if (!trimmed) return;
     const task = { id: uid(), title: trimmed, completed: false, createdAt: now(), updatedAt: now(), completedAt: null };
-    tasks.unshift(task);
-    persist();
+    if (!tasksByFolder[currentFolderId]) {
+      tasksByFolder[currentFolderId] = [];
+    }
+    tasksByFolder[currentFolderId].unshift(task);
+    persistTasks();
     render();
   }
 
   function updateTask(id, updates) {
-    const index = tasks.findIndex(t => t.id === id);
+    if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
+    const index = tasksByFolder[currentFolderId].findIndex(t => t.id === id);
     if (index === -1) return;
-    tasks[index] = { ...tasks[index], ...updates, updatedAt: now() };
-    persist();
+    tasksByFolder[currentFolderId][index] = { ...tasksByFolder[currentFolderId][index], ...updates, updatedAt: now() };
+    persistTasks();
     render();
   }
 
   function deleteTask(id) {
-    const next = tasks.filter(t => t.id !== id);
-    if (next.length === tasks.length) return;
-    tasks = next;
-    persist();
+    if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
+    const next = tasksByFolder[currentFolderId].filter(t => t.id !== id);
+    if (next.length === tasksByFolder[currentFolderId].length) return;
+    tasksByFolder[currentFolderId] = next;
+    persistTasks();
     render();
   }
 
   function clearCompleted() {
+    if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
+    const tasks = tasksByFolder[currentFolderId];
     const anyCompleted = tasks.some(t => t.completed);
     if (!anyCompleted) return;
-    tasks = tasks.filter(t => !t.completed);
-    persist();
+    tasksByFolder[currentFolderId] = tasks.filter(t => !t.completed);
+    persistTasks();
     render();
   }
 
-  function persist() {
-    writeStorage(STORAGE_KEYS.tasks, tasks);
+  // Rendering
+  function renderFolders() {
+    el.foldersList.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    folders.forEach(folder => {
+      const li = document.createElement('li');
+      li.className = `folder-item${folder.id === currentFolderId ? ' active' : ''}`;
+      li.dataset.folderId = folder.id;
+      
+      const name = document.createElement('span');
+      name.className = 'folder-name';
+      name.textContent = folder.name;
+      name.setAttribute('title', folder.name);
+      
+      const actions = document.createElement('div');
+      actions.className = 'folder-actions';
+      
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'folder-action edit';
+      editBtn.textContent = '✎';
+      editBtn.setAttribute('aria-label', 'Rename list');
+      editBtn.setAttribute('title', 'Rename list');
+      editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openFolderModal(folder.id, folder.name);
+      });
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'folder-action delete';
+      deleteBtn.textContent = '×';
+      deleteBtn.setAttribute('aria-label', 'Delete list');
+      deleteBtn.setAttribute('title', 'Delete list');
+      deleteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteFolder(folder.id);
+      });
+      
+      actions.append(editBtn, deleteBtn);
+      li.append(name, actions);
+      
+      li.addEventListener('click', () => switchFolder(folder.id));
+      
+      fragment.appendChild(li);
+    });
+    el.foldersList.appendChild(fragment);
   }
 
-  // Rendering
+  let currentModalFolderId = null;
+  let submitHandler = null;
+  let cancelHandler = null;
+
+  function openFolderModal(folderId = null, currentName = '') {
+    currentModalFolderId = folderId;
+    el.folderModal.hidden = false;
+    el.folderModal.removeAttribute('hidden');
+    el.folderModalTitle.textContent = folderId ? 'Rename List' : 'Create New List';
+    el.folderNameInput.value = currentName;
+    
+    // Remove old handlers if they exist
+    if (submitHandler) {
+      el.folderForm.removeEventListener('submit', submitHandler);
+    }
+    if (cancelHandler) {
+      el.folderModalCancel.removeEventListener('click', cancelHandler);
+    }
+    
+    // Create new handlers
+    submitHandler = (e) => {
+      e.preventDefault();
+      const name = el.folderNameInput.value.trim();
+      if (!name) {
+        el.folderNameInput.focus();
+        return;
+      }
+      
+      if (currentModalFolderId) {
+        renameFolder(currentModalFolderId, name);
+      } else {
+        createFolder(name);
+      }
+      closeFolderModal();
+    };
+    
+    cancelHandler = () => {
+      closeFolderModal();
+    };
+    
+    el.folderForm.addEventListener('submit', submitHandler);
+    el.folderModalCancel.addEventListener('click', cancelHandler);
+    
+    // Focus input after a short delay to ensure modal is visible
+    setTimeout(() => {
+      el.folderNameInput.focus();
+      if (!currentName) {
+        el.folderNameInput.select();
+      }
+    }, 10);
+  }
+
+  function closeFolderModal() {
+    el.folderModal.hidden = true;
+    el.folderModal.setAttribute('hidden', '');
+    if (submitHandler) {
+      el.folderForm.removeEventListener('submit', submitHandler);
+      submitHandler = null;
+    }
+    if (cancelHandler) {
+      el.folderModalCancel.removeEventListener('click', cancelHandler);
+      cancelHandler = null;
+    }
+    el.folderNameInput.value = '';
+    currentModalFolderId = null;
+    // Reset form to clear any validation states
+    el.folderForm.reset();
+  }
+
   function render() {
-    const { total, completed, filtered } = getRenderData();
+    const tasks = getCurrentTasks();
+    const { total, completed, filtered } = getRenderData(tasks);
     // Empty state
-    el.empty.hidden = filtered.length !== 0 || (searchQuery.length > 0 || activeFilter !== 'all');
+    el.empty.hidden = filtered.length !== 0 || (searchQuery.length > 0 || activeFilter !== 'all' || selectedMonth);
     // Progress
     const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
     el.progressText.textContent = `${percent}% • ${completed}/${total} completed`;
@@ -130,18 +369,31 @@
     filtered.forEach(task => fragment.appendChild(renderTaskItem(task)));
     el.tasks.appendChild(fragment);
     // Activity
-    renderActivity();
+    renderActivity(tasks);
+    // Update month filter dropdown
+    populateMonthFilter();
   }
 
-  function getRenderData() {
+  function getRenderData(tasks) {
     const total = tasks.length;
     const completed = tasks.filter(t => t.completed).length;
     const filtered = tasks.filter(task => {
+      // Filter by status (all/active/completed)
       if (activeFilter === 'active' && task.completed) return false;
       if (activeFilter === 'completed' && !task.completed) return false;
+      
+      // Filter by month
+      if (selectedMonth) {
+        const taskDate = new Date(task.createdAt);
+        const taskMonth = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}`;
+        if (taskMonth !== selectedMonth) return false;
+      }
+      
+      // Filter by search query
       if (searchQuery) {
         return task.title.toLowerCase().includes(searchQuery);
       }
+      
       return true;
     });
     return { total, completed, filtered };
@@ -286,6 +538,68 @@
     });
   }
 
+  function populateMonthFilter() {
+    if (!el.monthFilter) return;
+    
+    const tasks = getCurrentTasks();
+    const monthsSet = new Set();
+    
+    // Add months from tasks
+    tasks.forEach(task => {
+      const taskDate = new Date(task.createdAt);
+      const year = taskDate.getFullYear();
+      const month = taskDate.getMonth();
+      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+      monthsSet.add(JSON.stringify({ key: monthKey, year, month }));
+    });
+    
+    // Sort months (newest first)
+    const months = Array.from(monthsSet)
+      .map(str => JSON.parse(str))
+      .sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        return b.month - a.month;
+      });
+    
+    // Store current selection
+    const currentSelection = el.monthFilter.value;
+    
+    // Clear and populate dropdown
+    el.monthFilter.innerHTML = '<option value="">All Months</option>';
+    months.forEach(({ key, year, month }) => {
+      const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = monthName;
+      el.monthFilter.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (currentSelection && months.some(m => m.key === currentSelection)) {
+      el.monthFilter.value = currentSelection;
+    } else {
+      // Set saved value
+      const savedMonth = readStorage(STORAGE_KEYS.monthFilter, '');
+      if (savedMonth && months.some(m => m.key === savedMonth)) {
+        el.monthFilter.value = savedMonth;
+        selectedMonth = savedMonth;
+      } else {
+        el.monthFilter.value = '';
+        selectedMonth = '';
+      }
+    }
+  }
+
+  function initMonthFilter() {
+    populateMonthFilter();
+    
+    el.monthFilter.addEventListener('change', () => {
+      selectedMonth = el.monthFilter.value;
+      writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
+      render();
+    });
+  }
+
   // Form
   function initForm() {
     el.form.addEventListener('submit', (e) => {
@@ -309,57 +623,536 @@
     el.clearCompleted.addEventListener('click', clearCompleted);
   }
 
+  // Export to Excel
+  function exportToExcel() {
+    if (!currentFolderId) {
+      alert('Please select a list to export.');
+      return;
+    }
+    const tasks = getCurrentTasks();
+    if (tasks.length === 0) {
+      alert('No tasks to export in this list.');
+      return;
+    }
+
+    const currentFolder = folders.find(f => f.id === currentFolderId);
+    const folderName = currentFolder ? currentFolder.name.replace(/[^a-z0-9]/gi, '_') : 'tasks';
+
+    // Prepare data for Excel
+    const data = tasks.map(task => ({
+      'Title': task.title,
+      'Status': task.completed ? 'Completed' : 'Active',
+      'Created Date': formatDate(task.createdAt),
+      'Created Time': formatTime(task.createdAt),
+      'Completed Date': task.completedAt ? formatDate(task.completedAt) : '',
+      'Completed Time': task.completedAt ? formatTime(task.completedAt) : '',
+    }));
+
+    // Create workbook and worksheet
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+
+    // Generate filename with folder name and current date
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `${folderName}_${date}.xlsx`;
+
+    // Write file
+    XLSX.writeFile(wb, filename);
+  }
+
+  // Export multiple lists to Excel
+  function exportMultipleLists(selectedFolderIds) {
+    if (selectedFolderIds.length === 0) {
+      alert('Please select at least one list to export.');
+      return;
+    }
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    let sheetCount = 0;
+
+    // Add a sheet for each selected folder
+    selectedFolderIds.forEach(folderId => {
+      const folder = folders.find(f => f.id === folderId);
+      if (!folder) return;
+
+      const folderTasks = tasksByFolder[folderId] || [];
+      
+      // Skip empty folders
+      if (folderTasks.length === 0) return;
+
+      // Prepare data for Excel
+      const data = folderTasks.map(task => ({
+        'Title': task.title,
+        'Status': task.completed ? 'Completed' : 'Active',
+        'Created Date': formatDate(task.createdAt),
+        'Created Time': formatTime(task.createdAt),
+        'Completed Date': task.completedAt ? formatDate(task.completedAt) : '',
+        'Completed Time': task.completedAt ? formatTime(task.completedAt) : '',
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(data);
+      
+      // Clean folder name for sheet name (Excel sheet names have limitations: max 31 chars, no special chars)
+      let sheetName = folder.name.replace(/[\\\/\?\*\[\]:]/g, '_').substring(0, 31);
+      if (!sheetName) sheetName = 'List';
+      
+      // Ensure unique sheet names
+      let finalSheetName = sheetName;
+      let counter = 1;
+      while (wb.SheetNames.includes(finalSheetName)) {
+        const baseName = sheetName.substring(0, Math.max(1, 28 - String(counter).length));
+        finalSheetName = `${baseName}_${counter}`;
+        counter++;
+        if (counter > 99) break; // Safety limit
+      }
+      
+      XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
+      sheetCount++;
+    });
+
+    if (sheetCount === 0) {
+      alert('No tasks found in the selected lists.');
+      return;
+    }
+
+    // Generate filename with current date
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `multiple_lists_${date}.xlsx`;
+
+    // Write file
+    XLSX.writeFile(wb, filename);
+    closeExportMultipleModal();
+    alert(`Successfully exported ${sheetCount} list(s) to ${filename}`);
+  }
+
+  // Open export multiple modal
+  function openExportMultipleModal() {
+    if (folders.length === 0) {
+      alert('No lists available to export.');
+      return;
+    }
+
+    el.exportMultipleModal.hidden = false;
+    el.exportMultipleModal.removeAttribute('hidden');
+    
+    // Clear container
+    el.exportListsContainer.innerHTML = '';
+    
+    // Create checkboxes for each folder
+    folders.forEach(folder => {
+      const taskCount = tasksByFolder[folder.id] ? tasksByFolder[folder.id].length : 0;
+      
+      const label = document.createElement('label');
+      label.className = 'export-list-item';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = folder.id;
+      checkbox.checked = true; // Select all by default
+      checkbox.className = 'export-checkbox';
+      
+      const span = document.createElement('span');
+      span.textContent = `${folder.name} (${taskCount} task${taskCount !== 1 ? 's' : ''})`;
+      
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      el.exportListsContainer.appendChild(label);
+    });
+    
+    // Update Select All button text
+    el.exportMultipleSelectAll.textContent = 'Deselect All';
+  }
+
+  // Close export multiple modal
+  function closeExportMultipleModal() {
+    el.exportMultipleModal.hidden = true;
+    el.exportMultipleModal.setAttribute('hidden', '');
+  }
+
+  // Import from Excel
+  function importFromExcel(file) {
+    if (!currentFolderId) {
+      alert('Please select a list to import into.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        if (jsonData.length === 0) {
+          alert('The Excel file appears to be empty.');
+          return;
+        }
+
+        // Ask user if they want to replace or merge
+        const shouldReplace = confirm(
+          `Found ${jsonData.length} tasks in the file.\n\n` +
+          'Click OK to replace all existing tasks in this list, or Cancel to merge with existing tasks.'
+        );
+
+        const importedTasks = [];
+        jsonData.forEach((row, index) => {
+          // Try to map common column names
+          const title = row['Title'] || row['title'] || row['Task'] || row['task'] || row['Name'] || row['name'] || '';
+          const status = row['Status'] || row['status'] || row['Completed'] || row['completed'] || '';
+          const isCompleted = status.toString().toLowerCase() === 'completed' || status === true || status === 1;
+
+          if (title && title.toString().trim()) {
+            // Parse dates from Excel
+            const createdDateStr = row['Created Date'] || row['created date'] || row['CreatedDate'] || '';
+            const createdTimeStr = row['Created Time'] || row['created time'] || row['CreatedTime'] || '';
+            const completedDateStr = row['Completed Date'] || row['completed date'] || row['CompletedDate'] || '';
+            const completedTimeStr = row['Completed Time'] || row['completed time'] || row['CompletedTime'] || '';
+            
+            // Parse created date/time
+            let createdAt = parseDateTime(createdDateStr, createdTimeStr);
+            if (!createdAt) {
+              createdAt = now(); // Fallback to current time if parsing fails
+            }
+            
+            // Parse completed date/time
+            let completedAt = null;
+            if (isCompleted && completedDateStr) {
+              completedAt = parseDateTime(completedDateStr, completedTimeStr);
+              if (!completedAt) {
+                completedAt = createdAt; // Fallback to created date if parsing fails
+              }
+            } else if (isCompleted) {
+              completedAt = createdAt; // Use created date if no completed date provided
+            }
+            
+            importedTasks.push({
+              id: uid(),
+              title: title.toString().trim().slice(0, 120),
+              completed: isCompleted,
+              createdAt: createdAt,
+              updatedAt: completedAt || createdAt,
+              completedAt: completedAt,
+            });
+          }
+        });
+
+        if (importedTasks.length === 0) {
+          alert('No valid tasks found in the Excel file. Please ensure the file has a "Title" column.');
+          return;
+        }
+
+        if (!tasksByFolder[currentFolderId]) {
+          tasksByFolder[currentFolderId] = [];
+        }
+
+        if (shouldReplace) {
+          tasksByFolder[currentFolderId] = importedTasks;
+        } else {
+          // Merge: add imported tasks to existing ones
+          tasksByFolder[currentFolderId] = [...importedTasks, ...tasksByFolder[currentFolderId]];
+        }
+
+        persistTasks();
+        render();
+        alert(`Successfully imported ${importedTasks.length} task(s) into the current list.`);
+      } catch (error) {
+        console.error('Import error:', error);
+        alert('Error importing file. Please ensure it is a valid Excel file.');
+      }
+    };
+    reader.onerror = function() {
+      alert('Error reading file.');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Initialize import/export
+  function initImportExport() {
+    el.exportBtn.addEventListener('click', exportToExcel);
+    
+    // Export multiple lists
+    el.exportMultipleBtn.addEventListener('click', openExportMultipleModal);
+    
+    // Export multiple modal handlers
+    el.exportMultipleCancel.addEventListener('click', closeExportMultipleModal);
+    
+    el.exportMultipleSelectAll.addEventListener('click', () => {
+      const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(cb => {
+        cb.checked = !allChecked;
+      });
+      el.exportMultipleSelectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
+    });
+    
+    el.exportMultipleExport.addEventListener('click', () => {
+      const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+      exportMultipleLists(selectedIds);
+    });
+    
+    // Click outside modal to close
+    el.exportMultipleModal.addEventListener('click', (e) => {
+      if (e.target === el.exportMultipleModal) {
+        closeExportMultipleModal();
+      }
+    });
+    
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !el.exportMultipleModal.hidden) {
+        closeExportMultipleModal();
+      }
+    });
+    
+    el.importBtn.addEventListener('click', () => {
+      if (!currentFolderId) {
+        alert('Please select a list to import into.');
+        return;
+      }
+      el.importFile.click();
+    });
+    el.importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importFromExcel(file);
+        // Reset file input so same file can be selected again
+        e.target.value = '';
+      }
+    });
+  }
+
+  // Initialize folders
+  function initFolders() {
+    // Ensure modal starts closed
+    el.folderModal.hidden = true;
+    el.folderModal.setAttribute('hidden', '');
+    
+    el.addFolderBtn.addEventListener('click', () => openFolderModal());
+    
+    // Click outside modal to close
+    el.folderModal.addEventListener('click', (e) => {
+      if (e.target === el.folderModal) {
+        closeFolderModal();
+      }
+    });
+    
+    // Prevent modal content clicks from closing modal
+    const modalContent = el.folderModal.querySelector('.modal-content');
+    if (modalContent) {
+      modalContent.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+    
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !el.folderModal.hidden) {
+        closeFolderModal();
+      }
+    });
+  }
+
   // Load
   function load() {
-    tasks = readStorage(STORAGE_KEYS.tasks, []);
-    if (!Array.isArray(tasks)) tasks = [];
-    // Data migration: ensure completedAt key exists
-    tasks = tasks.map(t => ({ ...t, completedAt: typeof t.completedAt === 'number' ? t.completedAt : (t.completed ? (t.updatedAt || t.createdAt || now()) : null) }));
+    // Load folders
+    folders = readStorage(STORAGE_KEYS.folders, []);
+    if (!Array.isArray(folders)) folders = [];
+    
+    // Load tasks by folder
+    tasksByFolder = readStorage(STORAGE_KEYS.tasks, {});
+    if (typeof tasksByFolder !== 'object') tasksByFolder = {};
+    
+    // Migration: if old format exists, migrate to new format
+    const oldTasks = readStorage('tm_tasks_v1', []);
+    if (Array.isArray(oldTasks) && oldTasks.length > 0 && folders.length === 0) {
+      // Create default folder and migrate old tasks
+      const defaultFolder = { id: uid(), name: 'My Tasks', createdAt: now() };
+      folders.push(defaultFolder);
+      tasksByFolder[defaultFolder.id] = oldTasks.map(t => ({
+        ...t,
+        completedAt: typeof t.completedAt === 'number' ? t.completedAt : (t.completed ? (t.updatedAt || t.createdAt || now()) : null)
+      }));
+      persistFolders();
+      persistTasks();
+    }
+    
+    // Ensure at least one folder exists
+    if (folders.length === 0) {
+      const defaultFolder = { id: uid(), name: 'My Tasks', createdAt: now() };
+      folders.push(defaultFolder);
+      tasksByFolder[defaultFolder.id] = [];
+      persistFolders();
+      persistTasks();
+    }
+    
+    // Load current folder
+    currentFolderId = readStorage(STORAGE_KEYS.currentFolder, null);
+    if (!currentFolderId || !folders.find(f => f.id === currentFolderId)) {
+      currentFolderId = folders[0].id;
+      writeStorage(STORAGE_KEYS.currentFolder, currentFolderId);
+    }
+    
+    // Ensure all folders have task arrays
+    folders.forEach(folder => {
+      if (!tasksByFolder[folder.id]) {
+        tasksByFolder[folder.id] = [];
+      }
+      // Data migration: ensure completedAt key exists
+      tasksByFolder[folder.id] = tasksByFolder[folder.id].map(t => ({
+        ...t,
+        completedAt: typeof t.completedAt === 'number' ? t.completedAt : (t.completed ? (t.updatedAt || t.createdAt || now()) : null)
+      }));
+    });
+    
+    persistTasks();
   }
 
   // Init
   function init() {
+    // Ensure modal is closed on startup
+    if (el.folderModal) {
+      el.folderModal.hidden = true;
+      el.folderModal.setAttribute('hidden', '');
+    }
+    
     load();
     initTheme();
+    initFolders();
     initFilters();
     initSearch();
+    initMonthFilter();
     initForm();
     initBulk();
+    initImportExport();
+    renderFolders();
     render();
   }
 
   // Activity (monthly chart)
-  function renderActivity() {
+  function renderActivity(tasks) {
     if (!el.monthlyChart || !el.activityTotals) return;
+    
     const today = new Date();
     const year = today.getFullYear();
-    const month = today.getMonth(); // 0-11
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const counts = Array.from({ length: daysInMonth }, () => 0);
+    const monthCounts = Array.from({ length: 12 }, () => 0);
     let totalCompleted = 0;
+    
+    // Count completed tasks by month for current year
     tasks.forEach(t => {
       if (!t.completedAt) return;
       const d = new Date(t.completedAt);
-      if (d.getFullYear() === year && d.getMonth() === month) {
-        const day = d.getDate();
-        counts[day - 1] += 1;
+      if (d.getFullYear() === year) {
+        const month = d.getMonth(); // 0-11
+        monthCounts[month] += 1;
         totalCompleted += 1;
       }
     });
-    const max = Math.max(1, ...counts);
-    el.monthlyChart.innerHTML = '';
-    const frag = document.createDocumentFragment();
-    counts.forEach((count, idx) => {
-      const bar = document.createElement('div');
-      bar.className = 'bar' + (count === 0 ? ' dim' : '');
-      const height = Math.max(4, Math.round((count / max) * 60));
-      bar.style.height = `${height}px`;
-      const labelDay = idx + 1;
-      bar.setAttribute('title', `Day ${labelDay}: ${count} completed`);
-      bar.setAttribute('aria-label', `Day ${labelDay}: ${count} completed`);
-      frag.appendChild(bar);
+    
+    const max = Math.max(1, ...monthCounts);
+    const chartHeight = 180;
+    const chartWidth = 1000;
+    const padding = 40;
+    const plotHeight = chartHeight - padding * 2;
+    const plotWidth = chartWidth - padding * 2;
+    
+    // Get or create chart area group
+    let chartArea = el.monthlyChart.querySelector('#chartArea');
+    if (!chartArea) {
+      chartArea = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      chartArea.id = 'chartArea';
+      el.monthlyChart.appendChild(chartArea);
+    }
+    
+    // Clear previous chart
+    chartArea.innerHTML = '';
+    
+    // Calculate points for line chart
+    const points = monthCounts.map((count, idx) => {
+      const x = padding + (idx / 11) * plotWidth;
+      const y = padding + plotHeight - (count / max) * plotHeight;
+      return { x, y, count, month: idx };
     });
-    el.monthlyChart.appendChild(frag);
+    
+    // Create path for line
+    let pathData = '';
+    points.forEach((point, idx) => {
+      if (idx === 0) {
+        pathData += `M ${point.x} ${point.y}`;
+      } else {
+        pathData += ` L ${point.x} ${point.y}`;
+      }
+    });
+    
+    // Create area path (for gradient fill)
+    let areaPath = pathData;
+    if (points.length > 0) {
+      areaPath += ` L ${points[points.length - 1].x} ${padding + plotHeight}`;
+      areaPath += ` L ${points[0].x} ${padding + plotHeight}`;
+      areaPath += ' Z';
+    }
+    
+    // Draw area fill
+    if (points.length > 0) {
+      const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      area.setAttribute('d', areaPath);
+      area.setAttribute('fill', 'url(#lineGradient)');
+      area.setAttribute('stroke', 'none');
+      chartArea.appendChild(area);
+    }
+    
+    // Draw line
+    if (points.length > 0) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      line.setAttribute('d', pathData);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', 'var(--accent)');
+      line.setAttribute('stroke-width', '3');
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('stroke-linejoin', 'round');
+      chartArea.appendChild(line);
+    }
+    
+    // Draw points
+    points.forEach((point) => {
+      if (point.count > 0) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', point.y);
+        circle.setAttribute('r', '4');
+        circle.setAttribute('fill', 'var(--accent)');
+        circle.setAttribute('stroke', 'var(--panel)');
+        circle.setAttribute('stroke-width', '2');
+        const monthName = new Date(year, point.month, 1).toLocaleDateString('en-US', { month: 'short' });
+        circle.setAttribute('title', `${monthName}: ${point.count} completed`);
+        chartArea.appendChild(circle);
+      }
+    });
+    
+    // Update Y-axis labels
+    if (el.yAxisMax && el.yAxisMid && el.yAxisMin) {
+      el.yAxisMax.textContent = max.toString();
+      el.yAxisMid.textContent = Math.ceil(max / 2).toString();
+      el.yAxisMin.textContent = '0';
+    }
+    
+    // Update X-axis labels (month names)
+    if (el.xAxisLabels) {
+      el.xAxisLabels.innerHTML = '';
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      monthNames.forEach((monthName, idx) => {
+        const label = document.createElement('span');
+        label.textContent = monthName;
+        label.className = 'x-axis-label';
+        label.style.left = `${(idx / 11) * 100}%`;
+        label.setAttribute('title', `${monthName} ${year}: ${monthCounts[idx]} completed`);
+        el.xAxisLabels.appendChild(label);
+      });
+    }
+    
     el.activityTotals.textContent = `${totalCompleted} completed`;
   }
 
@@ -371,6 +1164,165 @@
       return `${date}, ${time}`;
     } catch (_) {
       return '';
+    }
+  }
+
+  function formatDate(ts) {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function formatTime(ts) {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    } catch (_) {
+      return '';
+    }
+  }
+
+  // Parse date and time from Excel import
+  function parseDateTime(dateStr, timeStr) {
+    if (!dateStr) return null;
+    
+    try {
+      // Handle Date objects (Excel sometimes returns these)
+      if (dateStr instanceof Date) {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          // Add time if provided
+          if (timeStr) {
+            const timeParts = parseTime(timeStr);
+            if (timeParts) {
+              date.setHours(timeParts.hours, timeParts.minutes, timeParts.seconds || 0, 0);
+            }
+          }
+          return date.getTime();
+        }
+      }
+      
+      // Try parsing as Excel serial date (number)
+      if (typeof dateStr === 'number') {
+        // Excel serial date: days since January 1, 1900
+        const excelEpoch = new Date(1900, 0, 1);
+        const days = dateStr - 2; // Excel has a bug where it treats 1900 as a leap year
+        const date = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+        
+        // Add time if provided
+        if (timeStr) {
+          const timeParts = parseTime(timeStr);
+          if (timeParts) {
+            date.setHours(timeParts.hours, timeParts.minutes, timeParts.seconds || 0, 0);
+          }
+        }
+        
+        return date.getTime();
+      }
+      
+      // Try parsing as date string
+      let date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        // Try common date formats
+        const formats = [
+          /(\d{1,2})\/(\d{1,2})\/(\d{4})/, // MM/DD/YYYY or DD/MM/YYYY
+          /(\d{4})-(\d{1,2})-(\d{1,2})/, // YYYY-MM-DD
+          /(\w{3})\s+(\d{1,2}),\s+(\d{4})/, // Mon DD, YYYY
+        ];
+        
+        for (const format of formats) {
+          const match = dateStr.match(format);
+          if (match) {
+            if (format === formats[0]) {
+              // MM/DD/YYYY or DD/MM/YYYY - try both
+              const month = parseInt(match[1]);
+              const day = parseInt(match[2]);
+              const year = parseInt(match[3]);
+              if (month > 12) {
+                // Likely DD/MM/YYYY
+                date = new Date(year, day - 1, month);
+              } else {
+                // Likely MM/DD/YYYY
+                date = new Date(year, month - 1, day);
+              }
+            } else if (format === formats[1]) {
+              // YYYY-MM-DD
+              date = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+            } else if (format === formats[2]) {
+              // Mon DD, YYYY
+              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const month = monthNames.indexOf(match[1]);
+              date = new Date(parseInt(match[3]), month, parseInt(match[2]));
+            }
+            break;
+          }
+        }
+      }
+      
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+      
+      // Add time if provided
+      if (timeStr) {
+        const timeParts = parseTime(timeStr);
+        if (timeParts) {
+          date.setHours(timeParts.hours, timeParts.minutes, timeParts.seconds || 0, 0);
+        }
+      }
+      
+      return date.getTime();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Parse time string (HH:MM AM/PM or HH:MM:SS)
+  function parseTime(timeStr) {
+    if (!timeStr) return null;
+    
+    try {
+      // Handle Excel time format (decimal fraction of a day)
+      if (typeof timeStr === 'number') {
+        const totalSeconds = Math.floor(timeStr * 24 * 60 * 60);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return { hours, minutes, seconds };
+      }
+      
+      // Handle string formats
+      const timeStrClean = timeStr.toString().trim();
+      
+      // Try 12-hour format (HH:MM AM/PM)
+      const amPmMatch = timeStrClean.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)/i);
+      if (amPmMatch) {
+        let hours = parseInt(amPmMatch[1]);
+        const minutes = parseInt(amPmMatch[2]);
+        const seconds = amPmMatch[3] ? parseInt(amPmMatch[3]) : 0;
+        const amPm = amPmMatch[4].toUpperCase();
+        
+        if (amPm === 'PM' && hours !== 12) hours += 12;
+        if (amPm === 'AM' && hours === 12) hours = 0;
+        
+        return { hours, minutes, seconds };
+      }
+      
+      // Try 24-hour format (HH:MM or HH:MM:SS)
+      const timeMatch = timeStrClean.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (timeMatch) {
+        const hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
+        return { hours, minutes, seconds };
+      }
+      
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
