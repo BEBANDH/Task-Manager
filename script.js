@@ -36,43 +36,47 @@
   /**
    * DOM elements
    */
-  const el = {
-    form: document.getElementById('taskForm'),
-    input: document.getElementById('taskInput'),
-    tasks: document.getElementById('tasks'),
-    empty: document.getElementById('emptyState'),
-    progressText: document.getElementById('progressText'),
-    progressBar: document.querySelector('.progress-bar'),
-    progressFill: document.querySelector('.progress-fill'),
-    // themeToggle removed
-    clearCompleted: document.getElementById('clearCompleted'),
-    filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
-    search: document.getElementById('searchInput'),
-    monthFilter: document.getElementById('monthFilter'),
-    monthlyChart: document.getElementById('monthlyChart'),
-    activityLabel: document.getElementById('activityLabel'),
-    activityTotals: document.getElementById('activityTotals'),
-    yAxisMax: document.getElementById('yAxisMax'),
-    yAxisMid: document.getElementById('yAxisMid'),
-    yAxisMin: document.getElementById('yAxisMin'),
-    xAxisLabels: document.getElementById('xAxisLabels'),
-    exportBtn: document.getElementById('exportBtn'),
-    exportMultipleBtn: document.getElementById('exportMultipleBtn'),
-    exportMultipleModal: document.getElementById('exportMultipleModal'),
-    exportListsContainer: document.getElementById('exportListsContainer'),
-    exportMultipleCancel: document.getElementById('exportMultipleCancel'),
-    exportMultipleSelectAll: document.getElementById('exportMultipleSelectAll'),
-    exportMultipleExport: document.getElementById('exportMultipleExport'),
-    importBtn: document.getElementById('importBtn'),
-    importFile: document.getElementById('importFile'),
-    foldersList: document.getElementById('foldersList'),
-    addFolderBtn: document.getElementById('addFolderBtn'),
-    folderModal: document.getElementById('folderModal'),
-    folderForm: document.getElementById('folderForm'),
-    folderNameInput: document.getElementById('folderNameInput'),
-    folderModalCancel: document.getElementById('folderModalCancel'),
-    folderModalTitle: document.getElementById('folderModalTitle'),
-  };
+  let el = {};
+
+  function initElements() {
+    el = {
+      form: document.getElementById('taskForm'),
+      input: document.getElementById('taskInput'),
+      tasks: document.getElementById('tasks'),
+      empty: document.getElementById('emptyState'),
+      progressText: document.getElementById('progressText'),
+      progressBar: document.querySelector('.progress-bar'),
+      progressFill: document.querySelector('.progress-fill'),
+      themeToggle: document.getElementById('themeToggle'),
+      clearCompleted: document.getElementById('clearCompleted'),
+      filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
+      search: document.getElementById('searchInput'),
+      monthFilter: document.getElementById('monthFilter'),
+      monthlyChart: document.getElementById('monthlyChart'),
+      activityLabel: document.getElementById('activityLabel'),
+      activityTotals: document.getElementById('activityTotals'),
+      yAxisMax: document.getElementById('yAxisMax'),
+      yAxisMid: document.getElementById('yAxisMid'),
+      yAxisMin: document.getElementById('yAxisMin'),
+      xAxisLabels: document.getElementById('xAxisLabels'),
+      exportBtn: document.getElementById('exportBtn'),
+      exportMultipleBtn: document.getElementById('exportMultipleBtn'),
+      exportMultipleModal: document.getElementById('exportMultipleModal'),
+      exportListsContainer: document.getElementById('exportListsContainer'),
+      exportMultipleCancel: document.getElementById('exportMultipleCancel'),
+      exportMultipleSelectAll: document.getElementById('exportMultipleSelectAll'),
+      exportMultipleExport: document.getElementById('exportMultipleExport'),
+      importBtn: document.getElementById('importBtn'),
+      importFile: document.getElementById('importFile'),
+      foldersList: document.getElementById('foldersList'),
+      addFolderBtn: document.getElementById('addFolderBtn'),
+      folderModal: document.getElementById('folderModal'),
+      folderForm: document.getElementById('folderForm'),
+      folderNameInput: document.getElementById('folderNameInput'),
+      folderModalCancel: document.getElementById('folderModalCancel'),
+      folderModalTitle: document.getElementById('folderModalTitle'),
+    };
+  }
 
   // Utilities
   const now = () => Date.now();
@@ -96,8 +100,27 @@
 
   // Theme
   // Theme logic removed
+  function toggleTheme() {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    writeStorage(STORAGE_KEYS.theme, next);
+  }
+
   function initTheme() {
-    // Theme is now permanent dark/jade
+    // 1. Check storage
+    let theme = readStorage(STORAGE_KEYS.theme, null);
+    // 2. Fallback to system
+    if (!theme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    // 3. Apply
+    document.documentElement.setAttribute('data-theme', theme);
+
+    if (el.themeToggle) {
+      el.themeToggle.addEventListener('click', toggleTheme);
+    }
   }
 
   // Folders CRUD
@@ -1086,17 +1109,47 @@
     if (typeof tasksByFolder !== 'object') tasksByFolder = {};
 
     // Migration: if old format exists, migrate to new format
-    const oldTasks = readStorage('tm_tasks_v1', []);
-    if (Array.isArray(oldTasks) && oldTasks.length > 0 && folders.length === 0) {
-      // Create default folder and migrate old tasks
-      const defaultFolder = { id: uid(), name: 'My Tasks', createdAt: now() };
+    // Migration: Attempt to recover data from older versions
+    // Check for v1 data
+    const oldTasksV1 = readStorage('tm_tasks_v1', []);
+    // Check for legacy data (pre-v1, commonly used keys)
+    const oldTasksLegacy = readStorage('tm_tasks', []) || readStorage('tasks', []) || readStorage('todo_list', []);
+
+    const hasV1Data = Array.isArray(oldTasksV1) && oldTasksV1.length > 0;
+    const hasLegacyData = Array.isArray(oldTasksLegacy) && oldTasksLegacy.length > 0;
+
+    // Only migrate if we have no current data (to avoid overwriting or duplicates on every reload)
+    // OR if the user explicitly asks for it (but we don't have a button for that yet)
+    // We'll migrate if folders list is empty, assuming it's a fresh or broken state.
+    if (folders.length === 0 && (hasV1Data || hasLegacyData)) {
+      console.log('Migrating old data...');
+
+      const defaultFolder = { id: uid(), name: 'Recovered Tasks', createdAt: now() };
       folders.push(defaultFolder);
-      tasksByFolder[defaultFolder.id] = oldTasks.map(t => ({
-        ...t,
-        completedAt: typeof t.completedAt === 'number' ? t.completedAt : (t.completed ? (t.updatedAt || t.createdAt || now()) : null)
-      }));
+
+      // Combine sources if compatible, or prioritize V1
+      let tasksToMigrate = hasV1Data ? oldTasksV1 : oldTasksLegacy;
+
+      // Sanitize and format tasks
+      tasksToMigrate = tasksToMigrate.map(t => {
+        // Ensure basic structure
+        if (typeof t === 'string') return { id: uid(), title: t, completed: false, createdAt: now(), updatedAt: now() };
+        return {
+          id: t.id || uid(),
+          title: t.title || t.name || 'Untitled Task',
+          completed: !!(t.completed || t.done),
+          createdAt: t.createdAt || now(),
+          updatedAt: t.updatedAt || now(),
+          completedAt: typeof t.completedAt === 'number' ? t.completedAt : (t.completed ? (t.updatedAt || t.createdAt || now()) : null),
+          subtasks: Array.isArray(t.subtasks) ? t.subtasks : []
+        };
+      });
+
+      tasksByFolder[defaultFolder.id] = tasksToMigrate;
+
       persistFolders();
       persistTasks();
+      alert('We found tasks from a previous version and recovered them into "Recovered Tasks".');
     }
 
     // Ensure at least one folder exists
@@ -1138,6 +1191,7 @@
       el.folderModal.setAttribute('hidden', '');
     }
 
+    initElements(); // Must be first!
     load();
     initTheme();
     initFolders();
