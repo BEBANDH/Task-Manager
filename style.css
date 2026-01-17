@@ -44,13 +44,13 @@
 
 [data-theme="dark"] {
   --bg: #000000;
-  --panel: #0e1a15;
-  --panel-2: #15241e;
+  --panel: #0e101a;
+  --panel-2: #151924;
   --text: #e5fdf4;
-  --text-dim: #5c8a7b;
-  --accent: #00A86B;
-  --accent-2: #4ade80;
-  --muted: #1c3329;
+  --text-dim: #5c6d8a;
+  --accent: #0b68b4;
+  --accent-2: #4acfde;
+  --muted: #1c1e33;
   --border: transparent;
   --border-accent: transparent;
   --bg-body: #000000;
@@ -164,8 +164,7 @@ body {
   padding: 16px;
   height: fit-content;
   box-shadow: none;
-  position: sticky;
-  top: 24px;
+  /* position: sticky; removed to allow natural scrolling */
 }
 
 .sidebar-actions {
