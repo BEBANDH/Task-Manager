@@ -11,7 +11,8 @@
     theme: 'tm_theme_v1',
     filter: 'tm_filter_v1',
     search: 'tm_search_v1',
-    monthFilter: 'tm_month_filter_v1'
+    monthFilter: 'tm_month_filter_v1',
+    yearFilter: 'tm_year_filter_v1'
   };
 
   /**
@@ -25,6 +26,7 @@
   let activeFilter = 'all'; // all | active | completed
   let searchQuery = '';
   let selectedMonth = ''; // '' for all months, or 'YYYY-MM' format
+  let selectedYear = ''; // '' for all years, or 'YYYY'
   const expandedTasks = new Set(); // Track expanded sublists
 
   // Get current folder's tasks
@@ -51,6 +53,7 @@
       clearCompleted: document.getElementById('clearCompleted'),
       filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
       search: document.getElementById('searchInput'),
+      yearFilter: document.getElementById('yearFilter'),
       monthFilter: document.getElementById('monthFilter'),
       monthlyChart: document.getElementById('monthlyChart'),
       activityLabel: document.getElementById('activityLabel'),
@@ -95,6 +98,28 @@
       localStorage.setItem(key, JSON.stringify(value));
     } catch (_) {
       // ignore storage errors (quota/private mode)
+    }
+  }
+  // Attempt to read JSON from cookies (for legacy data recovery)
+  function readCookieJSON(name) {
+    try {
+      const cookies = document.cookie ? document.cookie.split('; ') : [];
+      for (const c of cookies) {
+        const [k, ...rest] = c.split('=');
+        if (k === name) {
+          const raw = rest.join('=');
+          if (!raw) return null;
+          const decoded = decodeURIComponent(raw);
+          try {
+            return JSON.parse(decoded);
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -414,7 +439,13 @@
     // List
     el.tasks.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    filtered.forEach(task => fragment.appendChild(renderTaskItem(task)));
+    filtered.forEach(task => {
+      try {
+        fragment.appendChild(renderTaskItem(task));
+      } catch (err) {
+        console.error('Render task failed', err);
+      }
+    });
     el.tasks.appendChild(fragment);
     // Activity
     renderActivity(tasks);
@@ -430,7 +461,11 @@
       if (activeFilter === 'active' && task.completed) return false;
       if (activeFilter === 'completed' && !task.completed) return false;
 
-      // Filter by month
+      // Filter by year and month (createdAt-based for list)
+      if (selectedYear) {
+        const taskYear = new Date(task.createdAt).getFullYear().toString();
+        if (taskYear !== selectedYear) return false;
+      }
       if (selectedMonth) {
         const taskDate = new Date(task.createdAt);
         const taskMonth = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}`;
@@ -551,7 +586,7 @@
         sDel.type = 'button';
         sDel.className = 'ghost-button danger small';
         sDel.textContent = '×';
-        sDe.title = 'Delete subtask';
+        sDel.title = 'Delete subtask';
         sCb.addEventListener('change', () => {
           const checked = sCb.checked;
           updateSubtask(task.id, sub.id, { completed: checked });
@@ -686,13 +721,19 @@
     const tasks = getCurrentTasks();
     const monthsSet = new Set();
 
-    // Add months from tasks
+    // Add months from tasks (consider both createdAt and completedAt)
     tasks.forEach(task => {
-      const taskDate = new Date(task.createdAt);
-      const year = taskDate.getFullYear();
-      const month = taskDate.getMonth();
-      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-      monthsSet.add(JSON.stringify({ key: monthKey, year, month }));
+      const sources = [task.createdAt, task.completedAt].filter(Boolean);
+      sources.forEach(ts => {
+        const d = new Date(ts);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+        // If a year is selected, only include months from that year
+        if (!selectedYear || selectedYear === String(year)) {
+          monthsSet.add(JSON.stringify({ key: monthKey, year, month }));
+        }
+      });
     });
 
     // Sort months (newest first)
@@ -732,7 +773,42 @@
     }
   }
 
+  function populateYearFilter() {
+    if (!el.yearFilter) return;
+    const tasks = getCurrentTasks();
+    const yearsSet = new Set();
+    tasks.forEach(task => {
+      const sources = [task.createdAt, task.completedAt].filter(Boolean);
+      sources.forEach(ts => {
+        const y = new Date(ts).getFullYear();
+        yearsSet.add(y);
+      });
+    });
+    const years = Array.from(yearsSet).sort((a, b) => b - a);
+    const currentSelection = el.yearFilter.value;
+    el.yearFilter.innerHTML = '<option value="">All Years</option>';
+    years.forEach(y => {
+      const option = document.createElement('option');
+      option.value = String(y);
+      option.textContent = String(y);
+      el.yearFilter.appendChild(option);
+    });
+    if (currentSelection && years.includes(parseInt(currentSelection, 10))) {
+      el.yearFilter.value = currentSelection;
+    } else {
+      const savedYear = readStorage(STORAGE_KEYS.yearFilter, '');
+      if (savedYear && years.includes(parseInt(savedYear, 10))) {
+        el.yearFilter.value = savedYear;
+        selectedYear = savedYear;
+      } else {
+        el.yearFilter.value = '';
+        selectedYear = '';
+      }
+    }
+  }
+
   function initMonthFilter() {
+    populateYearFilter();
     populateMonthFilter();
 
     el.monthFilter.addEventListener('change', () => {
@@ -740,6 +816,19 @@
       writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
       render();
     });
+    if (el.yearFilter) {
+      el.yearFilter.addEventListener('change', () => {
+        selectedYear = el.yearFilter.value;
+        writeStorage(STORAGE_KEYS.yearFilter, selectedYear);
+        // Reset month if it no longer matches the selected year
+        if (selectedMonth && (!selectedYear || selectedMonth.split('-')[0] !== selectedYear)) {
+          selectedMonth = '';
+          writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
+        }
+        populateMonthFilter();
+        render();
+      });
+    }
   }
 
   // Form
@@ -769,6 +858,10 @@
   function exportToExcel() {
     if (!currentFolderId) {
       alert('Please select a list to export.');
+      return;
+    }
+    if (typeof XLSX === 'undefined' || !XLSX || !XLSX.utils) {
+      alert('Export library not loaded. Please check your internet connection.');
       return;
     }
     const tasks = getCurrentTasks();
@@ -1013,58 +1106,74 @@
 
   // Initialize import/export
   function initImportExport() {
-    el.exportBtn.addEventListener('click', exportToExcel);
-
+    if (el.exportBtn) {
+      el.exportBtn.addEventListener('click', exportToExcel);
+    }
+  
     // Export multiple lists
-    el.exportMultipleBtn.addEventListener('click', openExportMultipleModal);
-
+    if (el.exportMultipleBtn) {
+      el.exportMultipleBtn.addEventListener('click', openExportMultipleModal);
+    }
+  
     // Export multiple modal handlers
-    el.exportMultipleCancel.addEventListener('click', closeExportMultipleModal);
-
-    el.exportMultipleSelectAll.addEventListener('click', () => {
-      const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox');
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-      checkboxes.forEach(cb => {
-        cb.checked = !allChecked;
+    if (el.exportMultipleCancel) {
+      el.exportMultipleCancel.addEventListener('click', closeExportMultipleModal);
+    }
+  
+    if (el.exportMultipleSelectAll) {
+      el.exportMultipleSelectAll.addEventListener('click', () => {
+        const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => {
+          cb.checked = !allChecked;
+        });
+        el.exportMultipleSelectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
       });
-      el.exportMultipleSelectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
-    });
-
-    el.exportMultipleExport.addEventListener('click', () => {
-      const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox:checked');
-      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-      exportMultipleLists(selectedIds);
-    });
-
+    }
+  
+    if (el.exportMultipleExport) {
+      el.exportMultipleExport.addEventListener('click', () => {
+        const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+        exportMultipleLists(selectedIds);
+      });
+    }
+  
     // Click outside modal to close
-    el.exportMultipleModal.addEventListener('click', (e) => {
-      if (e.target === el.exportMultipleModal) {
-        closeExportMultipleModal();
-      }
-    });
-
+    if (el.exportMultipleModal) {
+      el.exportMultipleModal.addEventListener('click', (e) => {
+        if (e.target === el.exportMultipleModal) {
+          closeExportMultipleModal();
+        }
+      });
+    }
+  
     // ESC key to close modal
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !el.exportMultipleModal.hidden) {
+      if (el.exportMultipleModal && e.key === 'Escape' && !el.exportMultipleModal.hidden) {
         closeExportMultipleModal();
       }
     });
-
-    el.importBtn.addEventListener('click', () => {
-      if (!currentFolderId) {
-        alert('Please select a list to import into.');
-        return;
-      }
-      el.importFile.click();
-    });
-    el.importFile.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        importFromExcel(file);
-        // Reset file input so same file can be selected again
-        e.target.value = '';
-      }
-    });
+  
+    if (el.importBtn) {
+      el.importBtn.addEventListener('click', () => {
+        if (!currentFolderId) {
+          alert('Please select a list to import into.');
+          return;
+        }
+        el.importFile.click();
+      });
+    }
+    if (el.importFile) {
+      el.importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          importFromExcel(file);
+          // Reset file input so same file can be selected again
+          e.target.value = '';
+        }
+      });
+    }
   }
 
   // Initialize folders
@@ -1107,6 +1216,25 @@
     // Load tasks by folder
     tasksByFolder = readStorage(STORAGE_KEYS.tasks, {});
     if (typeof tasksByFolder !== 'object') tasksByFolder = {};
+
+    // Attempt cookie recovery if localStorage is empty
+    try {
+      if (folders.length === 0) {
+        const cookieFolders = readCookieJSON(STORAGE_KEYS.folders);
+        if (Array.isArray(cookieFolders) && cookieFolders.length > 0) {
+          folders = cookieFolders;
+        }
+      }
+      if (Object.keys(tasksByFolder).length === 0) {
+        const cookieTasks = readCookieJSON(STORAGE_KEYS.tasks) ||
+          readCookieJSON('tm_tasks_v1') || readCookieJSON('tm_tasks') || readCookieJSON('tasks') || readCookieJSON('todo_list');
+        if (cookieTasks && typeof cookieTasks === 'object') {
+          tasksByFolder = cookieTasks;
+        }
+      }
+    } catch (_) {
+      // ignore cookie parsing errors
+    }
 
     // Migration: if old format exists, migrate to new format
     // Migration: Attempt to recover data from older versions
@@ -1180,7 +1308,7 @@
       });
     });
 
-    persistTasks();
+    // Do not overwrite storage unless we actually migrated/created defaults above
   }
 
   // Init
@@ -1300,8 +1428,7 @@
 
     } else {
       // Year View (Months)
-      const today = new Date();
-      const year = today.getFullYear();
+      const year = selectedYear ? parseInt(selectedYear, 10) : new Date().getFullYear();
       const monthCounts = Array.from({ length: 12 }, () => 0);
       let totalCompleted = 0;
       tasks.forEach(t => {
