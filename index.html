@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager • Progress Tracker</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -85,6 +85,9 @@
                 </div>
                 <div class="search-filters">
                     <input id="searchInput" type="search" placeholder="Search tasks..." aria-label="Search tasks">
+                    <select id="yearFilter" class="month-filter" aria-label="Filter by year">
+                        <option value="">All Years</option>
+                    </select>
                     <select id="monthFilter" class="month-filter" aria-label="Filter by month">
                         <option value="">All Months</option>
                     </select>
