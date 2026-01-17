@@ -25,7 +25,23 @@
 }
 
 /* User requested pure black and specific colors, overriding light theme auto-detection for consistency with the prompt */
-[data-theme="light"],
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --panel-2: #f1f5f9;
+  --text: #0f172a;
+  --text-dim: #64748b;
+  --accent: #059669;
+  /* Slightly darker jade for contrast on light */
+  --accent-2: #34d399;
+  --muted: #e2e8f0;
+  --border: transparent;
+  --border-accent: #cbd5e1;
+  --bg-body: var(--bg);
+  --bg-header: rgba(255, 255, 255, 0.7);
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
 [data-theme="dark"] {
   --bg: #000000;
   --panel: #0e1a15;
