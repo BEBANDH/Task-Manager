@@ -26,7 +26,7 @@
   let searchQuery = '';
   let selectedMonth = ''; // '' for all months, or 'YYYY-MM' format
   const expandedTasks = new Set(); // Track expanded sublists
-  
+
   // Get current folder's tasks
   const getCurrentTasks = () => {
     if (!currentFolderId) return [];
@@ -44,7 +44,7 @@
     progressText: document.getElementById('progressText'),
     progressBar: document.querySelector('.progress-bar'),
     progressFill: document.querySelector('.progress-fill'),
-    themeToggle: document.getElementById('themeToggle'),
+    // themeToggle removed
     clearCompleted: document.getElementById('clearCompleted'),
     filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
     search: document.getElementById('searchInput'),
@@ -95,21 +95,9 @@
   }
 
   // Theme
-  function applyTheme(theme) {
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
-    const icon = isDark ? '🌙' : '🌞';
-    el.themeToggle.querySelector('.icon').textContent = icon;
-  }
-
+  // Theme logic removed
   function initTheme() {
-    const saved = readStorage(STORAGE_KEYS.theme, 'dark');
-    applyTheme(saved);
-    el.themeToggle.addEventListener('click', () => {
-      const current = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      writeStorage(STORAGE_KEYS.theme, current);
-      applyTheme(current);
-    });
+    // Theme is now permanent dark/jade
   }
 
   // Folders CRUD
@@ -149,19 +137,19 @@
       alert('You must have at least one list.');
       return;
     }
-    
+
     const folder = folders.find(f => f.id === id);
     const folderName = folder ? folder.name : 'this list';
     const taskCount = tasksByFolder[id] ? tasksByFolder[id].length : 0;
-    
-    const message = taskCount > 0 
+
+    const message = taskCount > 0
       ? `Are you sure you want to delete "${folderName}"? This will permanently delete ${taskCount} task(s).`
       : `Are you sure you want to delete "${folderName}"?`;
-    
+
     if (!confirm(message)) {
       return;
     }
-    
+
     folders = folders.filter(f => f.id !== id);
     delete tasksByFolder[id];
     if (currentFolderId === id) {
@@ -278,15 +266,15 @@
       const li = document.createElement('li');
       li.className = `folder-item${folder.id === currentFolderId ? ' active' : ''}`;
       li.dataset.folderId = folder.id;
-      
+
       const name = document.createElement('span');
       name.className = 'folder-name';
       name.textContent = folder.name;
       name.setAttribute('title', folder.name);
-      
+
       const actions = document.createElement('div');
       actions.className = 'folder-actions';
-      
+
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
       editBtn.className = 'folder-action edit';
@@ -298,7 +286,7 @@
         e.stopPropagation();
         openFolderModal(folder.id, folder.name);
       });
-      
+
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
       deleteBtn.className = 'folder-action delete';
@@ -310,12 +298,12 @@
         e.stopPropagation();
         deleteFolder(folder.id);
       });
-      
+
       actions.append(editBtn, deleteBtn);
       li.append(name, actions);
-      
+
       li.addEventListener('click', () => switchFolder(folder.id));
-      
+
       fragment.appendChild(li);
     });
     el.foldersList.appendChild(fragment);
@@ -331,7 +319,7 @@
     el.folderModal.removeAttribute('hidden');
     el.folderModalTitle.textContent = folderId ? 'Rename List' : 'Create New List';
     el.folderNameInput.value = currentName;
-    
+
     // Remove old handlers if they exist
     if (submitHandler) {
       el.folderForm.removeEventListener('submit', submitHandler);
@@ -339,7 +327,7 @@
     if (cancelHandler) {
       el.folderModalCancel.removeEventListener('click', cancelHandler);
     }
-    
+
     // Create new handlers
     submitHandler = (e) => {
       e.preventDefault();
@@ -348,7 +336,7 @@
         el.folderNameInput.focus();
         return;
       }
-      
+
       if (currentModalFolderId) {
         renameFolder(currentModalFolderId, name);
       } else {
@@ -356,14 +344,14 @@
       }
       closeFolderModal();
     };
-    
+
     cancelHandler = () => {
       closeFolderModal();
     };
-    
+
     el.folderForm.addEventListener('submit', submitHandler);
     el.folderModalCancel.addEventListener('click', cancelHandler);
-    
+
     // Focus input after a short delay to ensure modal is visible
     setTimeout(() => {
       el.folderNameInput.focus();
@@ -418,19 +406,19 @@
       // Filter by status (all/active/completed)
       if (activeFilter === 'active' && task.completed) return false;
       if (activeFilter === 'completed' && !task.completed) return false;
-      
+
       // Filter by month
       if (selectedMonth) {
         const taskDate = new Date(task.createdAt);
         const taskMonth = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}`;
         if (taskMonth !== selectedMonth) return false;
       }
-      
+
       // Filter by search query
       if (searchQuery) {
         return task.title.toLowerCase().includes(searchQuery);
       }
-      
+
       return true;
     });
     return { total, completed, filtered };
@@ -459,16 +447,42 @@
     title.setAttribute('role', 'textbox');
     title.setAttribute('aria-label', 'Task title');
     title.contentEditable = 'false';
-    
-    const subCount = Array.isArray(task.subtasks) ? task.subtasks.length : 0;
+
     const meta = document.createElement('span');
     meta.className = 'meta';
-    let metaText = `Added ${formatDateTime(task.createdAt)}`;
-    if (subCount > 0) {
-      metaText += ` • ${subCount} subtask${subCount === 1 ? '' : 's'}`;
+    const metaText = document.createTextNode(`Added ${formatDateTime(task.createdAt)}`);
+    meta.appendChild(metaText);
+
+    // Subtasks List (Always Visible)
+    const subList = document.createElement('ul');
+    subList.className = 'subtasks';
+
+    // Subtasks Add Form (Toggleable)
+    const subPanel = document.createElement('div');
+    subPanel.className = 'subtasks-panel';
+    // Initialize form visibility based on expandedTasks set
+    if (expandedTasks.has(task.id)) {
+      subPanel.hidden = false;
+    } else {
+      subPanel.hidden = true;
     }
-    meta.textContent = metaText;
-    content.append(title, meta);
+
+    const subForm = document.createElement('form');
+    subForm.className = 'subtask-form';
+    subForm.autocomplete = 'off';
+    subForm.noValidate = true;
+    const subInput = document.createElement('input');
+    subInput.type = 'text';
+    subInput.placeholder = 'Add a subtask...';
+    subInput.maxLength = 120;
+    const subAddBtn = document.createElement('button');
+    subAddBtn.type = 'submit';
+    subAddBtn.className = 'primary small';
+    subAddBtn.textContent = 'Add';
+    subForm.append(subInput, subAddBtn);
+    subPanel.append(subForm);
+
+    content.append(title, meta, subList, subPanel);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -492,33 +506,8 @@
     const subToggle = document.createElement('button');
     subToggle.type = 'button';
     subToggle.className = 'ghost-button';
-    subToggle.textContent = 'Subtasks ▼';
-
-    const subPanel = document.createElement('div');
-    subPanel.className = 'subtasks-panel';
-    // Initialize visibility based on expandedTasks set
-    if (expandedTasks.has(task.id)) {
-      subPanel.hidden = false;
-    } else {
-      subPanel.hidden = true;
-    }
-
-    const subForm = document.createElement('form');
-    subForm.className = 'subtask-form';
-    subForm.autocomplete = 'off';
-    subForm.noValidate = true;
-    const subInput = document.createElement('input');
-    subInput.type = 'text';
-    subInput.placeholder = 'Add a subtask...';
-    subInput.maxLength = 120;
-    const subAddBtn = document.createElement('button');
-    subAddBtn.type = 'submit';
-    subAddBtn.className = 'primary small';
-    subAddBtn.textContent = 'Add';
-    subForm.append(subInput, subAddBtn);
-
-    const subList = document.createElement('ul');
-    subList.className = 'subtasks';
+    subToggle.textContent = '+'; // Minimal add button
+    subToggle.setAttribute('title', 'Add subtask');
 
     function renderSubtasks() {
       subList.innerHTML = '';
@@ -538,7 +527,8 @@
         const sDel = document.createElement('button');
         sDel.type = 'button';
         sDel.className = 'ghost-button danger small';
-        sDel.textContent = 'Delete';
+        sDel.textContent = '×';
+        sDe.title = 'Delete subtask';
         sCb.addEventListener('change', () => {
           const checked = sCb.checked;
           updateSubtask(task.id, sub.id, { completed: checked });
@@ -551,11 +541,9 @@
       });
       subList.appendChild(frag);
     }
-    
-    // If initially visible, render contents
-    if (!subPanel.hidden) {
-      renderSubtasks();
-    }
+
+    // Always render contents
+    renderSubtasks();
 
     subForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -571,14 +559,11 @@
       subPanel.hidden = !isHidden;
       if (!subPanel.hidden) {
         expandedTasks.add(task.id);
-        renderSubtasks();
+        setTimeout(() => subInput.focus(), 10);
       } else {
         expandedTasks.delete(task.id);
       }
     });
-
-    subPanel.append(subForm, subList);
-    content.append(subPanel);
 
     actions.append(editBtn, saveBtn, delBtn, subToggle);
 
@@ -674,10 +659,10 @@
 
   function populateMonthFilter() {
     if (!el.monthFilter) return;
-    
+
     const tasks = getCurrentTasks();
     const monthsSet = new Set();
-    
+
     // Add months from tasks
     tasks.forEach(task => {
       const taskDate = new Date(task.createdAt);
@@ -686,7 +671,7 @@
       const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
       monthsSet.add(JSON.stringify({ key: monthKey, year, month }));
     });
-    
+
     // Sort months (newest first)
     const months = Array.from(monthsSet)
       .map(str => JSON.parse(str))
@@ -694,10 +679,10 @@
         if (a.year !== b.year) return b.year - a.year;
         return b.month - a.month;
       });
-    
+
     // Store current selection
     const currentSelection = el.monthFilter.value;
-    
+
     // Clear and populate dropdown
     el.monthFilter.innerHTML = '<option value="">All Months</option>';
     months.forEach(({ key, year, month }) => {
@@ -707,7 +692,7 @@
       option.textContent = monthName;
       el.monthFilter.appendChild(option);
     });
-    
+
     // Restore selection if it still exists
     if (currentSelection && months.some(m => m.key === currentSelection)) {
       el.monthFilter.value = currentSelection;
@@ -726,7 +711,7 @@
 
   function initMonthFilter() {
     populateMonthFilter();
-    
+
     el.monthFilter.addEventListener('change', () => {
       selectedMonth = el.monthFilter.value;
       writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
@@ -812,7 +797,7 @@
       if (!folder) return;
 
       const folderTasks = tasksByFolder[folderId] || [];
-      
+
       // Skip empty folders
       if (folderTasks.length === 0) return;
 
@@ -828,11 +813,11 @@
 
       // Create worksheet
       const ws = XLSX.utils.json_to_sheet(data);
-      
+
       // Clean folder name for sheet name (Excel sheet names have limitations: max 31 chars, no special chars)
       let sheetName = folder.name.replace(/[\\\/\?\*\[\]:]/g, '_').substring(0, 31);
       if (!sheetName) sheetName = 'List';
-      
+
       // Ensure unique sheet names
       let finalSheetName = sheetName;
       let counter = 1;
@@ -842,7 +827,7 @@
         counter++;
         if (counter > 99) break; // Safety limit
       }
-      
+
       XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
       sheetCount++;
     });
@@ -871,31 +856,31 @@
 
     el.exportMultipleModal.hidden = false;
     el.exportMultipleModal.removeAttribute('hidden');
-    
+
     // Clear container
     el.exportListsContainer.innerHTML = '';
-    
+
     // Create checkboxes for each folder
     folders.forEach(folder => {
       const taskCount = tasksByFolder[folder.id] ? tasksByFolder[folder.id].length : 0;
-      
+
       const label = document.createElement('label');
       label.className = 'export-list-item';
-      
+
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = folder.id;
       checkbox.checked = true; // Select all by default
       checkbox.className = 'export-checkbox';
-      
+
       const span = document.createElement('span');
       span.textContent = `${folder.name} (${taskCount} task${taskCount !== 1 ? 's' : ''})`;
-      
+
       label.appendChild(checkbox);
       label.appendChild(span);
       el.exportListsContainer.appendChild(label);
     });
-    
+
     // Update Select All button text
     el.exportMultipleSelectAll.textContent = 'Deselect All';
   }
@@ -913,7 +898,7 @@
       return;
     }
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -944,13 +929,13 @@
             const createdTimeStr = row['Created Time'] || row['created time'] || row['CreatedTime'] || '';
             const completedDateStr = row['Completed Date'] || row['completed date'] || row['CompletedDate'] || '';
             const completedTimeStr = row['Completed Time'] || row['completed time'] || row['CompletedTime'] || '';
-            
+
             // Parse created date/time
             let createdAt = parseDateTime(createdDateStr, createdTimeStr);
             if (!createdAt) {
               createdAt = now(); // Fallback to current time if parsing fails
             }
-            
+
             // Parse completed date/time
             let completedAt = null;
             if (isCompleted && completedDateStr) {
@@ -961,7 +946,7 @@
             } else if (isCompleted) {
               completedAt = createdAt; // Use created date if no completed date provided
             }
-            
+
             importedTasks.push({
               id: uid(),
               title: title.toString().trim().slice(0, 120),
@@ -997,7 +982,7 @@
         alert('Error importing file. Please ensure it is a valid Excel file.');
       }
     };
-    reader.onerror = function() {
+    reader.onerror = function () {
       alert('Error reading file.');
     };
     reader.readAsArrayBuffer(file);
@@ -1006,13 +991,13 @@
   // Initialize import/export
   function initImportExport() {
     el.exportBtn.addEventListener('click', exportToExcel);
-    
+
     // Export multiple lists
     el.exportMultipleBtn.addEventListener('click', openExportMultipleModal);
-    
+
     // Export multiple modal handlers
     el.exportMultipleCancel.addEventListener('click', closeExportMultipleModal);
-    
+
     el.exportMultipleSelectAll.addEventListener('click', () => {
       const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox');
       const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -1021,27 +1006,27 @@
       });
       el.exportMultipleSelectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
     });
-    
+
     el.exportMultipleExport.addEventListener('click', () => {
       const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox:checked');
       const selectedIds = Array.from(checkboxes).map(cb => cb.value);
       exportMultipleLists(selectedIds);
     });
-    
+
     // Click outside modal to close
     el.exportMultipleModal.addEventListener('click', (e) => {
       if (e.target === el.exportMultipleModal) {
         closeExportMultipleModal();
       }
     });
-    
+
     // ESC key to close modal
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.exportMultipleModal.hidden) {
         closeExportMultipleModal();
       }
     });
-    
+
     el.importBtn.addEventListener('click', () => {
       if (!currentFolderId) {
         alert('Please select a list to import into.');
@@ -1064,16 +1049,16 @@
     // Ensure modal starts closed
     el.folderModal.hidden = true;
     el.folderModal.setAttribute('hidden', '');
-    
+
     el.addFolderBtn.addEventListener('click', () => openFolderModal());
-    
+
     // Click outside modal to close
     el.folderModal.addEventListener('click', (e) => {
       if (e.target === el.folderModal) {
         closeFolderModal();
       }
     });
-    
+
     // Prevent modal content clicks from closing modal
     const modalContent = el.folderModal.querySelector('.modal-content');
     if (modalContent) {
@@ -1081,7 +1066,7 @@
         e.stopPropagation();
       });
     }
-    
+
     // ESC key to close modal
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.folderModal.hidden) {
@@ -1095,11 +1080,11 @@
     // Load folders
     folders = readStorage(STORAGE_KEYS.folders, []);
     if (!Array.isArray(folders)) folders = [];
-    
+
     // Load tasks by folder
     tasksByFolder = readStorage(STORAGE_KEYS.tasks, {});
     if (typeof tasksByFolder !== 'object') tasksByFolder = {};
-    
+
     // Migration: if old format exists, migrate to new format
     const oldTasks = readStorage('tm_tasks_v1', []);
     if (Array.isArray(oldTasks) && oldTasks.length > 0 && folders.length === 0) {
@@ -1113,7 +1098,7 @@
       persistFolders();
       persistTasks();
     }
-    
+
     // Ensure at least one folder exists
     if (folders.length === 0) {
       const defaultFolder = { id: uid(), name: 'My Tasks', createdAt: now() };
@@ -1122,14 +1107,14 @@
       persistFolders();
       persistTasks();
     }
-    
+
     // Load current folder
     currentFolderId = readStorage(STORAGE_KEYS.currentFolder, null);
     if (!currentFolderId || !folders.find(f => f.id === currentFolderId)) {
       currentFolderId = folders[0].id;
       writeStorage(STORAGE_KEYS.currentFolder, currentFolderId);
     }
-    
+
     // Ensure all folders have task arrays
     folders.forEach(folder => {
       if (!tasksByFolder[folder.id]) {
@@ -1141,7 +1126,7 @@
         return { ...t, completedAt, subtasks };
       });
     });
-    
+
     persistTasks();
   }
 
@@ -1152,7 +1137,7 @@
       el.folderModal.hidden = true;
       el.folderModal.setAttribute('hidden', '');
     }
-    
+
     load();
     initTheme();
     initFolders();
@@ -1181,7 +1166,27 @@
       el.monthlyChart.appendChild(chartArea);
     }
     chartArea.innerHTML = '';
+
+    // Helper to draw a single bar
+    const drawBar = (x, y, width, height, title) => {
+      if (height <= 0) return;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', width);
+      rect.setAttribute('height', height);
+      rect.setAttribute('fill', 'var(--accent)');
+      rect.setAttribute('rx', '2'); // rounded corners
+      if (title) {
+        const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = title;
+        rect.appendChild(titleEl);
+      }
+      chartArea.appendChild(rect);
+    };
+
     if (selectedMonth) {
+      // Days of the Month View
       const parts = selectedMonth.split('-');
       const ySel = parseInt(parts[0], 10);
       const mSel = parseInt(parts[1], 10) - 1;
@@ -1198,67 +1203,49 @@
         }
       });
       const max = Math.max(1, ...dayCounts);
-      
+
       // Draw bars
-      const barWidth = 4;
+      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 2); // Dynamic width
       dayCounts.forEach((count, idx) => {
-        const xCenter = padding + (idx / (daysInMonth - 1)) * plotWidth;
+        const xCenter = padding + (idx / (daysInMonth - 1)) * plotWidth; // rough positioning
+        // Better positioning for bars:
+        const x = padding + (idx * (plotWidth / daysInMonth)) + ((plotWidth / daysInMonth) - barWidth) / 2;
+
         const barHeight = (count / max) * plotHeight;
         const y = padding + plotHeight - barHeight;
-        
-        // Background line (optional, for grid effect)
-        // const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        // gridLine.setAttribute('x1', xCenter);
-        // gridLine.setAttribute('x2', xCenter);
-        // gridLine.setAttribute('y1', padding);
-        // gridLine.setAttribute('y2', padding + plotHeight);
-        // gridLine.setAttribute('stroke', 'var(--border-accent)');
-        // gridLine.setAttribute('stroke-width', '1');
-        // gridLine.setAttribute('stroke-dasharray', '2,2');
-        // chartArea.appendChild(gridLine);
 
-        if (count > 0) {
-            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('x', xCenter - barWidth / 2);
-            rect.setAttribute('y', y);
-            rect.setAttribute('width', barWidth);
-            rect.setAttribute('height', barHeight);
-            rect.setAttribute('fill', 'var(--accent)');
-            rect.setAttribute('rx', '1'); // rounded corners top
-            
-            const dateStr = new Date(ySel, mSel, idx + 1).toLocaleDateString(undefined);
-            rect.setAttribute('title', `${dateStr}: ${count} completed`);
-            chartArea.appendChild(rect);
-        }
+        drawBar(x, y, barWidth, barHeight, `${new Date(ySel, mSel, idx + 1).toLocaleDateString()}: ${count} tasks`);
       });
 
-      if (el.yAxisMax && el.yAxisMid && el.yAxisMin) {
-        el.yAxisMax.textContent = max.toString();
-        el.yAxisMid.textContent = Math.ceil(max / 2).toString();
-        el.yAxisMin.textContent = '0';
-      }
+      // Axis labels (Simplified)
       if (el.xAxisLabels) {
         el.xAxisLabels.innerHTML = '';
-        // Show labels for every 5 days or appropriate interval
-        const interval = daysInMonth > 20 ? 5 : 2; 
+        const interval = daysInMonth > 20 ? 5 : 2;
         for (let d = 1; d <= daysInMonth; d++) {
-            if (d === 1 || d === daysInMonth || d % interval === 0) {
-                const label = document.createElement('span');
-                label.textContent = String(d);
-                label.className = 'x-axis-label';
-                // Center label on the tick
-                label.style.left = `${((d - 1) / (daysInMonth - 1)) * 100}%`;
-                label.setAttribute('title', new Date(ySel, mSel, d).toLocaleDateString(undefined));
-                el.xAxisLabels.appendChild(label);
-            }
+          if (d === 1 || d === daysInMonth || d % interval === 0) {
+            const label = document.createElement('span');
+            label.textContent = String(d);
+            label.className = 'x-axis-label';
+            label.style.left = `${((d - 1) / (daysInMonth - 1)) * 100}%`;
+            el.xAxisLabels.appendChild(label);
+          }
         }
       }
       if (el.activityLabel) {
         const monthName = new Date(ySel, mSel, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-        el.activityLabel.textContent = `Completed Tasks • ${monthName}`;
+        el.activityLabel.textContent = `Completed • ${monthName}`;
       }
-      el.activityTotals.textContent = `${totalCompleted} completed`;
+      el.activityTotals.textContent = `${totalCompleted} tasks`;
+
+      // Y-Axis
+      if (el.yAxisMax) {
+        el.yAxisMax.textContent = max;
+        el.yAxisMid.textContent = Math.round(max / 2);
+        el.yAxisMin.textContent = 0;
+      }
+
     } else {
+      // Year View (Months)
       const today = new Date();
       const year = today.getFullYear();
       const monthCounts = Array.from({ length: 12 }, () => 0);
@@ -1273,61 +1260,24 @@
         }
       });
       const max = Math.max(1, ...monthCounts);
-      const points = monthCounts.map((count, idx) => {
-        const x = padding + (idx / 11) * plotWidth;
-        const y = padding + plotHeight - (count / max) * plotHeight;
-        return { x, y, count, month: idx };
+
+      const barWidth = (plotWidth / 12) - 10; // Wider bars for months
+
+      monthCounts.forEach((count, idx) => {
+        const x = padding + (idx * (plotWidth / 12)) + ((plotWidth / 12) - barWidth) / 2;
+        const barHeight = (count / max) * plotHeight;
+        const y = padding + plotHeight - barHeight;
+
+        const monthName = new Date(year, idx, 1).toLocaleDateString('en-US', { month: 'long' });
+        drawBar(x, y, barWidth, barHeight, `${monthName}: ${count} tasks`);
       });
-      let pathData = '';
-      points.forEach((point, idx) => {
-        if (idx === 0) {
-          pathData += `M ${point.x} ${point.y}`;
-        } else {
-          pathData += ` L ${point.x} ${point.y}`;
-        }
-      });
-      let areaPath = pathData;
-      if (points.length > 0) {
-        areaPath += ` L ${points[points.length - 1].x} ${padding + plotHeight}`;
-        areaPath += ` L ${points[0].x} ${padding + plotHeight}`;
-        areaPath += ' Z';
-      }
-      if (points.length > 0) {
-        const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        area.setAttribute('d', areaPath);
-        area.setAttribute('fill', 'url(#lineGradient)');
-        area.setAttribute('stroke', 'none');
-        chartArea.appendChild(area);
-      }
-      if (points.length > 0) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        line.setAttribute('d', pathData);
-        line.setAttribute('fill', 'none');
-        line.setAttribute('stroke', 'var(--accent)');
-        line.setAttribute('stroke-width', '3');
-        line.setAttribute('stroke-linecap', 'round');
-        line.setAttribute('stroke-linejoin', 'round');
-        chartArea.appendChild(line);
-      }
-      points.forEach((point) => {
-        if (point.count > 0) {
-          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('cx', point.x);
-          circle.setAttribute('cy', point.y);
-          circle.setAttribute('r', '4');
-          circle.setAttribute('fill', 'var(--accent)');
-          circle.setAttribute('stroke', 'var(--panel)');
-          circle.setAttribute('stroke-width', '2');
-          const monthName = new Date(year, point.month, 1).toLocaleDateString('en-US', { month: 'short' });
-          circle.setAttribute('title', `${monthName}: ${monthCounts[point.month]} completed`);
-          chartArea.appendChild(circle);
-        }
-      });
-      if (el.yAxisMax && el.yAxisMid && el.yAxisMin) {
+
+      if (el.yAxisMax) {
         el.yAxisMax.textContent = max.toString();
         el.yAxisMid.textContent = Math.ceil(max / 2).toString();
         el.yAxisMin.textContent = '0';
       }
+
       if (el.xAxisLabels) {
         el.xAxisLabels.innerHTML = '';
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1335,15 +1285,16 @@
           const label = document.createElement('span');
           label.textContent = monthName;
           label.className = 'x-axis-label';
-          label.style.left = `${(idx / 11) * 100}%`;
-          label.setAttribute('title', `${monthName} ${year}: ${monthCounts[idx]} completed`);
+          // Fix centering for month labels
+          label.style.left = `${(idx / 12 * 100) + (100 / 24)}%`;
+          label.style.transform = 'translateX(-50%)';
           el.xAxisLabels.appendChild(label);
         });
       }
       if (el.activityLabel) {
-        el.activityLabel.textContent = 'Completed Tasks This Year';
+        el.activityLabel.textContent = `Activity • ${year}`;
       }
-      el.activityTotals.textContent = `${totalCompleted} completed`;
+      el.activityTotals.textContent = `${totalCompleted} tasks`;
     }
   }
 
@@ -1379,7 +1330,7 @@
   // Parse date and time from Excel import
   function parseDateTime(dateStr, timeStr) {
     if (!dateStr) return null;
-    
+
     try {
       // Handle Date objects (Excel sometimes returns these)
       if (dateStr instanceof Date) {
@@ -1395,14 +1346,14 @@
           return date.getTime();
         }
       }
-      
+
       // Try parsing as Excel serial date (number)
       if (typeof dateStr === 'number') {
         // Excel serial date: days since January 1, 1900
         const excelEpoch = new Date(1900, 0, 1);
         const days = dateStr - 2; // Excel has a bug where it treats 1900 as a leap year
         const date = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
-        
+
         // Add time if provided
         if (timeStr) {
           const timeParts = parseTime(timeStr);
@@ -1410,10 +1361,10 @@
             date.setHours(timeParts.hours, timeParts.minutes, timeParts.seconds || 0, 0);
           }
         }
-        
+
         return date.getTime();
       }
-      
+
       // Try parsing as date string
       let date = new Date(dateStr);
       if (isNaN(date.getTime())) {
@@ -1423,7 +1374,7 @@
           /(\d{4})-(\d{1,2})-(\d{1,2})/, // YYYY-MM-DD
           /(\w{3})\s+(\d{1,2}),\s+(\d{4})/, // Mon DD, YYYY
         ];
-        
+
         for (const format of formats) {
           const match = dateStr.match(format);
           if (match) {
@@ -1452,11 +1403,11 @@
           }
         }
       }
-      
+
       if (isNaN(date.getTime())) {
         return null;
       }
-      
+
       // Add time if provided
       if (timeStr) {
         const timeParts = parseTime(timeStr);
@@ -1464,7 +1415,7 @@
           date.setHours(timeParts.hours, timeParts.minutes, timeParts.seconds || 0, 0);
         }
       }
-      
+
       return date.getTime();
     } catch (_) {
       return null;
@@ -1474,7 +1425,7 @@
   // Parse time string (HH:MM AM/PM or HH:MM:SS)
   function parseTime(timeStr) {
     if (!timeStr) return null;
-    
+
     try {
       // Handle Excel time format (decimal fraction of a day)
       if (typeof timeStr === 'number') {
@@ -1484,10 +1435,10 @@
         const seconds = totalSeconds % 60;
         return { hours, minutes, seconds };
       }
-      
+
       // Handle string formats
       const timeStrClean = timeStr.toString().trim();
-      
+
       // Try 12-hour format (HH:MM AM/PM)
       const amPmMatch = timeStrClean.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)/i);
       if (amPmMatch) {
@@ -1495,13 +1446,13 @@
         const minutes = parseInt(amPmMatch[2]);
         const seconds = amPmMatch[3] ? parseInt(amPmMatch[3]) : 0;
         const amPm = amPmMatch[4].toUpperCase();
-        
+
         if (amPm === 'PM' && hours !== 12) hours += 12;
         if (amPm === 'AM' && hours === 12) hours = 0;
-        
+
         return { hours, minutes, seconds };
       }
-      
+
       // Try 24-hour format (HH:MM or HH:MM:SS)
       const timeMatch = timeStrClean.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
       if (timeMatch) {
@@ -1510,7 +1461,7 @@
         const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
         return { hours, minutes, seconds };
       }
-      
+
       return null;
     } catch (_) {
       return null;
@@ -1524,4 +1475,3 @@
     init();
   }
 })();
-
