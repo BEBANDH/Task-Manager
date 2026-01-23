@@ -550,11 +550,7 @@
     editBtn.className = 'edit';
     editBtn.textContent = 'Edit';
 
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'save';
-    saveBtn.textContent = 'Save';
-    saveBtn.hidden = true;
+
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
@@ -623,7 +619,7 @@
       }
     });
 
-    actions.append(editBtn, saveBtn, delBtn, subToggle);
+    actions.append(editBtn, delBtn, subToggle);
 
     li.append(checkbox, content, actions);
 
@@ -634,13 +630,11 @@
       title.focus();
       placeCaretAtEnd(title);
       editBtn.hidden = true;
-      saveBtn.hidden = false;
     }
     function exitEdit(commit) {
       li.classList.remove('editing');
       title.contentEditable = 'false';
       editBtn.hidden = false;
-      saveBtn.hidden = true;
       if (commit) {
         const newTitle = title.textContent || '';
         const trimmed = newTitle.trim().slice(0, 120);
@@ -657,8 +651,9 @@
       }
     }
 
+
+
     editBtn.addEventListener('click', () => enterEdit());
-    saveBtn.addEventListener('click', () => exitEdit(true));
     delBtn.addEventListener('click', () => deleteTask(task.id));
 
     title.addEventListener('keydown', (e) => {
@@ -1311,26 +1306,7 @@
     // Do not overwrite storage unless we actually migrated/created defaults above
   }
 
-  // Scroll handler for auto-hiding header
-  function initScrollHandler() {
-    let lastScrollTop = 0;
-    const header = document.querySelector('.app-header');
-    if (!header) return;
 
-    window.addEventListener('scroll', () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-      if (scrollTop > lastScrollTop && scrollTop > 60) {
-        // Scrolling Down
-        header.classList.add('hidden');
-      } else {
-        // Scrolling Up
-        header.classList.remove('hidden');
-      }
-
-      lastScrollTop = Math.max(0, scrollTop);
-    }, { passive: true });
-  }
 
   // Init
   function init() {
@@ -1350,7 +1326,6 @@
     initForm();
     initBulk();
     initImportExport();
-    initScrollHandler();
     renderFolders();
     render();
   }
@@ -1379,7 +1354,7 @@
       rect.setAttribute('y', y);
       rect.setAttribute('width', width);
       rect.setAttribute('height', height);
-      rect.setAttribute('fill', 'var(--accent)');
+      rect.setAttribute('fill', 'var(--primary)');
       rect.setAttribute('rx', '2'); // rounded corners
       if (title) {
         const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
