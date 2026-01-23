@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager • Progress Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#0b0f14">
+</head>
+
+<body>
+    <header class="app-header" role="banner">
+        <div class="header-left">
+            <h1 class="app-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="app-logo" style="color: var(--accent);">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                Task Manager
+            </h1>
+            <span class="subtitle">with Progress Tracker</span>
+        </div>
+        <div class="header-actions"></div>
+    </header>
+
+    <main class="container" role="main">
+        <aside class="folders-sidebar" role="complementary">
+            <div class="folders-header">
+                <h2>Lists</h2>
+                <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
+                    title="Create new list">
+                    <span class="icon">+</span>
+                </button>
+            </div>
+            <ul id="foldersList" class="folders-list" role="list"></ul>
+            <section class="sidebar-actions" aria-label="Actions">
+                <h3 class="sidebar-actions-title">Actions</h3>
+                <button id="exportBtn" class="ghost-button" aria-label="Export tasks to Excel"
+                    title="Export tasks to Excel">Export</button>
+                <button id="exportMultipleBtn" class="ghost-button" aria-label="Export multiple lists to Excel"
+                    title="Export multiple lists to Excel">Export Multiple</button>
+                <button id="importBtn" class="ghost-button" aria-label="Import tasks from Excel"
+                    title="Import tasks from Excel">Import</button>
+                <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
+                <button id="themeToggle" class="ghost-button" aria-label="Toggle theme" title="Toggle theme">
+                    <span class="icon">☀/☾</span> Toggle Theme
+                </button>
+                <button id="clearCompleted" class="ghost-button" aria-label="Clear completed tasks"
+                    title="Clear completed tasks">Clear Completed</button>
+            </section>
+        </aside>
+
+        <div class="main-content">
+            <section class="add-task" aria-labelledby="addTaskLabel">
+                <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
+                <form id="taskForm" autocomplete="off" novalidate>
+                    <input id="taskInput" type="text" name="task" placeholder="Add a task..." aria-label="Task title"
+                        required maxlength="120">
+                    <button type="submit" class="primary">Add</button>
+                </form>
+            </section>
+
+            <section class="progress" aria-labelledby="progressLabel">
+                <div class="progress-header">
+                    <h2 id="progressLabel">Progress</h2>
+                    <span id="progressText" aria-live="polite">0% • 0/0 completed</span>
+                </div>
+                <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="progress-fill" style="width:0%"></div>
+                </div>
+            </section>
+
+            <section class="controls" aria-label="Task filters">
+                <div class="filters" role="tablist" aria-label="Filters">
+                    <button class="chip active" data-filter="all" role="tab" aria-selected="true">All</button>
+                    <button class="chip" data-filter="active" role="tab" aria-selected="false">Active</button>
+                    <button class="chip" data-filter="completed" role="tab" aria-selected="false">Completed</button>
+                </div>
+                <div class="search-filters">
+                    <input id="searchInput" type="search" placeholder="Search tasks..." aria-label="Search tasks">
+                    <select id="yearFilter" class="month-filter" aria-label="Filter by year">
+                        <option value="">All Years</option>
+                    </select>
+                    <select id="monthFilter" class="month-filter" aria-label="Filter by month">
+                        <option value="">All Months</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="activity" aria-labelledby="activityLabel">
+                <div class="activity-header">
+                    <h2 id="activityLabel">Completed Tasks This Year</h2>
+                    <span id="activityTotals" aria-live="polite">0 completed</span>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-y-axis">
+                        <span id="yAxisMax">0</span>
+                        <span id="yAxisMid">0</span>
+                        <span id="yAxisMin">0</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <svg id="monthlyChart" class="line-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:var(--accent-2);stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0.1" />
+                                </linearGradient>
+                            </defs>
+                            <g id="chartArea"></g>
+                        </svg>
+                        <div id="xAxisLabels" class="chart-x-axis"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="task-list" aria-labelledby="taskListLabel">
+                <h2 id="taskListLabel" class="sr-only">Task list</h2>
+                <ul id="tasks" class="tasks" aria-live="polite"></ul>
+                <p id="emptyState" class="empty" hidden>No tasks yet. Add your first task above.</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Folder creation modal -->
+    <div id="folderModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3 id="folderModalTitle">Create New List</h3>
+            <form id="folderForm">
+                <input id="folderNameInput" type="text" placeholder="List name..." aria-label="List name" required
+                    maxlength="50" autofocus>
+                <div class="modal-actions">
+                    <button type="button" id="folderModalCancel" class="ghost-button">Cancel</button>
+                    <button type="submit" class="primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export multiple lists modal -->
+    <div id="exportMultipleModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3>Select Lists to Export</h3>
+            <div id="exportListsContainer" class="export-lists-container"></div>
+            <div class="modal-actions">
+                <button type="button" id="exportMultipleCancel" class="ghost-button">Cancel</button>
+                <button type="button" id="exportMultipleSelectAll" class="ghost-button">Select All</button>
+                <button type="button" id="exportMultipleExport" class="primary">Export Selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme toggle and footer removed -->
+
+    <script src="script.js" defer></script>
+</body>
+
+</html>
