@@ -559,17 +559,17 @@ button.delete {
     0 4px 16px rgba(255, 255, 255, 0.05);
 }
 
+.task:hover .drag-handle {
+  opacity: 1;
+}
+
 .task.completed {
-  opacity: 0.3;
+  opacity: 0.55;
   transition: opacity 0.5s ease, transform 0.3s ease;
 }
 
 .task.completed:hover {
-  opacity: 0.5;
-}
-
-.task:hover .drag-handle {
-  opacity: 1;
+  opacity: 0.75;
 }
 
 .drag-handle {
@@ -588,8 +588,7 @@ button.delete {
 }
 
 .task.completed .title {
-  text-decoration: line-through;
-  color: var(--text-muted);
+  color: var(--text-dim);
 }
 
 .task input[type="checkbox"] {
