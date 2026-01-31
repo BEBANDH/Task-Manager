@@ -78,6 +78,9 @@
       folderNameInput: document.getElementById('folderNameInput'),
       folderModalCancel: document.getElementById('folderModalCancel'),
       folderModalTitle: document.getElementById('folderModalTitle'),
+      keyboardHintBtn: document.getElementById('keyboardHintBtn'),
+      shortcutsModal: document.getElementById('shortcutsModal'),
+      shortcutsClose: document.getElementById('shortcutsClose'),
     };
   }
 
@@ -487,6 +490,13 @@
     li.className = `task${task.completed ? ' completed' : ''}`;
     li.dataset.id = task.id;
 
+    // Drag handle
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'drag-handle';
+    dragHandle.innerHTML = '⋮⋮';
+    dragHandle.setAttribute('aria-label', 'Drag to reorder');
+    dragHandle.setAttribute('title', 'Drag to reorder');
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'checkbox';
@@ -498,6 +508,11 @@
     });
 
     const content = document.createElement('div');
+
+    // Task header with title and timestamp inline
+    const taskHeader = document.createElement('div');
+    taskHeader.className = 'task-header';
+
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = task.title;
@@ -508,8 +523,12 @@
 
     const meta = document.createElement('span');
     meta.className = 'meta';
-    const metaText = document.createTextNode(`Added ${formatDateTime(task.createdAt)}`);
-    meta.appendChild(metaText);
+    const dateStr = formatDate(task.createdAt);
+    const timeStr = formatTime(task.createdAt);
+    meta.textContent = `${dateStr} • ${timeStr}`;
+
+    taskHeader.append(title, meta);
+    content.appendChild(taskHeader);
 
     // Subtasks List (Always Visible)
     const subList = document.createElement('ul');
@@ -540,7 +559,7 @@
     subForm.append(subInput, subAddBtn);
     subPanel.append(subForm);
 
-    content.append(title, meta, subList, subPanel);
+    content.append(subList, subPanel);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -621,7 +640,7 @@
 
     actions.append(editBtn, delBtn, subToggle);
 
-    li.append(checkbox, content, actions);
+    li.append(dragHandle, checkbox, content, actions);
 
     // Editing behavior
     function enterEdit() {
@@ -1326,8 +1345,104 @@
     initForm();
     initBulk();
     initImportExport();
+    initKeyboardShortcuts();
     renderFolders();
     render();
+  }
+
+  // Keyboard Shortcuts
+  function initKeyboardShortcuts() {
+    // Open shortcuts modal
+    if (el.keyboardHintBtn) {
+      el.keyboardHintBtn.addEventListener('click', () => {
+        el.shortcutsModal.hidden = false;
+        el.shortcutsModal.removeAttribute('hidden');
+      });
+    }
+
+    // Close shortcuts modal
+    if (el.shortcutsClose) {
+      el.shortcutsClose.addEventListener('click', () => {
+        el.shortcutsModal.hidden = true;
+        el.shortcutsModal.setAttribute('hidden', '');
+      });
+    }
+
+    // Click outside to close
+    if (el.shortcutsModal) {
+      el.shortcutsModal.addEventListener('click', (e) => {
+        if (e.target === el.shortcutsModal) {
+          el.shortcutsModal.hidden = true;
+          el.shortcutsModal.setAttribute('hidden', '');
+        }
+      });
+    }
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        // Allow ESC to close modals even in inputs
+        if (e.key === 'Escape') {
+          if (el.shortcutsModal && !el.shortcutsModal.hidden) {
+            el.shortcutsModal.hidden = true;
+            el.shortcutsModal.setAttribute('hidden', '');
+            e.preventDefault();
+          }
+        }
+        return;
+      }
+
+      // ESC - Close shortcuts modal
+      if (e.key === 'Escape' && el.shortcutsModal && !el.shortcutsModal.hidden) {
+        el.shortcutsModal.hidden = true;
+        el.shortcutsModal.setAttribute('hidden', '');
+        e.preventDefault();
+      }
+
+      // ? or K - Show shortcuts
+      if (e.key === '?' || (e.key === 'k' && !e.ctrlKey && !e.metaKey)) {
+        el.shortcutsModal.hidden = false;
+        el.shortcutsModal.removeAttribute('hidden');
+        e.preventDefault();
+      }
+
+      // N - Focus on new task input
+      if (e.key === 'n' || e.key === 'N') {
+        el.input.focus();
+        e.preventDefault();
+      }
+
+      // / - Focus on search
+      if (e.key === '/') {
+        el.search.focus();
+        e.preventDefault();
+      }
+
+      // T - Toggle theme
+      if (e.key === 't' || e.key === 'T') {
+        toggleTheme();
+        e.preventDefault();
+      }
+
+      // A - Show all tasks
+      if (e.key === 'a' || e.key === 'A') {
+        setFilter('all');
+        e.preventDefault();
+      }
+
+      // 1 - Show active tasks
+      if (e.key === '1') {
+        setFilter('active');
+        e.preventDefault();
+      }
+
+      // 2 - Show completed tasks
+      if (e.key === '2') {
+        setFilter('completed');
+        e.preventDefault();
+      }
+    });
   }
 
   // Activity (monthly chart)
@@ -1384,7 +1499,7 @@
       const max = Math.max(1, ...dayCounts);
 
       // Draw bars
-      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 2); // Dynamic width
+      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 4); // Thinner with more spacing
       dayCounts.forEach((count, idx) => {
         const xCenter = padding + (idx / (daysInMonth - 1)) * plotWidth; // rough positioning
         // Better positioning for bars:
@@ -1439,7 +1554,7 @@
       });
       const max = Math.max(1, ...monthCounts);
 
-      const barWidth = (plotWidth / 12) - 10; // Wider bars for months
+      const barWidth = (plotWidth / 12) - 20; // Thinner bars with more spacing
 
       monthCounts.forEach((count, idx) => {
         const x = padding + (idx * (plotWidth / 12)) + ((plotWidth / 12) - barWidth) / 2;

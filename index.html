@@ -28,7 +28,12 @@
             </h1>
             <span class="subtitle">with Progress Tracker</span>
         </div>
-        <div class="header-actions"></div>
+        <div class="header-actions">
+            <button id="keyboardHintBtn" class="keyboard-hint" aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts">
+                ?
+            </button>
+        </div>
     </header>
 
     <main class="container" role="main">
@@ -45,14 +50,50 @@
                 <section class="sidebar-actions" aria-label="Actions">
                     <h3 class="sidebar-actions-title">Actions</h3>
                     <button id="exportBtn" class="ghost-button" aria-label="Export tasks to Excel"
-                        title="Export tasks to Excel">Export</button>
+                        title="Export tasks to Excel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export
+                    </button>
                     <button id="exportMultipleBtn" class="ghost-button" aria-label="Export multiple lists to Excel"
-                        title="Export multiple lists to Excel">Export Multiple</button>
+                        title="Export multiple lists to Excel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export Multiple
+                    </button>
                     <button id="importBtn" class="ghost-button" aria-label="Import tasks from Excel"
-                        title="Import tasks from Excel">Import</button>
+                        title="Import tasks from Excel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Import
+                    </button>
                     <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
                     <button id="themeToggle" class="ghost-button" aria-label="Toggle theme" title="Toggle theme">
-                        <span class="icon">☀/☾</span> Toggle Theme
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        Toggle Theme
                     </button>
                     <button id="clearCompleted" class="ghost-button" aria-label="Clear completed tasks"
                         title="Clear completed tasks">Clear Completed</button>
@@ -157,6 +198,46 @@
                 <button type="button" id="exportMultipleCancel" class="ghost-button">Cancel</button>
                 <button type="button" id="exportMultipleSelectAll" class="ghost-button">Select All</button>
                 <button type="button" id="exportMultipleExport" class="primary">Export Selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcutsModal" class="shortcuts-modal" hidden>
+        <div class="shortcuts-content">
+            <h3>Keyboard Shortcuts</h3>
+            <div class="shortcuts-list">
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Add new task</span>
+                    <kbd class="shortcut-key">N</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Search tasks</span>
+                    <kbd class="shortcut-key">/</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Toggle theme</span>
+                    <kbd class="shortcut-key">T</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Show all tasks</span>
+                    <kbd class="shortcut-key">A</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Show active tasks</span>
+                    <kbd class="shortcut-key">1</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Show completed tasks</span>
+                    <kbd class="shortcut-key">2</kbd>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-desc">Close this dialog</span>
+                    <kbd class="shortcut-key">ESC</kbd>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="shortcutsClose" class="primary">Got it</button>
             </div>
         </div>
     </div>
