@@ -1420,8 +1420,49 @@
 
     // Close on escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !el.shortcutsModal.hidden) {
-        el.shortcutsModal.hidden = true;
+      // Ignore if user is typing in an input/textarea
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) && e.key !== 'Escape') {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      const isModalOpen = !el.shortcutsModal.hidden || !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden);
+
+      if (e.key === 'Escape') {
+        if (!el.shortcutsModal.hidden) el.shortcutsModal.hidden = true;
+        if (!el.folderModal.hidden) closeFolderModal();
+        if (!el.exportMultipleModal.hidden) el.exportMultipleModal.hidden = true;
+
+        // Also close profile modal if open
+        const profileModal = document.getElementById('profileModal');
+        if (profileModal && !profileModal.hidden) profileModal.hidden = true;
+
+        // Blur any active input
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+          document.activeElement.blur();
+        }
+        return;
+      }
+
+      // Don't trigger shortcuts if any modal is open
+      if (isModalOpen) return;
+
+      if (key === 'n') {
+        e.preventDefault();
+        el.input.focus();
+      } else if (key === '/') {
+        e.preventDefault();
+        el.search.focus();
+      } else if (key === 't') {
+        toggleTheme();
+      } else if (key === 'a') {
+        setFilter('all');
+      } else if (key === '1') {
+        setFilter('active');
+      } else if (key === '2') {
+        setFilter('completed');
+      } else if (key === '?') {
+        el.shortcutsModal.hidden = false;
       }
     });
 
