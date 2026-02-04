@@ -120,6 +120,146 @@ body {
   margin-left: 4px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Sign In Button */
+.sign-in-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-in-button:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+
+.sign-in-button svg {
+  flex-shrink: 0;
+}
+
+/* Profile Button */
+.profile-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-button:hover {
+  background: var(--bg-panel);
+  border-color: var(--text);
+  transform: none;
+}
+
+.profile-photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.profile-button span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Profile Modal */
+.profile-modal {
+  max-width: 500px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  padding: 20px;
+  background: var(--bg-subtle);
+  border-radius: 12px;
+}
+
+.profile-photo-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+}
+
+.profile-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profile-info p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* Profile Stats */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.stat-card {
+  padding: 20px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  background: var(--bg-panel);
+  border-color: var(--text-dim);
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -128,6 +268,12 @@ body {
   grid-template-columns: 280px 1fr;
   /* Sidebar | Main */
   gap: 40px;
+  transition: grid-template-columns 0.3s ease;
+}
+
+.container.sidebar-collapsed {
+  grid-template-columns: 0px 1fr;
+  gap: 0;
 }
 
 /* Sidebar Wrapper */
@@ -138,8 +284,15 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  /* Allow the entire panel to scroll if needed */
-  position: sticky;
+  overflow-x: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 280px;
+}
+
+.left-panel.collapsed {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Sidebar */
@@ -236,9 +389,17 @@ body {
   min-width: 0;
 }
 
+/* Top Section - Contains Add Task and Activity Chart stacked vertically */
+.top-section {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+
 /* Add Task */
 .add-task {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .add-task form {
@@ -453,13 +614,13 @@ button.delete {
 /* Chart */
 .activity {
   flex-shrink: 0;
-  margin-top: 24px;
-  padding: 20px 16px 0 0;
+  margin-top: 0;
+  padding: 20px 0 0 0;
   border-top: 1px solid var(--border);
   background: transparent;
   border-radius: 0;
   border-left: none;
-  border-right: 1px solid var(--border);
+  border-right: none;
   border-bottom: none;
 }
 
@@ -902,18 +1063,461 @@ input[type="checkbox"]:checked::after {
   border-radius: var(--radius);
 }
 
-@media (max-width: 768px) {
+/* Sidebar Toggle Button (Hamburger Menu) */
+.sidebar-toggle {
+  display: flex;
+  /* Always visible, including desktop */
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.sidebar-toggle:hover {
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  transform: none;
+}
+
+.sidebar-toggle svg {
+  display: block;
+}
+
+/* Sidebar Overlay for mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* Mobile and Tablet Responsive Styles */
+@media (max-width: 1024px) {
   .container {
     grid-template-columns: 1fr;
     padding: 16px;
+    gap: 0;
+  }
+
+  .left-panel {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    background: var(--bg);
+    z-index: 100;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    padding: 80px 16px 16px 16px;
+  }
+
+  .left-panel.active {
+    left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .folders-sidebar {
-    position: static;
-    height: auto;
     border-right: none;
-    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+  }
+
+  .activity {
+    margin-top: 24px;
+    padding: 20px 0 0 0;
+    border-right: none;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* Header adjustments */
+  .app-header {
+    padding: 10px 16px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .app-title {
+    font-size: 16px;
+  }
+
+  .subtitle {
+    display: none;
+    /* Hide subtitle on small screens */
+  }
+
+  .app-logo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .keyboard-hint {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  /* Container */
+  .container {
+    padding: 12px;
+  }
+
+  /* Add Task Form */
+  .add-task form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .add-task button[type="submit"] {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  input[type="text"]#taskInput {
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+  }
+
+  /* Progress Section */
+  .progress {
     margin-bottom: 24px;
-    padding-bottom: 24px;
+  }
+
+  #progressText {
+    font-size: 12px;
+  }
+
+  /* Controls/Filters */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .filters {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .search-filters {
+    max-width: 100%;
+    flex-direction: column;
+  }
+
+  .search-filters input,
+  .search-filters select {
+    width: 100%;
+  }
+
+  /* Task Items */
+  .task {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .drag-handle {
+    font-size: 14px;
+  }
+
+  .task .title {
+    font-size: 14px;
+  }
+
+  .task .meta {
+    font-size: 10px;
+  }
+
+  .task .actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task .actions button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* Subtasks */
+  .subtasks {
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+
+  .subtask .sub-title {
+    font-size: 12px;
+  }
+
+  .subtask-form {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .subtask-form input {
+    font-size: 14px;
+  }
+
+  .subtask-form button {
+    width: 100%;
+  }
+
+  /* Sidebar */
+  .folders-header h2 {
+    font-size: 9px;
+  }
+
+  .folder-item {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .sidebar-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .sidebar-actions-title {
+    font-size: 9px;
+    margin-bottom: 10px;
+  }
+
+  .ghost-button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Activity Chart */
+  .activity {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+
+  .activity h2 {
+    font-size: 9px;
+  }
+
+  #activityTotals {
+    font-size: 10px;
+  }
+
+  .chart-wrapper {
+    height: 100px;
+  }
+
+  .chart-x-axis {
+    font-size: 8px;
+  }
+
+  /* Modals */
+  .modal-content {
+    width: 90%;
+    max-width: 90vw;
+    padding: 20px;
+  }
+
+  .modal-content h3 {
+    font-size: 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  /* Shortcuts Modal */
+  .shortcuts-content {
+    width: 90%;
+    max-width: 90vw;
+    padding: 24px;
+  }
+
+  .shortcuts-content h3 {
+    font-size: 16px;
+  }
+
+  .shortcuts-list {
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .shortcut-item {
+    padding: 6px 0;
+  }
+
+  .shortcut-desc {
+    font-size: 13px;
+  }
+
+  .shortcut-key {
+    font-size: 11px;
+    padding: 3px 8px;
+    min-width: 28px;
+  }
+
+  /* Export Lists Container */
+  .export-lists-container {
+    max-height: 50vh;
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* Extra small screens */
+  .app-header {
+    padding: 8px 12px;
+  }
+
+  .app-title {
+    font-size: 14px;
+  }
+
+  .container {
+    padding: 8px;
+  }
+
+  .task {
+    padding: 10px 12px;
+  }
+
+  .task .title {
+    font-size: 13px;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  input[type="text"],
+  input[type="search"],
+  select {
+    font-size: 14px;
+  }
+
+  button {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .ghost-button {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .modal-content,
+  .shortcuts-content {
+    padding: 16px;
+  }
+}
+
+/* Landscape mode optimizations for phones */
+@media (max-height: 600px) and (orientation: landscape) {
+  .app-header {
+    position: sticky;
+    padding: 8px 16px;
+  }
+
+  .container {
+    padding: 8px 12px;
+  }
+
+  .left-panel {
+    padding-top: 60px;
+  }
+
+  .activity {
+    margin-top: 16px;
+  }
+
+  .chart-wrapper {
+    height: 80px;
+  }
+
+  .modal-content,
+  .shortcuts-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* Ensure proper touch targets for mobile */
+@media (hover: none) and (pointer: coarse) {
+
+  button,
+  .folder-item,
+  .chip,
+  input[type="checkbox"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .icon-button.small {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .task input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Print Styles */
+@media print {
+
+  .app-header,
+  .sidebar-toggle,
+  .left-panel,
+  .add-task,
+  .controls,
+  .task .actions,
+  .drag-handle,
+  button {
+    display: none !important;
+  }
+
+  .container {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .task {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

@@ -81,6 +81,9 @@
       keyboardHintBtn: document.getElementById('keyboardHintBtn'),
       shortcutsModal: document.getElementById('shortcutsModal'),
       shortcutsClose: document.getElementById('shortcutsClose'),
+      sidebarToggle: document.getElementById('sidebarToggle'),
+      sidebarOverlay: document.getElementById('sidebarOverlay'),
+      leftPanel: document.querySelector('.left-panel'),
     };
   }
 
@@ -223,10 +226,18 @@
 
   function persistFolders() {
     writeStorage(STORAGE_KEYS.folders, folders);
+    // Trigger cloud sync if available
+    if (window.syncCurrentData) {
+      setTimeout(() => window.syncCurrentData(), 100);
+    }
   }
 
   function persistTasks() {
     writeStorage(STORAGE_KEYS.tasks, tasksByFolder);
+    // Trigger cloud sync if available
+    if (window.syncCurrentData) {
+      setTimeout(() => window.syncCurrentData(), 100);
+    }
   }
 
   // Tasks CRUD
@@ -490,13 +501,6 @@
     li.className = `task${task.completed ? ' completed' : ''}`;
     li.dataset.id = task.id;
 
-    // Drag handle
-    const dragHandle = document.createElement('span');
-    dragHandle.className = 'drag-handle';
-    dragHandle.innerHTML = '⋮⋮';
-    dragHandle.setAttribute('aria-label', 'Drag to reorder');
-    dragHandle.setAttribute('title', 'Drag to reorder');
-
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'checkbox';
@@ -508,11 +512,6 @@
     });
 
     const content = document.createElement('div');
-
-    // Task header with title and timestamp inline
-    const taskHeader = document.createElement('div');
-    taskHeader.className = 'task-header';
-
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = task.title;
@@ -523,12 +522,8 @@
 
     const meta = document.createElement('span');
     meta.className = 'meta';
-    const dateStr = formatDate(task.createdAt);
-    const timeStr = formatTime(task.createdAt);
-    meta.textContent = `${dateStr} • ${timeStr}`;
-
-    taskHeader.append(title, meta);
-    content.appendChild(taskHeader);
+    const metaText = document.createTextNode(`Added ${formatDateTime(task.createdAt)}`);
+    meta.appendChild(metaText);
 
     // Subtasks List (Always Visible)
     const subList = document.createElement('ul');
@@ -559,7 +554,7 @@
     subForm.append(subInput, subAddBtn);
     subPanel.append(subForm);
 
-    content.append(subList, subPanel);
+    content.append(title, meta, subList, subPanel);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -569,7 +564,11 @@
     editBtn.className = 'edit';
     editBtn.textContent = 'Edit';
 
-
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'save';
+    saveBtn.textContent = 'Save';
+    saveBtn.hidden = true;
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
@@ -638,9 +637,9 @@
       }
     });
 
-    actions.append(editBtn, delBtn, subToggle);
+    actions.append(editBtn, saveBtn, delBtn, subToggle);
 
-    li.append(dragHandle, checkbox, content, actions);
+    li.append(checkbox, content, actions);
 
     // Editing behavior
     function enterEdit() {
@@ -649,11 +648,13 @@
       title.focus();
       placeCaretAtEnd(title);
       editBtn.hidden = true;
+      saveBtn.hidden = false;
     }
     function exitEdit(commit) {
       li.classList.remove('editing');
       title.contentEditable = 'false';
       editBtn.hidden = false;
+      saveBtn.hidden = true;
       if (commit) {
         const newTitle = title.textContent || '';
         const trimmed = newTitle.trim().slice(0, 120);
@@ -670,9 +671,8 @@
       }
     }
 
-
-
     editBtn.addEventListener('click', () => enterEdit());
+    saveBtn.addEventListener('click', () => exitEdit(true));
     delBtn.addEventListener('click', () => deleteTask(task.id));
 
     title.addEventListener('keydown', (e) => {
@@ -1325,7 +1325,78 @@
     // Do not overwrite storage unless we actually migrated/created defaults above
   }
 
+  // Sidebar Toggle
+  function initSidebarToggle() {
+    if (!el.sidebarToggle || !el.sidebarOverlay || !el.leftPanel) return;
 
+    const container = document.querySelector('.container');
+
+    function isMobile() {
+      return window.innerWidth <= 1024;
+    }
+
+    function openSidebar() {
+      if (isMobile()) {
+        el.leftPanel.classList.add('active');
+        el.sidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      } else {
+        el.leftPanel.classList.remove('collapsed');
+        if (container) container.classList.remove('sidebar-collapsed');
+      }
+    }
+
+    function closeSidebar() {
+      if (isMobile()) {
+        el.leftPanel.classList.remove('active');
+        el.sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      } else {
+        el.leftPanel.classList.add('collapsed');
+        if (container) container.classList.add('sidebar-collapsed');
+      }
+    }
+
+    function isSidebarOpen() {
+      if (isMobile()) {
+        return el.leftPanel.classList.contains('active');
+      } else {
+        return !el.leftPanel.classList.contains('collapsed');
+      }
+    }
+
+    el.sidebarToggle.addEventListener('click', () => {
+      if (isSidebarOpen()) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+
+    el.sidebarOverlay.addEventListener('click', closeSidebar);
+
+    el.foldersList.addEventListener('click', (e) => {
+      if (e.target.closest('.folder-item') && isMobile()) {
+        setTimeout(closeSidebar, 150);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      const wasMobile = el.leftPanel.classList.contains('active');
+      const wasDesktopCollapsed = el.leftPanel.classList.contains('collapsed');
+
+      if (isMobile()) {
+        el.leftPanel.classList.remove('collapsed');
+        if (container) container.classList.remove('sidebar-collapsed');
+        if (!wasDesktopCollapsed) closeSidebar();
+      } else {
+        el.leftPanel.classList.remove('active');
+        el.sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        if (wasMobile) openSidebar();
+      }
+    });
+  }
 
   // Init
   function init() {
@@ -1345,104 +1416,9 @@
     initForm();
     initBulk();
     initImportExport();
-    initKeyboardShortcuts();
+    initSidebarToggle(); // Add sidebar toggle
     renderFolders();
     render();
-  }
-
-  // Keyboard Shortcuts
-  function initKeyboardShortcuts() {
-    // Open shortcuts modal
-    if (el.keyboardHintBtn) {
-      el.keyboardHintBtn.addEventListener('click', () => {
-        el.shortcutsModal.hidden = false;
-        el.shortcutsModal.removeAttribute('hidden');
-      });
-    }
-
-    // Close shortcuts modal
-    if (el.shortcutsClose) {
-      el.shortcutsClose.addEventListener('click', () => {
-        el.shortcutsModal.hidden = true;
-        el.shortcutsModal.setAttribute('hidden', '');
-      });
-    }
-
-    // Click outside to close
-    if (el.shortcutsModal) {
-      el.shortcutsModal.addEventListener('click', (e) => {
-        if (e.target === el.shortcutsModal) {
-          el.shortcutsModal.hidden = true;
-          el.shortcutsModal.setAttribute('hidden', '');
-        }
-      });
-    }
-
-    // Global keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Don't trigger shortcuts when typing in inputs
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-        // Allow ESC to close modals even in inputs
-        if (e.key === 'Escape') {
-          if (el.shortcutsModal && !el.shortcutsModal.hidden) {
-            el.shortcutsModal.hidden = true;
-            el.shortcutsModal.setAttribute('hidden', '');
-            e.preventDefault();
-          }
-        }
-        return;
-      }
-
-      // ESC - Close shortcuts modal
-      if (e.key === 'Escape' && el.shortcutsModal && !el.shortcutsModal.hidden) {
-        el.shortcutsModal.hidden = true;
-        el.shortcutsModal.setAttribute('hidden', '');
-        e.preventDefault();
-      }
-
-      // ? or K - Show shortcuts
-      if (e.key === '?' || (e.key === 'k' && !e.ctrlKey && !e.metaKey)) {
-        el.shortcutsModal.hidden = false;
-        el.shortcutsModal.removeAttribute('hidden');
-        e.preventDefault();
-      }
-
-      // N - Focus on new task input
-      if (e.key === 'n' || e.key === 'N') {
-        el.input.focus();
-        e.preventDefault();
-      }
-
-      // / - Focus on search
-      if (e.key === '/') {
-        el.search.focus();
-        e.preventDefault();
-      }
-
-      // T - Toggle theme
-      if (e.key === 't' || e.key === 'T') {
-        toggleTheme();
-        e.preventDefault();
-      }
-
-      // A - Show all tasks
-      if (e.key === 'a' || e.key === 'A') {
-        setFilter('all');
-        e.preventDefault();
-      }
-
-      // 1 - Show active tasks
-      if (e.key === '1') {
-        setFilter('active');
-        e.preventDefault();
-      }
-
-      // 2 - Show completed tasks
-      if (e.key === '2') {
-        setFilter('completed');
-        e.preventDefault();
-      }
-    });
   }
 
   // Activity (monthly chart)
@@ -1469,7 +1445,7 @@
       rect.setAttribute('y', y);
       rect.setAttribute('width', width);
       rect.setAttribute('height', height);
-      rect.setAttribute('fill', 'var(--primary)');
+      rect.setAttribute('fill', 'var(--accent)');
       rect.setAttribute('rx', '2'); // rounded corners
       if (title) {
         const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
@@ -1499,7 +1475,7 @@
       const max = Math.max(1, ...dayCounts);
 
       // Draw bars
-      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 4); // Thinner with more spacing
+      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 2); // Dynamic width
       dayCounts.forEach((count, idx) => {
         const xCenter = padding + (idx / (daysInMonth - 1)) * plotWidth; // rough positioning
         // Better positioning for bars:
@@ -1554,7 +1530,7 @@
       });
       const max = Math.max(1, ...monthCounts);
 
-      const barWidth = (plotWidth / 12) - 20; // Thinner bars with more spacing
+      const barWidth = (plotWidth / 12) - 10; // Wider bars for months
 
       monthCounts.forEach((count, idx) => {
         const x = padding + (idx * (plotWidth / 12)) + ((plotWidth / 12) - barWidth) / 2;

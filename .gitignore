@@ -1,0 +1,22 @@
+# Local environment variables
+.env
+.env.local
+
+# Firebase credentials (keep your own config private)
+js/config/firebase-config.js
+
+# Backup files
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

@@ -19,6 +19,14 @@
 <body>
     <header class="app-header" role="banner">
         <div class="header-left">
+            <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <h1 class="app-title">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" class="app-logo" style="color: var(--primary);">
@@ -29,6 +37,17 @@
             <span class="subtitle">with Progress Tracker</span>
         </div>
         <div class="header-actions">
+            <button id="signInBtn" class="sign-in-button" aria-label="Sign in with Google">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Sign In
+            </button>
+            <button id="profileBtn" class="profile-button" style="display: none;" aria-label="View profile">
+                <img id="profilePhoto" class="profile-photo" src="" alt="Profile">
+                <span id="profileName"></span>
+            </button>
             <button id="keyboardHintBtn" class="keyboard-hint" aria-label="Keyboard shortcuts"
                 title="Keyboard shortcuts">
                 ?
@@ -99,43 +118,46 @@
                         title="Clear completed tasks">Clear Completed</button>
                 </section>
             </aside>
-
-            <section class="activity" aria-labelledby="activityLabel">
-                <div class="activity-header">
-                    <h2 id="activityLabel">Completed Tasks This Year</h2>
-                    <span id="activityTotals" aria-live="polite">0 completed</span>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-y-axis">
-                        <span id="yAxisMax">0</span>
-                        <span id="yAxisMid">0</span>
-                        <span id="yAxisMin">0</span>
-                    </div>
-                    <div class="chart-wrapper">
-                        <svg id="monthlyChart" class="line-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" style="stop-color:var(--primary);stop-opacity:0.3" />
-                                    <stop offset="100%" style="stop-color:var(--primary);stop-opacity:0.1" />
-                                </linearGradient>
-                            </defs>
-                            <g id="chartArea"></g>
-                        </svg>
-                        <div id="xAxisLabels" class="chart-x-axis"></div>
-                    </div>
-                </div>
-            </section>
         </div>
 
         <div class="main-content">
-            <section class="add-task" aria-labelledby="addTaskLabel">
-                <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
-                <form id="taskForm" autocomplete="off" novalidate>
-                    <input id="taskInput" type="text" name="task" placeholder="Add a task..." aria-label="Task title"
-                        required maxlength="120">
-                    <button type="submit" class="primary">Add</button>
-                </form>
-            </section>
+            <div class="top-section">
+                <section class="add-task" aria-labelledby="addTaskLabel">
+                    <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
+                    <form id="taskForm" autocomplete="off" novalidate>
+                        <input id="taskInput" type="text" name="task" placeholder="Add a task..."
+                            aria-label="Task title" required maxlength="120">
+                        <button type="submit" class="primary">Add</button>
+                    </form>
+                </section>
+
+                <section class="activity" aria-labelledby="activityLabel">
+                    <div class="activity-header">
+                        <h2 id="activityLabel">Completed Tasks This Year</h2>
+                        <span id="activityTotals" aria-live="polite">0 completed</span>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-y-axis">
+                            <span id="yAxisMax">0</span>
+                            <span id="yAxisMid">0</span>
+                            <span id="yAxisMin">0</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <svg id="monthlyChart" class="line-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:var(--primary);stop-opacity:0.3" />
+                                        <stop offset="100%" style="stop-color:var(--primary);stop-opacity:0.1" />
+                                    </linearGradient>
+                                </defs>
+                                <g id="chartArea"></g>
+                            </svg>
+                            <div id="xAxisLabels" class="chart-x-axis"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
 
             <section class="progress" aria-labelledby="progressLabel">
                 <div class="progress-header">
@@ -173,6 +195,9 @@
             </section>
         </div>
     </main>
+
+    <!-- Sidebar Overlay for mobile -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- Folder creation modal -->
     <div id="folderModal" class="modal" hidden>
@@ -242,9 +267,53 @@
         </div>
     </div>
 
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal" hidden>
+        <div class="modal-content profile-modal">
+            <h3>Profile</h3>
+            <div class="profile-header">
+                <img id="profileModalPhoto" class="profile-photo-large" src="" alt="Profile">
+                <div class="profile-info">
+                    <h4 id="profileModalName"></h4>
+                    <p id="profileModalEmail"></p>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTasksStat">0</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completedTasksStat">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeTasksStat">0</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completionRateStat">0%</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="signOutBtn" class="ghost-button">Sign Out</button>
+                <button type="button" id="profileModalClose" class="primary">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Theme toggle and footer removed -->
 
-    <script src="script.js" defer></script>
+    <script src="js/script.js" defer></script>
+    <script type="module">
+        import { initAuthUI } from './js/ui/auth-ui.js';
+
+        // Wait for main script to load
+        window.addEventListener('load', () => {
+            setTimeout(() => initAuthUI(), 500);
+        });
+    </script>
 </body>
 
 </html>
