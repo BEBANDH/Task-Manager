@@ -758,11 +758,11 @@ button.delete {
 
 .task input[type="checkbox"] {
   margin-top: 3px;
-  accent-color: var(--primary);
+  accent-color: var(--accent);
   width: 18px;
   height: 18px;
   cursor: pointer;
-  border: 2px solid var(--primary);
+  border: 2px solid var(--accent);
 }
 
 .task>div {

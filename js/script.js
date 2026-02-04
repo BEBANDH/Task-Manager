@@ -512,6 +512,12 @@
     });
 
     const content = document.createElement('div');
+    content.className = 'task-content-wrapper';
+
+    // Header (Title + Date)
+    const header = document.createElement('div');
+    header.className = 'task-header';
+
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = task.title;
@@ -522,8 +528,10 @@
 
     const meta = document.createElement('span');
     meta.className = 'meta';
-    const metaText = document.createTextNode(`Added ${formatDateTime(task.createdAt)}`);
+    const metaText = document.createTextNode(formatDateTime(task.createdAt));
     meta.appendChild(metaText);
+
+    header.append(title, meta);
 
     // Subtasks List (Always Visible)
     const subList = document.createElement('ul');
@@ -554,7 +562,7 @@
     subForm.append(subInput, subAddBtn);
     subPanel.append(subForm);
 
-    content.append(title, meta, subList, subPanel);
+    content.append(header, subList, subPanel);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
