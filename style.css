@@ -554,7 +554,7 @@ button.delete {
 }
 
 .progress-fill {
-  background: var(--primary);
+  background: var(--accent);
   height: 100%;
   width: 0%;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
