@@ -1398,6 +1398,33 @@
     });
   }
 
+  // Keyboard Shortcuts Modal
+  function initKeyboardShortcuts() {
+    if (!el.keyboardHintBtn || !el.shortcutsModal || !el.shortcutsClose) return;
+
+    el.keyboardHintBtn.addEventListener('click', () => {
+      el.shortcutsModal.hidden = false;
+    });
+
+    el.shortcutsClose.addEventListener('click', () => {
+      el.shortcutsModal.hidden = true;
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !el.shortcutsModal.hidden) {
+        el.shortcutsModal.hidden = true;
+      }
+    });
+
+    // Close on outside click
+    el.shortcutsModal.addEventListener('click', (e) => {
+      if (e.target === el.shortcutsModal) {
+        el.shortcutsModal.hidden = true;
+      }
+    });
+  }
+
   // Init
   function init() {
     // Ensure modal is closed on startup
@@ -1416,7 +1443,8 @@
     initForm();
     initBulk();
     initImportExport();
-    initSidebarToggle(); // Add sidebar toggle
+    initSidebarToggle();
+    initKeyboardShortcuts();
     renderFolders();
     render();
   }
