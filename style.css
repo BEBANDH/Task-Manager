@@ -14,6 +14,8 @@
 
   --primary: #000000;
   --primary-fg: #ffffff;
+  --accent: #22c55e;
+  /* Jade green for chart */
 
   --danger: #ef4444;
   --success: #22c55e;
@@ -35,6 +37,8 @@
 
   --primary: #ffffff;
   --primary-fg: #000000;
+  --accent: #4ade80;
+  /* Brighter green for dark mode */
 }
 
 * {
