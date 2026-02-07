@@ -1446,8 +1446,8 @@
 
       // Don't trigger shortcuts if any modal is open
       if (isModalOpen) return;
-
-      if (key === 'n && ctrlKey') {
+/*
+      if (key === 'n' && ctrlKey) {
         e.preventDefault();
         el.input.focus();
       } else if (key === '/' && ctrlKey) {
@@ -1464,7 +1464,7 @@
       } else if (key === '?' && ctrlKey) {
         el.shortcutsModal.hidden = false;
       }
-    });
+    }); */
 
     // Close on outside click
     el.shortcutsModal.addEventListener('click', (e) => {
