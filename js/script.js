@@ -1452,25 +1452,25 @@
 
       // Don't trigger shortcuts if any modal is open
       if (isModalOpen) return;
-
-      if (key === 'n') {
+/*
+      if (key === 'n' && ctrlKey) {
         e.preventDefault();
         el.input.focus();
-      } else if (key === '/') {
+      } else if (key === '/' && ctrlKey) {
         e.preventDefault();
         el.search.focus();
-      } else if (key === 't') {
+      } else if (key === 't'&& ctrlKey) {
         toggleTheme();
-      } else if (key === 'a') {
+      } else if (key === 'a' && ctrlKey) {
         setFilter('all');
-      } else if (key === '1') {
+      } else if (key === '1' && ctrlKey) {
         setFilter('active');
-      } else if (key === '2') {
+      } else if (key === '2' && ctrlKey) {
         setFilter('completed');
-      } else if (key === '?') {
+      } else if (key === '?' && ctrlKey) {
         el.shortcutsModal.hidden = false;
       }
-    });
+    }); */
 
     // Close on outside click
     el.shortcutsModal.addEventListener('click', (e) => {
@@ -1499,7 +1499,6 @@
     initBulk();
     initImportExport();
     initSidebarToggle();
-    initKeyboardShortcuts();
     renderFolders();
     render();
   }
