@@ -1450,18 +1450,18 @@
       if (key === 'n') {
         e.preventDefault();
         el.input.focus();
-      } else if (key === '/') {
+      } else if (key === '/' && ctrlKey) {
         e.preventDefault();
         el.search.focus();
-      } else if (key === 't') {
+      } else if (key === 't'&& ctrlKey) {
         toggleTheme();
-      } else if (key === 'a') {
+      } else if (key === 'a' && ctrlKey) {
         setFilter('all');
-      } else if (key === '1') {
+      } else if (key === '1' && ctrlKey) {
         setFilter('active');
-      } else if (key === '2') {
+      } else if (key === '2' && ctrlKey) {
         setFilter('completed');
-      } else if (key === '?') {
+      } else if (key === '?' && ctrlKey) {
         el.shortcutsModal.hidden = false;
       }
     });
