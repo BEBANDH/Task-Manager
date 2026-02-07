@@ -1447,7 +1447,7 @@
       // Don't trigger shortcuts if any modal is open
       if (isModalOpen) return;
 
-      if (key === 'n') {
+      if (key === 'n && ctrlKey') {
         e.preventDefault();
         el.input.focus();
       } else if (key === '/' && ctrlKey) {
