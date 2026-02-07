@@ -1452,25 +1452,24 @@
 
       // Don't trigger shortcuts if any modal is open
       if (isModalOpen) return;
-/*
-      if (key === 'n' && ctrlKey) {
+      if (key === 'n') {
         e.preventDefault();
         el.input.focus();
-      } else if (key === '/' && ctrlKey) {
+      } else if (key === '/') {
         e.preventDefault();
         el.search.focus();
-      } else if (key === 't'&& ctrlKey) {
+      } else if (key === 't') {
         toggleTheme();
-      } else if (key === 'a' && ctrlKey) {
+      } else if (key === 'a') {
         setFilter('all');
-      } else if (key === '1' && ctrlKey) {
+      } else if (key === '1') {
         setFilter('active');
-      } else if (key === '2' && ctrlKey) {
+      } else if (key === '2') {
         setFilter('completed');
-      } else if (key === '?' && ctrlKey) {
+      } else if (key === '?') {
         el.shortcutsModal.hidden = false;
       }
-    }); */
+    });
 
     // Close on outside click
     el.shortcutsModal.addEventListener('click', (e) => {
