@@ -1420,10 +1420,16 @@
 
     // Close on escape
     document.addEventListener('keydown', (e) => {
-      // Ignore if user is typing in an input/textarea
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) && e.key !== 'Escape') {
+      // Ignore if user is typing in an input/textarea or contentEditable
+      const active = document.activeElement;
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable;
+
+      if (isInput && e.key !== 'Escape') {
         return;
       }
+
+      // Ignore shortcuts with modifiers (except Shift, which is needed for '?')
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
 
       const key = e.key.toLowerCase();
       const isModalOpen = !el.shortcutsModal.hidden || !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden);
@@ -1438,8 +1444,8 @@
         if (profileModal && !profileModal.hidden) profileModal.hidden = true;
 
         // Blur any active input
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
-          document.activeElement.blur();
+        if (isInput) {
+          active.blur();
         }
         return;
       }
