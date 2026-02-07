@@ -1493,7 +1493,6 @@
     initBulk();
     initImportExport();
     initSidebarToggle();
-    initKeyboardShortcuts();
     renderFolders();
     render();
   }
