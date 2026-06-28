@@ -28,6 +28,21 @@
   let selectedMonth = ''; // '' for all months, or 'YYYY-MM' format
   let selectedYear = ''; // '' for all years, or 'YYYY'
   const expandedTasks = new Set(); // Track expanded sublists
+  let confirmDeleteResolve = null;
+  let listSearchQuery = '';
+
+  const ACCENT_COLORS = {
+    green: { light: '#22c55e', dark: '#4ade80' },
+    blue: { light: '#3b82f6', dark: '#60a5fa' },
+    indigo: { light: '#6366f1', dark: '#818cf8' },
+    purple: { light: '#a855f7', dark: '#c084fc' },
+    pink: { light: '#ec4899', dark: '#f472b6' },
+    red: { light: '#ef4444', dark: '#f87171' },
+    orange: { light: '#f97316', dark: '#fb923c' },
+    amber: { light: '#f59e0b', dark: '#fbbf24' },
+    teal: { light: '#14b8a6', dark: '#2dd4bf' },
+    cyan: { light: '#06b6d4', dark: '#22d3ee' }
+  };
 
   // Get current folder's tasks
   const getCurrentTasks = () => {
@@ -76,14 +91,27 @@
       folderModal: document.getElementById('folderModal'),
       folderForm: document.getElementById('folderForm'),
       folderNameInput: document.getElementById('folderNameInput'),
+      folderDescriptionInput: document.getElementById('folderDescriptionInput'),
       folderModalCancel: document.getElementById('folderModalCancel'),
       folderModalTitle: document.getElementById('folderModalTitle'),
-      keyboardHintBtn: document.getElementById('keyboardHintBtn'),
-      shortcutsModal: document.getElementById('shortcutsModal'),
-      shortcutsClose: document.getElementById('shortcutsClose'),
+      listDescriptionDisplay: document.getElementById('listDescriptionDisplay'),
+      listSearchInput: document.getElementById('listSearchInput'),
       sidebarToggle: document.getElementById('sidebarToggle'),
       sidebarOverlay: document.getElementById('sidebarOverlay'),
       leftPanel: document.querySelector('.left-panel'),
+      confirmDeleteModal: document.getElementById('confirmDeleteModal'),
+      confirmDeleteMessage: document.getElementById('confirmDeleteMessage'),
+      confirmDeleteCancel: document.getElementById('confirmDeleteCancel'),
+      confirmDeleteConfirm: document.getElementById('confirmDeleteConfirm'),
+      dashboardBtn: document.getElementById('dashboardBtn'),
+      dashboardModal: document.getElementById('dashboardModal'),
+      dashboardModalClose: document.getElementById('dashboardModalClose'),
+      dashCompletionRate: document.getElementById('dashCompletionRate'),
+      dashCurrentStreak: document.getElementById('dashCurrentStreak'),
+      dashBusiestDay: document.getElementById('dashBusiestDay'),
+      dashListDistribution: document.getElementById('dashListDistribution'),
+      dashPriorityList: document.getElementById('dashPriorityList'),
+      accentColorContainer: document.getElementById('accentColorContainer'),
     };
   }
 
@@ -137,6 +165,10 @@
     const next = current === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     writeStorage(STORAGE_KEYS.theme, next);
+    applyAccentColor();
+    if (el.dashboardModal && !el.dashboardModal.hidden) {
+      renderAccentColorPicker();
+    }
   }
 
   function initTheme() {
@@ -148,21 +180,29 @@
     }
     // 3. Apply
     document.documentElement.setAttribute('data-theme', theme);
+    applyAccentColor();
 
     if (el.themeToggle) {
       el.themeToggle.addEventListener('click', toggleTheme);
     }
   }
 
+  function applyAccentColor() {
+    const currentAccent = readStorage('tm_accent_color', 'green');
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent][theme] : ACCENT_COLORS.green[theme];
+    document.documentElement.style.setProperty('--accent', colorVal);
+  }
+
   // Folders CRUD
-  function createFolder(name) {
+  function createFolder(name, description = '') {
     const trimmed = name.trim();
     if (!trimmed) return null;
     if (folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
       alert('A list with this name already exists.');
       return null;
     }
-    const folder = { id: uid(), name: trimmed, createdAt: now() };
+    const folder = { id: uid(), name: trimmed, description: description.trim(), createdAt: now() };
     folders.push(folder);
     tasksByFolder[folder.id] = [];
     persistFolders();
@@ -172,7 +212,7 @@
     return folder;
   }
 
-  function renameFolder(id, newName) {
+  function renameFolder(id, newName, newDescription = '') {
     const trimmed = newName.trim();
     if (!trimmed) return;
     const folder = folders.find(f => f.id === id);
@@ -182,8 +222,10 @@
       return;
     }
     folder.name = trimmed;
+    folder.description = newDescription.trim();
     persistFolders();
     renderFolders();
+    render();
   }
 
   function deleteFolder(id) {
@@ -266,13 +308,50 @@
     render();
   }
 
-  function deleteTask(id) {
+  async function deleteTask(id) {
     if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
+    const task = tasksByFolder[currentFolderId].find(t => t.id === id);
+    if (!task) return;
+    const confirmed = await showConfirmDeleteModal(`Are you sure you want to delete the task "${task.title}"?`);
+    if (!confirmed) return;
     const next = tasksByFolder[currentFolderId].filter(t => t.id !== id);
     if (next.length === tasksByFolder[currentFolderId].length) return;
     tasksByFolder[currentFolderId] = next;
     persistTasks();
     render();
+  }
+
+  function initConfirmDeleteModal() {
+    if (!el.confirmDeleteModal) return;
+    el.confirmDeleteCancel.addEventListener('click', () => {
+      closeConfirmDeleteModal(false);
+    });
+    el.confirmDeleteConfirm.addEventListener('click', () => {
+      closeConfirmDeleteModal(true);
+    });
+    el.confirmDeleteModal.addEventListener('click', (e) => {
+      if (e.target === el.confirmDeleteModal) {
+        closeConfirmDeleteModal(false);
+      }
+    });
+  }
+
+  function showConfirmDeleteModal(message) {
+    el.confirmDeleteMessage.textContent = message;
+    el.confirmDeleteModal.hidden = false;
+    el.confirmDeleteModal.removeAttribute('hidden');
+    return new Promise((resolve) => {
+      confirmDeleteResolve = resolve;
+    });
+  }
+
+  function closeConfirmDeleteModal(result) {
+    el.confirmDeleteModal.hidden = true;
+    el.confirmDeleteModal.setAttribute('hidden', '');
+    if (confirmDeleteResolve) {
+      confirmDeleteResolve(result);
+      confirmDeleteResolve = null;
+    }
   }
 
   function clearCompleted() {
@@ -324,7 +403,13 @@
   function renderFolders() {
     el.foldersList.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    folders.forEach(folder => {
+    const filteredFolders = folders.filter(folder => {
+      if (!listSearchQuery) return true;
+      const desc = folder.description || '';
+      return desc.toLowerCase().includes(listSearchQuery);
+    });
+
+    filteredFolders.forEach(folder => {
       const li = document.createElement('li');
       li.className = `folder-item${folder.id === currentFolderId ? ' active' : ''}`;
       li.dataset.folderId = folder.id;
@@ -382,6 +467,15 @@
     el.folderModalTitle.textContent = folderId ? 'Rename List' : 'Create New List';
     el.folderNameInput.value = currentName;
 
+    let currentDescription = '';
+    if (folderId) {
+      const folder = folders.find(f => f.id === folderId);
+      currentDescription = folder?.description || '';
+    }
+    if (el.folderDescriptionInput) {
+      el.folderDescriptionInput.value = currentDescription;
+    }
+
     // Remove old handlers if they exist
     if (submitHandler) {
       el.folderForm.removeEventListener('submit', submitHandler);
@@ -394,15 +488,16 @@
     submitHandler = (e) => {
       e.preventDefault();
       const name = el.folderNameInput.value.trim();
+      const description = el.folderDescriptionInput ? el.folderDescriptionInput.value.trim() : '';
       if (!name) {
         el.folderNameInput.focus();
         return;
       }
 
       if (currentModalFolderId) {
-        renameFolder(currentModalFolderId, name);
+        renameFolder(currentModalFolderId, name, description);
       } else {
-        createFolder(name);
+        createFolder(name, description);
       }
       closeFolderModal();
     };
@@ -435,6 +530,9 @@
       cancelHandler = null;
     }
     el.folderNameInput.value = '';
+    if (el.folderDescriptionInput) {
+      el.folderDescriptionInput.value = '';
+    }
     currentModalFolderId = null;
     // Reset form to clear any validation states
     el.folderForm.reset();
@@ -443,6 +541,18 @@
   function render() {
     const tasks = getCurrentTasks();
     const { total, completed, filtered } = getRenderData(tasks);
+
+    // Render list description
+    const currentFolder = folders.find(f => f.id === currentFolderId);
+    if (el.listDescriptionDisplay) {
+      if (currentFolder && currentFolder.description) {
+        el.listDescriptionDisplay.textContent = currentFolder.description;
+        el.listDescriptionDisplay.style.display = 'block';
+      } else {
+        el.listDescriptionDisplay.textContent = '';
+        el.listDescriptionDisplay.style.display = 'none';
+      }
+    }
     // Empty state
     el.empty.hidden = filtered.length !== 0 || (searchQuery.length > 0 || activeFilter !== 'all' || selectedMonth);
     // Progress
@@ -453,8 +563,39 @@
     // List
     el.tasks.innerHTML = '';
     const fragment = document.createDocumentFragment();
+    let lastDateStr = null;
     filtered.forEach(task => {
       try {
+        const taskDate = new Date(task.createdAt);
+        const dateStr = taskDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        
+        if (dateStr !== lastDateStr) {
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'task-date-header';
+          dateHeader.style.display = 'flex';
+          dateHeader.style.alignItems = 'center';
+          dateHeader.style.gap = '12px';
+          dateHeader.style.margin = '16px 0 8px 0';
+          
+          const text = document.createElement('span');
+          text.textContent = dateStr;
+          text.style.fontSize = '12px';
+          text.style.fontWeight = '600';
+          text.style.color = 'var(--text-dim)';
+          text.style.whiteSpace = 'nowrap';
+          
+          const hr = document.createElement('hr');
+          hr.style.flex = '1';
+          hr.style.border = 'none';
+          hr.style.borderTop = '1px solid var(--border)';
+          hr.style.margin = '0';
+          
+          dateHeader.append(text, hr);
+          fragment.appendChild(dateHeader);
+          
+          lastDateStr = dateStr;
+        }
+
         fragment.appendChild(renderTaskItem(task));
       } catch (err) {
         console.error('Render task failed', err);
@@ -567,16 +708,29 @@
     const actions = document.createElement('div');
     actions.className = 'actions';
 
+    const priorityBtn = document.createElement('button');
+    priorityBtn.type = 'button';
+    priorityBtn.className = 'priority';
+    priorityBtn.textContent = task.highPriority ? '🚩' : '🏳️';
+    priorityBtn.setAttribute('title', task.highPriority ? 'Remove high priority' : 'Mark as high priority');
+    priorityBtn.style.padding = '6px 8px';
+    priorityBtn.style.fontSize = '12px';
+    priorityBtn.style.border = 'none';
+    priorityBtn.style.background = 'transparent';
+    priorityBtn.style.cursor = 'pointer';
+    priorityBtn.style.transition = 'transform 0.15s ease';
+    priorityBtn.addEventListener('mouseenter', () => priorityBtn.style.transform = 'scale(1.25)');
+    priorityBtn.addEventListener('mouseleave', () => priorityBtn.style.transform = 'scale(1)');
+    priorityBtn.addEventListener('click', () => {
+      updateTask(task.id, { highPriority: !task.highPriority });
+    });
+
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'edit';
     editBtn.textContent = 'Edit';
 
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'save';
-    saveBtn.textContent = 'Save';
-    saveBtn.hidden = true;
+
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
@@ -645,7 +799,7 @@
       }
     });
 
-    actions.append(editBtn, saveBtn, delBtn, subToggle);
+    actions.append(priorityBtn, editBtn, delBtn, subToggle);
 
     li.append(checkbox, content, actions);
 
@@ -656,13 +810,11 @@
       title.focus();
       placeCaretAtEnd(title);
       editBtn.hidden = true;
-      saveBtn.hidden = false;
     }
     function exitEdit(commit) {
       li.classList.remove('editing');
       title.contentEditable = 'false';
       editBtn.hidden = false;
-      saveBtn.hidden = true;
       if (commit) {
         const newTitle = title.textContent || '';
         const trimmed = newTitle.trim().slice(0, 120);
@@ -680,7 +832,6 @@
     }
 
     editBtn.addEventListener('click', () => enterEdit());
-    saveBtn.addEventListener('click', () => exitEdit(true));
     delBtn.addEventListener('click', () => deleteTask(task.id));
 
     title.addEventListener('keydown', (e) => {
@@ -735,6 +886,13 @@
       writeStorage(STORAGE_KEYS.search, el.search.value.trim());
       render();
     });
+
+    if (el.listSearchInput) {
+      el.listSearchInput.addEventListener('input', () => {
+        listSearchQuery = el.listSearchInput.value.trim().toLowerCase();
+        renderFolders();
+      });
+    }
   }
 
   function populateMonthFilter() {
@@ -1406,21 +1564,9 @@
     });
   }
 
-  // Keyboard Shortcuts Modal
+  // Keyboard Shortcuts
   function initKeyboardShortcuts() {
-    if (!el.keyboardHintBtn || !el.shortcutsModal || !el.shortcutsClose) return;
-
-    el.keyboardHintBtn.addEventListener('click', () => {
-      el.shortcutsModal.hidden = false;
-    });
-
-    el.shortcutsClose.addEventListener('click', () => {
-      el.shortcutsModal.hidden = true;
-    });
-
-    // Close on escape
     document.addEventListener('keydown', (e) => {
-      // Ignore if user is typing in an input/textarea or contentEditable
       const active = document.activeElement;
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable;
 
@@ -1428,29 +1574,30 @@
         return;
       }
 
-      // Ignore shortcuts with modifiers (except Shift, which is needed for '?')
       if (e.ctrlKey || e.altKey || e.metaKey) return;
 
       const key = e.key.toLowerCase();
-      const isModalOpen = !el.shortcutsModal.hidden || !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden);
+      const isModalOpen = !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || (el.dashboardModal && !el.dashboardModal.hidden);
 
       if (e.key === 'Escape') {
-        if (!el.shortcutsModal.hidden) el.shortcutsModal.hidden = true;
         if (!el.folderModal.hidden) closeFolderModal();
         if (!el.exportMultipleModal.hidden) el.exportMultipleModal.hidden = true;
+        if (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) {
+          closeConfirmDeleteModal(false);
+        }
+        if (el.dashboardModal && !el.dashboardModal.hidden) {
+          closeDashboardModal();
+        }
 
-        // Also close profile modal if open
         const profileModal = document.getElementById('profileModal');
         if (profileModal && !profileModal.hidden) profileModal.hidden = true;
 
-        // Blur any active input
         if (isInput) {
           active.blur();
         }
         return;
       }
 
-      // Don't trigger shortcuts if any modal is open
       if (isModalOpen) return;
       if (key === 'n') {
         e.preventDefault();
@@ -1466,17 +1613,296 @@
         setFilter('active');
       } else if (key === '2') {
         setFilter('completed');
-      } else if (key === '?') {
-        el.shortcutsModal.hidden = false;
       }
+    });
+  }
+
+  function renderAccentColorPicker() {
+    const container = el.accentColorContainer;
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const currentAccent = readStorage('tm_accent_color', 'green');
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+
+    Object.keys(ACCENT_COLORS).forEach(colorKey => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const colorHex = ACCENT_COLORS[colorKey][theme];
+      btn.style.width = '36px';
+      btn.style.height = '36px';
+      btn.style.borderRadius = '50%';
+      btn.style.backgroundColor = colorHex;
+      btn.style.border = colorKey === currentAccent ? '3px solid var(--text)' : '1px solid var(--border)';
+      btn.style.cursor = 'pointer';
+      btn.style.padding = '0';
+      btn.style.display = 'inline-flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.setAttribute('title', colorKey.charAt(0).toUpperCase() + colorKey.slice(1));
+      btn.setAttribute('aria-label', `Select ${colorKey} accent color`);
+
+      if (colorKey === currentAccent) {
+        const check = document.createElement('span');
+        check.textContent = '✓';
+        check.style.color = theme === 'dark' ? '#000000' : '#ffffff';
+        check.style.fontWeight = 'bold';
+        check.style.fontSize = '14px';
+        btn.appendChild(check);
+      }
+
+      btn.addEventListener('click', () => {
+        writeStorage('tm_accent_color', colorKey);
+        applyAccentColor();
+        renderAccentColorPicker();
+        render();
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  function initDashboard() {
+    if (!el.dashboardBtn || !el.dashboardModal || !el.dashboardModalClose) return;
+
+    el.dashboardBtn.addEventListener('click', () => {
+      renderDashboard();
+      el.dashboardModal.hidden = false;
+      el.dashboardModal.removeAttribute('hidden');
     });
 
-    // Close on outside click
-    el.shortcutsModal.addEventListener('click', (e) => {
-      if (e.target === el.shortcutsModal) {
-        el.shortcutsModal.hidden = true;
+    el.dashboardModalClose.addEventListener('click', () => {
+      closeDashboardModal();
+    });
+
+    el.dashboardModal.addEventListener('click', (e) => {
+      if (e.target === el.dashboardModal) {
+        closeDashboardModal();
       }
     });
+  }
+
+  function closeDashboardModal() {
+    el.dashboardModal.hidden = true;
+    el.dashboardModal.setAttribute('hidden', '');
+  }
+
+  function renderDashboard() {
+    renderAccentColorPicker();
+
+    let totalTasksCount = 0;
+    let totalCompletedCount = 0;
+    Object.values(tasksByFolder).forEach(listTasks => {
+      totalTasksCount += listTasks.length;
+      totalCompletedCount += listTasks.filter(t => t.completed).length;
+    });
+    const rate = totalTasksCount > 0 ? Math.round((totalCompletedCount / totalTasksCount) * 100) : 0;
+    el.dashCompletionRate.textContent = `${rate}% (${totalCompletedCount}/${totalTasksCount})`;
+
+    const completedDates = [];
+    Object.values(tasksByFolder).forEach(listTasks => {
+      listTasks.forEach(task => {
+        if (task.completed && task.completedAt) {
+          completedDates.push(new Date(task.completedAt).toDateString());
+        }
+      });
+    });
+    
+    const uniqueDates = Array.from(new Set(completedDates)).map(d => new Date(d));
+    uniqueDates.sort((a, b) => b - a);
+
+    let currentStreak = 0;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (uniqueDates.length > 0) {
+      const firstDate = uniqueDates[0];
+      firstDate.setHours(0,0,0,0);
+      if (firstDate.getTime() === today.getTime() || firstDate.getTime() === yesterday.getTime()) {
+        currentStreak = 1;
+        let expectedTime = firstDate.getTime();
+        for (let i = 1; i < uniqueDates.length; i++) {
+          expectedTime -= 24 * 60 * 60 * 1000;
+          const compareDate = uniqueDates[i];
+          compareDate.setHours(0,0,0,0);
+          if (compareDate.getTime() === expectedTime) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    el.dashCurrentStreak.textContent = `${currentStreak} day${currentStreak !== 1 ? 's' : ''}`;
+
+    const weekdayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let maxDay = -1;
+    let maxCount = 0;
+    Object.values(tasksByFolder).forEach(listTasks => {
+      listTasks.forEach(task => {
+        if (task.completed && task.completedAt) {
+          const day = new Date(task.completedAt).getDay();
+          weekdayCounts[day]++;
+        }
+      });
+    });
+    for (let i = 0; i < 7; i++) {
+      if (weekdayCounts[i] > maxCount) {
+        maxCount = weekdayCounts[i];
+        maxDay = i;
+      }
+    }
+    el.dashBusiestDay.textContent = maxDay !== -1 && maxCount > 0 ? `${weekdayNames[maxDay]} (${maxCount} completed)` : "No tasks completed yet";
+
+    // Distribution
+    el.dashListDistribution.innerHTML = '';
+    folders.forEach(folder => {
+      const listTasks = tasksByFolder[folder.id] || [];
+      const count = listTasks.length;
+      const completed = listTasks.filter(t => t.completed).length;
+      const pct = count > 0 ? Math.round((completed / count) * 100) : 0;
+
+      const item = document.createElement('div');
+      item.style.marginBottom = '4px';
+
+      const labelRow = document.createElement('div');
+      labelRow.style.display = 'flex';
+      labelRow.style.justifyContent = 'space-between';
+      labelRow.style.fontSize = '13px';
+      labelRow.style.marginBottom = '6px';
+
+      const folderNameSpan = document.createElement('span');
+      folderNameSpan.textContent = folder.name;
+      folderNameSpan.style.fontWeight = '500';
+
+      const statsSpan = document.createElement('span');
+      statsSpan.textContent = `${pct}% (${completed}/${count})`;
+      statsSpan.style.color = 'var(--text-dim)';
+
+      labelRow.append(folderNameSpan, statsSpan);
+
+      const track = document.createElement('div');
+      track.style.height = '6px';
+      track.style.background = 'var(--bg-subtle)';
+      track.style.borderRadius = '3px';
+      track.style.overflow = 'hidden';
+
+      const bar = document.createElement('div');
+      bar.style.height = '100%';
+      bar.style.width = `${pct}%`;
+      bar.style.background = 'var(--accent)';
+      bar.style.transition = 'width 0.5s ease-out';
+
+      track.appendChild(bar);
+      item.append(labelRow, track);
+      el.dashListDistribution.appendChild(item);
+    });
+
+    // High Priority List
+    el.dashPriorityList.innerHTML = '';
+    let priorityCount = 0;
+
+    folders.forEach(folder => {
+      const listTasks = tasksByFolder[folder.id] || [];
+      listTasks.forEach(task => {
+        if (task.highPriority) {
+          priorityCount++;
+          
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.justifyContent = 'space-between';
+          row.style.padding = '8px 12px';
+          row.style.background = 'var(--bg-subtle)';
+          row.style.borderRadius = 'var(--radius)';
+          row.style.border = '1px solid var(--border)';
+
+          const left = document.createElement('div');
+          left.style.display = 'flex';
+          left.style.alignItems = 'center';
+          left.style.gap = '8px';
+          left.style.flex = '1';
+          left.style.minWidth = '0';
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = task.completed;
+          cb.addEventListener('change', () => {
+            const checked = cb.checked;
+            const idx = tasksByFolder[folder.id].findIndex(t => t.id === task.id);
+            if (idx !== -1) {
+              tasksByFolder[folder.id][idx] = {
+                ...tasksByFolder[folder.id][idx],
+                completed: checked,
+                completedAt: checked ? now() : null,
+                updatedAt: now()
+              };
+              persistTasks();
+              renderDashboard();
+              render();
+            }
+          });
+
+          const titleSpan = document.createElement('span');
+          titleSpan.textContent = task.title;
+          titleSpan.style.fontSize = '13px';
+          titleSpan.style.textDecoration = task.completed ? 'line-through' : 'none';
+          titleSpan.style.color = task.completed ? 'var(--text-dim)' : 'var(--text)';
+          titleSpan.style.overflow = 'hidden';
+          titleSpan.style.textOverflow = 'ellipsis';
+          titleSpan.style.whiteSpace = 'nowrap';
+
+          const folderSpan = document.createElement('span');
+          folderSpan.textContent = ` [${folder.name}]`;
+          folderSpan.style.fontSize = '10px';
+          folderSpan.style.color = 'var(--text-muted)';
+          folderSpan.style.marginLeft = '4px';
+
+          left.append(cb, titleSpan, folderSpan);
+
+          const right = document.createElement('button');
+          right.type = 'button';
+          right.textContent = '×';
+          right.style.border = 'none';
+          right.style.background = 'transparent';
+          right.style.cursor = 'pointer';
+          right.style.color = 'var(--danger)';
+          right.style.fontSize = '16px';
+          right.style.padding = '0 4px';
+          right.setAttribute('title', 'Remove high priority');
+          
+          right.addEventListener('click', () => {
+            const idx = tasksByFolder[folder.id].findIndex(t => t.id === task.id);
+            if (idx !== -1) {
+              tasksByFolder[folder.id][idx] = {
+                ...tasksByFolder[folder.id][idx],
+                highPriority: false,
+                updatedAt: now()
+              };
+              persistTasks();
+              renderDashboard();
+              render();
+            }
+          });
+
+          row.append(left, right);
+          el.dashPriorityList.appendChild(row);
+        }
+      });
+    });
+
+    document.getElementById('dashPriorityCount').textContent = priorityCount;
+    if (priorityCount === 0) {
+      const emptyMsg = document.createElement('p');
+      emptyMsg.textContent = 'No high priority tasks yet.';
+      emptyMsg.style.fontSize = '12px';
+      emptyMsg.style.color = 'var(--text-muted)';
+      emptyMsg.style.margin = '4px 0';
+      el.dashPriorityList.appendChild(emptyMsg);
+    }
   }
 
   // Init
@@ -1485,6 +1911,14 @@
     if (el.folderModal) {
       el.folderModal.hidden = true;
       el.folderModal.setAttribute('hidden', '');
+    }
+    if (el.confirmDeleteModal) {
+      el.confirmDeleteModal.hidden = true;
+      el.confirmDeleteModal.setAttribute('hidden', '');
+    }
+    if (el.dashboardModal) {
+      el.dashboardModal.hidden = true;
+      el.dashboardModal.setAttribute('hidden', '');
     }
 
     initElements(); // Must be first!
@@ -1497,6 +1931,9 @@
     initForm();
     initBulk();
     initImportExport();
+    initConfirmDeleteModal();
+    initDashboard();
+    initKeyboardShortcuts();
     initSidebarToggle();
     renderFolders();
     render();

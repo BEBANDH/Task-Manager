@@ -301,9 +301,9 @@ body {
 
 /* Sidebar */
 .folders-sidebar {
-  flex: 0 0 auto;
-  min-height: auto;
-  /* No right border, maybe? Or keep it if desired */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--border);
   padding-right: 16px;
 }
@@ -413,6 +413,7 @@ body {
 
 input[type="text"],
 input[type="search"],
+textarea,
 select {
   flex: 1;
   background: transparent;
@@ -433,6 +434,7 @@ input[type="text"]#taskInput {
 }
 
 input:focus,
+textarea:focus,
 select:focus {
   outline: none;
   border-bottom: 2px solid var(--primary);
@@ -951,6 +953,23 @@ button.delete {
   gap: 8px;
 }
 
+.dashboard-settings-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 580px) {
+  .dashboard-settings-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
 /* Checkbox Styling */
 input[type="checkbox"] {
   appearance: none;
@@ -1264,8 +1283,10 @@ input[type="checkbox"]:checked::after {
   }
 
   .task .actions {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 6px;
+    opacity: 1;
   }
 
   .task .actions button {

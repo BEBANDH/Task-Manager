@@ -48,10 +48,6 @@
                 <img id="profilePhoto" class="profile-photo" src="" alt="Profile">
                 <span id="profileName"></span>
             </button>
-            <button id="keyboardHintBtn" class="keyboard-hint" aria-label="Keyboard shortcuts"
-                title="Keyboard shortcuts">
-                ?
-            </button>
         </div>
     </header>
 
@@ -64,6 +60,9 @@
                         title="Create new list">
                         <span class="icon">+</span>
                     </button>
+                </div>
+                <div class="folders-search" style="margin: 0 0 12px 0; padding: 0 4px;">
+                    <input id="listSearchInput" type="search" placeholder="Search lists by description..." aria-label="Search lists by description" style="width: 100%; padding: 8px 4px; font-size: 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);">
                 </div>
                 <ul id="foldersList" class="folders-list" role="list"></ul>
                 <section class="sidebar-actions" aria-label="Actions">
@@ -99,24 +98,28 @@
                         Import
                     </button>
                     <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
-                    <button id="themeToggle" class="ghost-button" aria-label="Toggle theme" title="Toggle theme">
+
+                    <button id="dashboardBtn" class="ghost-button" aria-label="Open dashboard" title="Open dashboard">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Toggle Theme
+                        Dashboard
                     </button>
                     <button id="clearCompleted" class="ghost-button" aria-label="Clear completed tasks"
                         title="Clear completed tasks">Clear Completed</button>
                 </section>
+                <div class="sidebar-shortcuts" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim);">
+                    <div style="font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Shortcuts</div>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 6px; line-height: 1.5;">
+                        <span>New Task</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">N</kbd>
+                        <span>Search</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">/</kbd>
+                        <span>Toggle Theme</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">T</kbd>
+                        <span>Filters (All/Act/Cmp)</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">A / 1 / 2</kbd>
+                    </div>
+                </div>
             </aside>
         </div>
 
@@ -124,6 +127,7 @@
             <div class="top-section">
                 <section class="add-task" aria-labelledby="addTaskLabel">
                     <h2 id="addTaskLabel" class="sr-only">Add a new task</h2>
+                    <div id="listDescriptionDisplay" style="margin-bottom: 8px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6; display: none; font-style: italic; border-left: 2px solid var(--accent); padding-left: 12px; white-space: pre-wrap; word-break: break-word;"></div>
                     <form id="taskForm" autocomplete="off" novalidate>
                         <input id="taskInput" type="text" name="task" placeholder="Add a task..."
                             aria-label="Task title" required maxlength="120">
@@ -206,11 +210,104 @@
             <form id="folderForm">
                 <input id="folderNameInput" type="text" placeholder="List name..." aria-label="List name" required
                     maxlength="50" autofocus>
+                <textarea id="folderDescriptionInput" placeholder="List description (optional, max 100 chars)..." aria-label="List description"
+                    maxlength="100" rows="2" style="width: 100%; margin-top: 12px; resize: none;"></textarea>
                 <div class="modal-actions">
                     <button type="button" id="folderModalCancel" class="ghost-button">Cancel</button>
                     <button type="submit" class="primary">Create</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Modal -->
+    <div id="dashboardModal" class="modal" hidden>
+        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 85vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Dashboard & Settings
+            </h3>
+            
+            <!-- Theme & Customization Settings -->
+            <div class="dashboard-settings-section">
+                <div>
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-dim);">Theme</label>
+                    <button id="themeToggle" class="ghost-button" style="width: 100%; justify-content: center; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer;" aria-label="Toggle theme" title="Toggle theme">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        Theme
+                    </button>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-dim);">Accent Color</label>
+                    <div id="accentColorContainer" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                </div>
+            </div>
+
+            <!-- Productivity Stats -->
+            <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                <div class="stat-card" style="border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); background: var(--bg-panel);">
+                    <div id="dashCompletionRate" style="font-size: 20px; font-weight: bold; color: var(--accent);">0%</div>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">Completion Rate</div>
+                </div>
+                <div class="stat-card" style="border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); background: var(--bg-panel);">
+                    <div id="dashCurrentStreak" style="font-size: 20px; font-weight: bold; color: var(--text);">0 days</div>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">Current Daily Streak</div>
+                </div>
+                <div class="stat-card" style="border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); background: var(--bg-panel); grid-column: span 2;">
+                    <div id="dashBusiestDay" style="font-size: 15px; font-weight: 600; color: var(--text);">None</div>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">Most Productive Day</div>
+                </div>
+            </div>
+
+            <!-- List Distribution -->
+            <div class="distribution-section" style="border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px;">
+                <h4 style="font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">List Task Distribution</h4>
+                <div id="dashListDistribution" style="display: flex; flex-direction: column; gap: 12px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Lists progress will go here -->
+                </div>
+            </div>
+
+            <!-- High Priority Tasks -->
+            <div class="priority-section">
+                <h4 style="font-size: 14px; font-weight: 600; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;">
+                    <span>🚩 High Priority Tasks</span>
+                    <span id="dashPriorityCount" style="font-size: 11px; color: var(--text-dim); background: var(--bg-subtle); padding: 2px 6px; border-radius: 10px;">0</span>
+                </h4>
+                <div id="dashPriorityList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                    <!-- High priority tasks will go here -->
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <button type="button" id="dashboardModalClose" class="primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmDeleteModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3 id="confirmDeleteTitle">Delete Task</h3>
+            <p id="confirmDeleteMessage" style="margin: 16px 0 24px; color: var(--text-dim); font-size: 14px;"></p>
+            <div class="modal-actions">
+                <button type="button" id="confirmDeleteCancel" class="ghost-button">No</button>
+                <button type="button" id="confirmDeleteConfirm" class="primary">Yes</button>
+            </div>
         </div>
     </div>
 
@@ -227,45 +324,7 @@
         </div>
     </div>
 
-    <!-- Keyboard Shortcuts Modal -->
-    <div id="shortcutsModal" class="shortcuts-modal" hidden>
-        <div class="shortcuts-content">
-            <h3>Keyboard Shortcuts</h3>
-            <div class="shortcuts-list">
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Add new task</span>
-                    <kbd class="shortcut-key">N</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Search tasks</span>
-                    <kbd class="shortcut-key">/</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Toggle theme</span>
-                    <kbd class="shortcut-key">T</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Show all tasks</span>
-                    <kbd class="shortcut-key">A</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Show active tasks</span>
-                    <kbd class="shortcut-key">1</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Show completed tasks</span>
-                    <kbd class="shortcut-key">2</kbd>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-desc">Close this dialog</span>
-                    <kbd class="shortcut-key">ESC</kbd>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="shortcutsClose" class="primary">Got it</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Profile Modal -->
     <div id="profileModal" class="modal" hidden>
