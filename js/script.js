@@ -23,6 +23,7 @@
   /** @type {Record<string, { id: string; title: string; completed: boolean; createdAt: number; updatedAt: number; completedAt?: number | null; }[]>} */
   let tasksByFolder = {};
   let currentFolderId = null;
+  let currentView = 'tasks'; // tasks | dashboard
   let activeFilter = 'all'; // all | active | completed
   let searchQuery = '';
   let selectedMonth = ''; // '' for all months, or 'YYYY-MM' format
@@ -48,6 +49,12 @@
   const getCurrentTasks = () => {
     if (!currentFolderId) return [];
     return tasksByFolder[currentFolderId] || [];
+  };
+
+  const isCurrentFolderLocked = () => {
+    if (!currentFolderId) return false;
+    const folder = folders.find(f => f.id === currentFolderId);
+    return folder ? !!folder.locked : false;
   };
 
   /**
@@ -104,14 +111,25 @@
       confirmDeleteCancel: document.getElementById('confirmDeleteCancel'),
       confirmDeleteConfirm: document.getElementById('confirmDeleteConfirm'),
       dashboardBtn: document.getElementById('dashboardBtn'),
-      dashboardModal: document.getElementById('dashboardModal'),
-      dashboardModalClose: document.getElementById('dashboardModalClose'),
+      tasksView: document.getElementById('tasksView'),
+      dashboardView: document.getElementById('dashboardView'),
       dashCompletionRate: document.getElementById('dashCompletionRate'),
       dashCurrentStreak: document.getElementById('dashCurrentStreak'),
+      dashMaxStreak: document.getElementById('dashMaxStreak'),
+      dashActiveTasks: document.getElementById('dashActiveTasks'),
+      dashAvgTime: document.getElementById('dashAvgTime'),
       dashBusiestDay: document.getElementById('dashBusiestDay'),
       dashListDistribution: document.getElementById('dashListDistribution'),
       dashPriorityList: document.getElementById('dashPriorityList'),
       accentColorContainer: document.getElementById('accentColorContainer'),
+      lockToggleBtn: document.getElementById('lockToggleBtn'),
+      lockToggleIcon: document.getElementById('lockToggleIcon'),
+      lockToggleText: document.getElementById('lockToggleText'),
+      activeListNameDisplay: document.getElementById('activeListNameDisplay'),
+      toggleChartBtn: document.getElementById('toggleChartBtn'),
+      changelogBtn: document.getElementById('changelogBtn'),
+      changelogModal: document.getElementById('changelogModal'),
+      changelogModalClose: document.getElementById('changelogModalClose'),
     };
   }
 
@@ -166,9 +184,24 @@
     root.setAttribute('data-theme', next);
     writeStorage(STORAGE_KEYS.theme, next);
     applyAccentColor();
-    if (el.dashboardModal && !el.dashboardModal.hidden) {
+    if (currentView === 'dashboard') {
       renderAccentColorPicker();
     }
+  }
+
+  function cycleAccentColor() {
+    const keys = Object.keys(ACCENT_COLORS);
+    const currentAccent = readStorage('tm_accent_color', 'green');
+    let nextIndex = (keys.indexOf(currentAccent) + 1) % keys.length;
+    if (nextIndex === -1) nextIndex = 0;
+    const nextAccent = keys[nextIndex];
+    
+    writeStorage('tm_accent_color', nextAccent);
+    applyAccentColor();
+    if (currentView === 'dashboard') {
+      renderAccentColorPicker();
+    }
+    render();
   }
 
   function initTheme() {
@@ -261,8 +294,18 @@
   function switchFolder(id) {
     if (!folders.find(f => f.id === id)) return;
     currentFolderId = id;
+    currentView = 'tasks';
     writeStorage(STORAGE_KEYS.currentFolder, currentFolderId);
     renderFolders();
+    render();
+  }
+
+  function toggleCurrentFolderLock() {
+    if (!currentFolderId) return;
+    const folder = folders.find(f => f.id === currentFolderId);
+    if (!folder) return;
+    folder.locked = !folder.locked;
+    persistFolders();
     render();
   }
 
@@ -411,7 +454,7 @@
 
     filteredFolders.forEach(folder => {
       const li = document.createElement('li');
-      li.className = `folder-item${folder.id === currentFolderId ? ' active' : ''}`;
+      li.className = `folder-item${(folder.id === currentFolderId && currentView === 'tasks') ? ' active' : ''}`;
       li.dataset.folderId = folder.id;
 
       const name = document.createElement('span');
@@ -539,11 +582,48 @@
   }
 
   function render() {
+    if (currentView === 'dashboard') {
+      if (el.tasksView) el.tasksView.style.display = 'none';
+      if (el.dashboardView) el.dashboardView.style.display = 'block';
+      if (el.dashboardBtn) el.dashboardBtn.classList.add('active');
+      renderDashboard();
+      return;
+    }
+
+    if (el.tasksView) el.tasksView.style.display = 'block';
+    if (el.dashboardView) el.dashboardView.style.display = 'none';
+    if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+
     const tasks = getCurrentTasks();
     const { total, completed, filtered } = getRenderData(tasks);
 
     // Render list description
     const currentFolder = folders.find(f => f.id === currentFolderId);
+    if (currentFolder) {
+      if (el.activeListNameDisplay) {
+        el.activeListNameDisplay.textContent = currentFolder.name;
+      }
+      const isLocked = !!currentFolder.locked;
+      if (el.lockToggleIcon) {
+        el.lockToggleIcon.innerHTML = isLocked 
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+      }
+      if (el.lockToggleText) {
+        el.lockToggleText.textContent = isLocked ? 'Locked' : 'Unlocked';
+      }
+      if (el.lockToggleBtn) {
+        el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
+      }
+      if (el.input) {
+        el.input.disabled = isLocked;
+        el.input.placeholder = isLocked ? 'This list is locked...' : 'Add a task...';
+      }
+      const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
+      if (addBtn) {
+        addBtn.disabled = isLocked;
+      }
+    }
     if (el.listDescriptionDisplay) {
       if (currentFolder && currentFolder.description) {
         el.listDescriptionDisplay.textContent = currentFolder.description;
@@ -604,8 +684,6 @@
     el.tasks.appendChild(fragment);
     // Activity
     renderActivity(tasks);
-    // Update month filter dropdown
-    populateMonthFilter();
   }
 
   function getRenderData(tasks) {
@@ -615,17 +693,6 @@
       // Filter by status (all/active/completed)
       if (activeFilter === 'active' && task.completed) return false;
       if (activeFilter === 'completed' && !task.completed) return false;
-
-      // Filter by year and month (createdAt-based for list)
-      if (selectedYear) {
-        const taskYear = new Date(task.createdAt).getFullYear().toString();
-        if (taskYear !== selectedYear) return false;
-      }
-      if (selectedMonth) {
-        const taskDate = new Date(task.createdAt);
-        const taskMonth = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}`;
-        if (taskMonth !== selectedMonth) return false;
-      }
 
       // Filter by search query
       if (searchQuery) {
@@ -711,8 +778,10 @@
     const priorityBtn = document.createElement('button');
     priorityBtn.type = 'button';
     priorityBtn.className = 'priority';
-    priorityBtn.textContent = task.highPriority ? '🚩' : '🏳️';
-    priorityBtn.setAttribute('title', task.highPriority ? 'Remove high priority' : 'Mark as high priority');
+    priorityBtn.innerHTML = task.highPriority 
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+    priorityBtn.title = task.highPriority ? 'Remove high priority' : 'Mark as high priority';
     priorityBtn.style.padding = '6px 8px';
     priorityBtn.style.fontSize = '12px';
     priorityBtn.style.border = 'none';
@@ -728,20 +797,20 @@
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'edit';
-    editBtn.textContent = 'Edit';
-
-
+    editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+    editBtn.title = 'Edit';
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'delete';
-    delBtn.textContent = 'Delete';
+    delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+    delBtn.title = 'Delete';
 
     const subToggle = document.createElement('button');
     subToggle.type = 'button';
     subToggle.className = 'ghost-button';
-    subToggle.textContent = '+'; // Minimal add button
-    subToggle.setAttribute('title', 'Add subtask');
+    subToggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'; 
+    subToggle.title = 'Add subtask';
 
     function renderSubtasks() {
       subList.innerHTML = '';
@@ -761,8 +830,12 @@
         const sDel = document.createElement('button');
         sDel.type = 'button';
         sDel.className = 'ghost-button danger small';
-        sDel.textContent = '×';
+        sDel.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         sDel.title = 'Delete subtask';
+        if (isCurrentFolderLocked()) {
+          sCb.style.display = 'none';
+          sDel.style.display = 'none';
+        }
         sCb.addEventListener('change', () => {
           const checked = sCb.checked;
           updateSubtask(task.id, sub.id, { completed: checked });
@@ -798,6 +871,15 @@
         expandedTasks.delete(task.id);
       }
     });
+
+    if (isCurrentFolderLocked()) {
+      checkbox.style.display = 'none';
+      editBtn.style.display = 'none';
+      delBtn.style.display = 'none';
+      subToggle.style.display = 'none';
+      priorityBtn.style.display = 'none';
+      subPanel.style.display = 'none';
+    }
 
     actions.append(priorityBtn, editBtn, delBtn, subToggle);
 
@@ -895,121 +977,7 @@
     }
   }
 
-  function populateMonthFilter() {
-    if (!el.monthFilter) return;
-
-    const tasks = getCurrentTasks();
-    const monthsSet = new Set();
-
-    // Add months from tasks (consider both createdAt and completedAt)
-    tasks.forEach(task => {
-      const sources = [task.createdAt, task.completedAt].filter(Boolean);
-      sources.forEach(ts => {
-        const d = new Date(ts);
-        const year = d.getFullYear();
-        const month = d.getMonth();
-        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-        // If a year is selected, only include months from that year
-        if (!selectedYear || selectedYear === String(year)) {
-          monthsSet.add(JSON.stringify({ key: monthKey, year, month }));
-        }
-      });
-    });
-
-    // Sort months (newest first)
-    const months = Array.from(monthsSet)
-      .map(str => JSON.parse(str))
-      .sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year;
-        return b.month - a.month;
-      });
-
-    // Store current selection
-    const currentSelection = el.monthFilter.value;
-
-    // Clear and populate dropdown
-    el.monthFilter.innerHTML = '<option value="">All Months</option>';
-    months.forEach(({ key, year, month }) => {
-      const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = monthName;
-      el.monthFilter.appendChild(option);
-    });
-
-    // Restore selection if it still exists
-    if (currentSelection && months.some(m => m.key === currentSelection)) {
-      el.monthFilter.value = currentSelection;
-    } else {
-      // Set saved value
-      const savedMonth = readStorage(STORAGE_KEYS.monthFilter, '');
-      if (savedMonth && months.some(m => m.key === savedMonth)) {
-        el.monthFilter.value = savedMonth;
-        selectedMonth = savedMonth;
-      } else {
-        el.monthFilter.value = '';
-        selectedMonth = '';
-      }
-    }
-  }
-
-  function populateYearFilter() {
-    if (!el.yearFilter) return;
-    const tasks = getCurrentTasks();
-    const yearsSet = new Set();
-    tasks.forEach(task => {
-      const sources = [task.createdAt, task.completedAt].filter(Boolean);
-      sources.forEach(ts => {
-        const y = new Date(ts).getFullYear();
-        yearsSet.add(y);
-      });
-    });
-    const years = Array.from(yearsSet).sort((a, b) => b - a);
-    const currentSelection = el.yearFilter.value;
-    el.yearFilter.innerHTML = '<option value="">All Years</option>';
-    years.forEach(y => {
-      const option = document.createElement('option');
-      option.value = String(y);
-      option.textContent = String(y);
-      el.yearFilter.appendChild(option);
-    });
-    if (currentSelection && years.includes(parseInt(currentSelection, 10))) {
-      el.yearFilter.value = currentSelection;
-    } else {
-      const savedYear = readStorage(STORAGE_KEYS.yearFilter, '');
-      if (savedYear && years.includes(parseInt(savedYear, 10))) {
-        el.yearFilter.value = savedYear;
-        selectedYear = savedYear;
-      } else {
-        el.yearFilter.value = '';
-        selectedYear = '';
-      }
-    }
-  }
-
-  function initMonthFilter() {
-    populateYearFilter();
-    populateMonthFilter();
-
-    el.monthFilter.addEventListener('change', () => {
-      selectedMonth = el.monthFilter.value;
-      writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
-      render();
-    });
-    if (el.yearFilter) {
-      el.yearFilter.addEventListener('change', () => {
-        selectedYear = el.yearFilter.value;
-        writeStorage(STORAGE_KEYS.yearFilter, selectedYear);
-        // Reset month if it no longer matches the selected year
-        if (selectedMonth && (!selectedYear || selectedMonth.split('-')[0] !== selectedYear)) {
-          selectedMonth = '';
-          writeStorage(STORAGE_KEYS.monthFilter, selectedMonth);
-        }
-        populateMonthFilter();
-        render();
-      });
-    }
-  }
+  // Removed month/year filter logic
 
   // Form
   function initForm() {
@@ -1577,7 +1545,7 @@
       if (e.ctrlKey || e.altKey || e.metaKey) return;
 
       const key = e.key.toLowerCase();
-      const isModalOpen = !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || (el.dashboardModal && !el.dashboardModal.hidden);
+      const isModalOpen = !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || (el.changelogModal && !el.changelogModal.hidden);
 
       if (e.key === 'Escape') {
         if (!el.folderModal.hidden) closeFolderModal();
@@ -1585,8 +1553,8 @@
         if (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) {
           closeConfirmDeleteModal(false);
         }
-        if (el.dashboardModal && !el.dashboardModal.hidden) {
-          closeDashboardModal();
+        if (el.changelogModal && !el.changelogModal.hidden) {
+          el.changelogModal.hidden = true;
         }
 
         const profileModal = document.getElementById('profileModal');
@@ -1613,6 +1581,17 @@
         setFilter('active');
       } else if (key === '2') {
         setFilter('completed');
+      } else if (key === 'l') {
+        e.preventDefault();
+        toggleCurrentFolderLock();
+      } else if (key === 's') {
+        e.preventDefault();
+        if (el.sidebarToggle) {
+          el.sidebarToggle.click();
+        }
+      } else if (key === 'c') {
+        e.preventDefault();
+        cycleAccentColor();
       }
     });
   }
@@ -1663,28 +1642,13 @@
   }
 
   function initDashboard() {
-    if (!el.dashboardBtn || !el.dashboardModal || !el.dashboardModalClose) return;
+    if (!el.dashboardBtn) return;
 
     el.dashboardBtn.addEventListener('click', () => {
-      renderDashboard();
-      el.dashboardModal.hidden = false;
-      el.dashboardModal.removeAttribute('hidden');
+      currentView = 'dashboard';
+      renderFolders();
+      render();
     });
-
-    el.dashboardModalClose.addEventListener('click', () => {
-      closeDashboardModal();
-    });
-
-    el.dashboardModal.addEventListener('click', (e) => {
-      if (e.target === el.dashboardModal) {
-        closeDashboardModal();
-      }
-    });
-  }
-
-  function closeDashboardModal() {
-    el.dashboardModal.hidden = true;
-    el.dashboardModal.setAttribute('hidden', '');
   }
 
   function renderDashboard() {
@@ -1717,17 +1681,19 @@
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (uniqueDates.length > 0) {
-      const firstDate = uniqueDates[0];
-      firstDate.setHours(0,0,0,0);
-      if (firstDate.getTime() === today.getTime() || firstDate.getTime() === yesterday.getTime()) {
+    const normalizedTimes = uniqueDates.map(d => {
+      const copy = new Date(d);
+      copy.setHours(0,0,0,0);
+      return copy.getTime();
+    });
+
+    if (normalizedTimes.length > 0) {
+      if (normalizedTimes[0] === today.getTime() || normalizedTimes[0] === yesterday.getTime()) {
         currentStreak = 1;
-        let expectedTime = firstDate.getTime();
-        for (let i = 1; i < uniqueDates.length; i++) {
+        let expectedTime = normalizedTimes[0];
+        for (let i = 1; i < normalizedTimes.length; i++) {
           expectedTime -= 24 * 60 * 60 * 1000;
-          const compareDate = uniqueDates[i];
-          compareDate.setHours(0,0,0,0);
-          if (compareDate.getTime() === expectedTime) {
+          if (normalizedTimes[i] === expectedTime) {
             currentStreak++;
           } else {
             break;
@@ -1736,6 +1702,63 @@
       }
     }
     el.dashCurrentStreak.textContent = `${currentStreak} day${currentStreak !== 1 ? 's' : ''}`;
+
+    let maxStreak = 0;
+    let tempStreak = 0;
+    if (normalizedTimes.length > 0) {
+      tempStreak = 1;
+      maxStreak = 1;
+      for (let i = 1; i < normalizedTimes.length; i++) {
+        const diff = normalizedTimes[i - 1] - normalizedTimes[i];
+        if (diff === 24 * 60 * 60 * 1000) {
+          tempStreak++;
+        } else if (diff > 24 * 60 * 60 * 1000) {
+          if (tempStreak > maxStreak) {
+            maxStreak = tempStreak;
+          }
+          tempStreak = 1;
+        }
+      }
+      if (tempStreak > maxStreak) {
+        maxStreak = tempStreak;
+      }
+    }
+    el.dashMaxStreak.textContent = `${maxStreak} day${maxStreak !== 1 ? 's' : ''}`;
+
+    let activeTasksCount = 0;
+    let totalCompletionTime = 0;
+    let completedCountWithDates = 0;
+    
+    Object.values(tasksByFolder).forEach(listTasks => {
+      listTasks.forEach(task => {
+        if (!task.completed) {
+          activeTasksCount++;
+        } else if (task.completedAt && task.createdAt) {
+          const diffMs = task.completedAt - task.createdAt;
+          if (diffMs >= 0) {
+            totalCompletionTime += diffMs;
+            completedCountWithDates++;
+          }
+        }
+      });
+    });
+
+    el.dashActiveTasks.textContent = activeTasksCount;
+
+    let avgCompletionTimeStr = "N/A";
+    if (completedCountWithDates > 0) {
+      const avgMs = totalCompletionTime / completedCountWithDates;
+      const avgHours = avgMs / (1000 * 60 * 60);
+      if (avgHours < 24) {
+        const roundedHours = Math.round(avgHours);
+        avgCompletionTimeStr = `${roundedHours} hour${roundedHours !== 1 ? 's' : ''}`;
+      } else {
+        const avgDays = avgHours / 24;
+        const roundedDays = Math.round(avgDays);
+        avgCompletionTimeStr = `${roundedDays} day${roundedDays !== 1 ? 's' : ''}`;
+      }
+    }
+    el.dashAvgTime.textContent = avgCompletionTimeStr;
 
     const weekdayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -1865,12 +1888,11 @@
 
           const right = document.createElement('button');
           right.type = 'button';
-          right.textContent = '×';
+          right.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
           right.style.border = 'none';
           right.style.background = 'transparent';
           right.style.cursor = 'pointer';
           right.style.color = 'var(--danger)';
-          right.style.fontSize = '16px';
           right.style.padding = '0 4px';
           right.setAttribute('title', 'Remove high priority');
           
@@ -1916,10 +1938,6 @@
       el.confirmDeleteModal.hidden = true;
       el.confirmDeleteModal.setAttribute('hidden', '');
     }
-    if (el.dashboardModal) {
-      el.dashboardModal.hidden = true;
-      el.dashboardModal.setAttribute('hidden', '');
-    }
 
     initElements(); // Must be first!
     load();
@@ -1927,26 +1945,88 @@
     initFolders();
     initFilters();
     initSearch();
-    initMonthFilter();
     initForm();
     initBulk();
     initImportExport();
     initConfirmDeleteModal();
     initDashboard();
+    initLockToggle();
+    initChartVisibility();
+    initChangelog();
     initKeyboardShortcuts();
     initSidebarToggle();
     renderFolders();
     render();
   }
 
+  function initLockToggle() {
+    if (!el.lockToggleBtn) return;
+    el.lockToggleBtn.addEventListener('click', () => {
+      toggleCurrentFolderLock();
+    });
+  }
+
+  function initChartVisibility() {
+    if (!el.toggleChartBtn) return;
+    
+    let isVisible = readStorage('tm_show_chart_v2', true);
+    
+    const updateVisibility = (visible) => {
+      const container = el.monthlyChart ? el.monthlyChart.closest('.chart-container') : null;
+      if (container) {
+        container.style.display = visible ? '' : 'none';
+      }
+      el.toggleChartBtn.textContent = visible ? 'Hide Chart' : 'Show Chart';
+    };
+    
+    updateVisibility(isVisible);
+    
+    el.toggleChartBtn.addEventListener('click', () => {
+      isVisible = !isVisible;
+      writeStorage('tm_show_chart_v2', isVisible);
+      updateVisibility(isVisible);
+    });
+  }
+
+  function initChangelog() {
+    if (!el.changelogBtn || !el.changelogModal) return;
+    
+    el.changelogModal.hidden = true;
+    el.changelogModal.setAttribute('hidden', '');
+    
+    el.changelogBtn.addEventListener('click', () => {
+      el.changelogModal.hidden = false;
+      el.changelogModal.removeAttribute('hidden');
+    });
+    
+    if (el.changelogModalClose) {
+      el.changelogModalClose.addEventListener('click', () => {
+        el.changelogModal.hidden = true;
+        el.changelogModal.setAttribute('hidden', '');
+      });
+    }
+    
+    el.changelogModal.addEventListener('click', (e) => {
+      if (e.target === el.changelogModal) {
+        el.changelogModal.hidden = true;
+        el.changelogModal.setAttribute('hidden', '');
+      }
+    });
+  }
+
   // Activity (monthly chart)
+  // Activity (contribution chart)
   function renderActivity(tasks) {
     if (!el.monthlyChart || !el.activityTotals) return;
-    const chartHeight = 180;
-    const chartWidth = 1000;
-    const padding = 40;
-    const plotHeight = chartHeight - padding * 2;
-    const plotWidth = chartWidth - padding * 2;
+    const boxSize = 12;
+    const boxGap = 4;
+    const daysInYear = 365;
+    
+    // 7 rows (Sunday - Saturday)
+    // 53 columns maximum for 365 days + starting offset
+    const chartHeight = 7 * (boxSize + boxGap);
+    const chartWidth = 53 * (boxSize + boxGap);
+
     let chartArea = el.monthlyChart.querySelector('#chartArea');
     if (!chartArea) {
       chartArea = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1954,135 +2034,119 @@
       el.monthlyChart.appendChild(chartArea);
     }
     chartArea.innerHTML = '';
+    el.monthlyChart.setAttribute('viewBox', `0 0 ${chartWidth} ${chartHeight}`);
 
-    // Helper to draw a single bar
-    const drawBar = (x, y, width, height, title) => {
-      if (height <= 0) return;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    // Create an array of the last 365 days
+    const days = [];
+    for (let i = daysInYear - 1; i >= 0; i--) {
+      const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      days.push({
+        date: d,
+        dateStr: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+        count: 0
+      });
+    }
+
+    // Tally completed tasks
+    let totalCompleted = 0;
+    tasks.forEach(t => {
+      if (!t.completedAt) return;
+      const d = new Date(t.completedAt);
+      const diffTime = today.getTime() - d.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays >= 0 && diffDays < daysInYear) {
+        const index = daysInYear - 1 - diffDays;
+        days[index].count += 1;
+        totalCompleted += 1;
+      }
+    });
+
+    if (el.activityLabel) {
+      el.activityLabel.textContent = `Activity in the last 365 days`;
+    }
+    el.activityTotals.textContent = `${totalCompleted} tasks`;
+
+    let tooltip = document.querySelector('.chart-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.className = 'chart-tooltip';
+      tooltip.style.position = 'absolute';
+      tooltip.style.display = 'none';
+      tooltip.style.background = 'var(--bg-panel)';
+      tooltip.style.border = '1px solid var(--border)';
+      tooltip.style.padding = '6px 12px';
+      tooltip.style.borderRadius = '6px';
+      tooltip.style.fontSize = '12px';
+      tooltip.style.color = 'var(--text)';
+      tooltip.style.pointerEvents = 'none';
+      tooltip.style.whiteSpace = 'nowrap';
+      tooltip.style.zIndex = '9999';
+      tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+      tooltip.style.fontWeight = '500';
+      tooltip.style.transition = 'opacity 0.2s';
+      tooltip.style.opacity = '0';
+      document.body.appendChild(tooltip);
+    }
+
+    // Determine max to scale colors
+    const max = Math.max(1, ...days.map(d => d.count));
+
+    // Determine starting column offset (day of week for the first day)
+    const firstDay = days[0].date.getDay(); 
+    let currentCol = 0;
+    let currentRow = firstDay;
+
+    days.forEach((day, i) => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const x = currentCol * (boxSize + boxGap);
+      const y = currentRow * (boxSize + boxGap);
+      
       rect.setAttribute('x', x);
       rect.setAttribute('y', y);
-      rect.setAttribute('width', width);
-      rect.setAttribute('height', height);
-      rect.setAttribute('fill', 'var(--accent)');
-      rect.setAttribute('rx', '2'); // rounded corners
-      if (title) {
-        const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        titleEl.textContent = title;
-        rect.appendChild(titleEl);
+      rect.setAttribute('width', boxSize);
+      rect.setAttribute('height', boxSize);
+      rect.setAttribute('rx', 3);
+      
+      if (day.count === 0) {
+        rect.setAttribute('fill', 'var(--border)'); // subtle grey/border color
+        rect.style.opacity = '0.4';
+      } else {
+        const intensity = Math.min(1, 0.3 + (day.count / max) * 0.7);
+        rect.setAttribute('fill', 'var(--accent)');
+        rect.style.opacity = intensity;
       }
+
+      rect.addEventListener('mouseenter', (e) => {
+        if (window.innerWidth <= 1024) return; // Disable tooltip on mobile
+        
+        tooltip.textContent = `${day.count} task${day.count === 1 ? '' : 's'} on ${day.dateStr}`;
+        tooltip.style.display = 'block';
+        tooltip.style.opacity = '1';
+        
+        const tooltipX = e.pageX;
+        const tooltipY = e.pageY - 30; // above cursor
+        
+        tooltip.style.left = `${tooltipX}px`;
+        tooltip.style.transform = 'translateX(-50%)';
+        tooltip.style.top = `${tooltipY}px`;
+      });
+      
+      rect.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+        tooltip.style.display = 'none';
+      });
+
       chartArea.appendChild(rect);
-    };
 
-    if (selectedMonth) {
-      // Days of the Month View
-      const parts = selectedMonth.split('-');
-      const ySel = parseInt(parts[0], 10);
-      const mSel = parseInt(parts[1], 10) - 1;
-      const daysInMonth = new Date(ySel, mSel + 1, 0).getDate();
-      const dayCounts = Array.from({ length: daysInMonth }, () => 0);
-      let totalCompleted = 0;
-      tasks.forEach(t => {
-        if (!t.completedAt) return;
-        const d = new Date(t.completedAt);
-        if (d.getFullYear() === ySel && d.getMonth() === mSel) {
-          const day = d.getDate() - 1;
-          dayCounts[day] += 1;
-          totalCompleted += 1;
-        }
-      });
-      const max = Math.max(1, ...dayCounts);
-
-      // Draw bars
-      const barWidth = Math.max(2, (plotWidth / daysInMonth) - 2); // Dynamic width
-      dayCounts.forEach((count, idx) => {
-        const xCenter = padding + (idx / (daysInMonth - 1)) * plotWidth; // rough positioning
-        // Better positioning for bars:
-        const x = padding + (idx * (plotWidth / daysInMonth)) + ((plotWidth / daysInMonth) - barWidth) / 2;
-
-        const barHeight = (count / max) * plotHeight;
-        const y = padding + plotHeight - barHeight;
-
-        drawBar(x, y, barWidth, barHeight, `${new Date(ySel, mSel, idx + 1).toLocaleDateString()}: ${count} tasks`);
-      });
-
-      // Axis labels (Simplified)
-      if (el.xAxisLabels) {
-        el.xAxisLabels.innerHTML = '';
-        const interval = daysInMonth > 20 ? 5 : 2;
-        for (let d = 1; d <= daysInMonth; d++) {
-          if (d === 1 || d === daysInMonth || d % interval === 0) {
-            const label = document.createElement('span');
-            label.textContent = String(d);
-            label.className = 'x-axis-label';
-            label.style.left = `${((d - 1) / (daysInMonth - 1)) * 100}%`;
-            el.xAxisLabels.appendChild(label);
-          }
-        }
+      currentRow++;
+      if (currentRow === 7) {
+        currentRow = 0;
+        currentCol++;
       }
-      if (el.activityLabel) {
-        const monthName = new Date(ySel, mSel, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-        el.activityLabel.textContent = `Completed • ${monthName}`;
-      }
-      el.activityTotals.textContent = `${totalCompleted} tasks`;
-
-      // Y-Axis
-      if (el.yAxisMax) {
-        el.yAxisMax.textContent = max;
-        el.yAxisMid.textContent = Math.round(max / 2);
-        el.yAxisMin.textContent = 0;
-      }
-
-    } else {
-      // Year View (Months)
-      const year = selectedYear ? parseInt(selectedYear, 10) : new Date().getFullYear();
-      const monthCounts = Array.from({ length: 12 }, () => 0);
-      let totalCompleted = 0;
-      tasks.forEach(t => {
-        if (!t.completedAt) return;
-        const d = new Date(t.completedAt);
-        if (d.getFullYear() === year) {
-          const month = d.getMonth();
-          monthCounts[month] += 1;
-          totalCompleted += 1;
-        }
-      });
-      const max = Math.max(1, ...monthCounts);
-
-      const barWidth = (plotWidth / 12) - 10; // Wider bars for months
-
-      monthCounts.forEach((count, idx) => {
-        const x = padding + (idx * (plotWidth / 12)) + ((plotWidth / 12) - barWidth) / 2;
-        const barHeight = (count / max) * plotHeight;
-        const y = padding + plotHeight - barHeight;
-
-        const monthName = new Date(year, idx, 1).toLocaleDateString('en-US', { month: 'long' });
-        drawBar(x, y, barWidth, barHeight, `${monthName}: ${count} tasks`);
-      });
-
-      if (el.yAxisMax) {
-        el.yAxisMax.textContent = max.toString();
-        el.yAxisMid.textContent = Math.ceil(max / 2).toString();
-        el.yAxisMin.textContent = '0';
-      }
-
-      if (el.xAxisLabels) {
-        el.xAxisLabels.innerHTML = '';
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        monthNames.forEach((monthName, idx) => {
-          const label = document.createElement('span');
-          label.textContent = monthName;
-          label.className = 'x-axis-label';
-          // Fix centering for month labels
-          label.style.left = `${(idx / 12 * 100) + (100 / 24)}%`;
-          label.style.transform = 'translateX(-50%)';
-          el.xAxisLabels.appendChild(label);
-        });
-      }
-      if (el.activityLabel) {
-        el.activityLabel.textContent = `Activity • ${year}`;
-      }
-      el.activityTotals.textContent = `${totalCompleted} tasks`;
-    }
+    });
   }
 
   function formatDateTime(ts) {
