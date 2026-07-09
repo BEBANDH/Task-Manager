@@ -59,6 +59,14 @@ body {
 
 /* Layout */
 .app-header {
+  --bg: #000000;
+  --bg-subtle: #1a1a1a;
+  --text: #ffffff;
+  --text-dim: #aaaaaa;
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #ffffff;
+  --primary-fg: #000000;
+
   position: sticky;
   top: 0;
   z-index: 100;
@@ -1109,7 +1117,7 @@ input[type="checkbox"] {
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid var(--primary);
+  border: 2px solid var(--accent);
   border-radius: 3px;
   background: transparent;
   cursor: pointer;
@@ -1118,7 +1126,8 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-  background: var(--primary);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 input[type="checkbox"]:checked::after {
