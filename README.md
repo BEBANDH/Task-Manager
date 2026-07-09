@@ -1,4 +1,4 @@
-# ⚡ Task Manager with Progress Tracker
+# ⚡ Squash: Squashing tasks like bugs...
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/yourusername/task-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -6,7 +6,7 @@
 [![Firebase Support](https://img.shields.io/badge/Firebase-Supported-orange.svg)](https://firebase.google.com/)
 [![Platform](https://img.shields.io/badge/platform-web-lightgrey.svg)](#)
 
-A beautiful, premium, and feature-rich Task Manager web application. Engineered with a modular frontend architecture, it supports multiple list folders, subtask trees, robust keyboard shortcuts, data export/import, active analytics, modifications lock, and real-time Firestore database synchronization with Google Sign-in.
+A beautiful, premium, and feature-rich task management web application. Engineered with a modular frontend architecture, it supports multiple list folders, subtask trees, robust keyboard shortcuts, data export/import, active analytics, modifications lock, and real-time Firestore database synchronization with Google Sign-in.
 
 ---
 
@@ -138,7 +138,7 @@ graph TD
 ```
 
 - **Separation of Concerns**: Core list rendering (`script.js`), cloud synchronization (`sync.js`), and user authentication (`auth.js`) are decoupled, ensuring the UI remains active and responsive regardless of network latency.
-- **Offline First**: The task manager remains fully functional offline, reading and writing to Browser `LocalStorage`. When a network connection is re-established, the sync manager reconciles changes with Firestore automatically.
+- **Offline First**: Squash remains fully functional offline, reading and writing to Browser `LocalStorage`. When a network connection is re-established, the sync manager reconciles changes with Firestore automatically.
 
 ---
 

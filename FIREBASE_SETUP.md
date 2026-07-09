@@ -4,14 +4,14 @@
 
 1. Go to https://console.firebase.google.com
 2. Click "Add project" or "Create a project"
-3. Enter project name (e.g., "Task Manager")
+3. Enter project name (e.g., "Squash")
 4. Disable Google Analytics (optional)
 5. Click "Create project"
 
 ## Step 2: Add Web App
 
 1. In your Firebase project, click the **Web** icon (</>)
-2. Register app nickname: "Task Manager Web"
+2. Register app nickname: "Squash Web"
 3. DON'T check "Set up Firebase Hosting"
 4. Click "Register app"
 5. **COPY the firebaseConfig object** - you'll need this!
@@ -68,7 +68,7 @@ Click "Publish"
 
 ## Step 7: Test Your App
 
-1. Open your Task Manager app
+1. Open your Squash app
 2. Click "Sign In" button
 3. Sign in with your Google account
 4. Your tasks will now sync across all devices!
