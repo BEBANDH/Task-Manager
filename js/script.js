@@ -229,11 +229,40 @@
     }
   }
 
+  const PASTEL_COLORS = {
+    green: { bg: '#bbf7d0', subtle: '#86efac', panel: '#dcfce7' },
+    blue: { bg: '#bfdbfe', subtle: '#93c5fd', panel: '#dbeafe' },
+    indigo: { bg: '#c7d2fe', subtle: '#a5b4fc', panel: '#e0e7ff' },
+    purple: { bg: '#e9d5ff', subtle: '#d8b4fe', panel: '#f3e8ff' },
+    pink: { bg: '#fbcfe8', subtle: '#f9a8d4', panel: '#fce7f3' },
+    red: { bg: '#fecaca', subtle: '#fca5a5', panel: '#fee2e2' },
+    orange: { bg: '#fed7aa', subtle: '#fdba74', panel: '#ffedd5' },
+    amber: { bg: '#fde68a', subtle: '#fcd34d', panel: '#fef3c7' },
+    teal: { bg: '#99f6e4', subtle: '#5eead4', panel: '#ccfbf1' },
+    cyan: { bg: '#a5f3fc', subtle: '#67e8f9', panel: '#cffafe' }
+  };
+
   function applyAccentColor() {
     const currentAccent = readStorage('tm_accent_color', 'green');
     const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent][theme] : ACCENT_COLORS.green[theme];
-    document.documentElement.style.setProperty('--accent', colorVal);
+    
+    if (theme === 'light') {
+      // In light mode, accent is black, background takes the pastel color
+      const pastel = PASTEL_COLORS[currentAccent] || PASTEL_COLORS.green;
+      document.documentElement.style.setProperty('--accent', '#000000');
+      document.documentElement.style.setProperty('--text', '#000000');
+      document.documentElement.style.setProperty('--bg', pastel.bg);
+      document.documentElement.style.setProperty('--bg-subtle', pastel.subtle);
+      document.documentElement.style.setProperty('--bg-panel', pastel.panel);
+    } else {
+      // In dark mode, reset light mode overrides and use standard dark accent
+      const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent].dark : ACCENT_COLORS.green.dark;
+      document.documentElement.style.setProperty('--accent', colorVal);
+      document.documentElement.style.removeProperty('--text');
+      document.documentElement.style.removeProperty('--bg');
+      document.documentElement.style.removeProperty('--bg-subtle');
+      document.documentElement.style.removeProperty('--bg-panel');
+    }
   }
 
   // Folders CRUD
@@ -780,8 +809,8 @@
     priorityBtn.type = 'button';
     priorityBtn.className = 'priority';
     priorityBtn.innerHTML = task.highPriority 
-      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
-      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
     priorityBtn.title = task.highPriority ? 'Remove high priority' : 'Mark as high priority';
     priorityBtn.style.padding = '6px 8px';
     priorityBtn.style.fontSize = '12px';
@@ -798,19 +827,19 @@
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'edit';
-    editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+    editBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
     editBtn.title = 'Edit';
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'delete';
-    delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+    delBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
     delBtn.title = 'Delete';
 
     const subToggle = document.createElement('button');
     subToggle.type = 'button';
     subToggle.className = 'ghost-button';
-    subToggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'; 
+    subToggle.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'; 
     subToggle.title = 'Add subtask';
 
     function renderSubtasks() {
@@ -1267,90 +1296,84 @@
 
   // Import from Excel
   function importFromExcel(file) {
-    if (!currentFolderId) {
-      alert('Please select a list to import into.');
-      return;
-    }
     const reader = new FileReader();
     reader.onload = function (e) {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        let totalImported = 0;
+        let newFoldersCreated = 0;
 
-        if (jsonData.length === 0) {
-          alert('The Excel file appears to be empty.');
-          return;
-        }
+        workbook.SheetNames.forEach(sheetName => {
+          const sheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(sheet);
+          
+          if (jsonData.length === 0) return;
 
-        // Ask user if they want to replace or merge
-        const shouldReplace = confirm(
-          `Found ${jsonData.length} tasks in the file.\n\n` +
-          'Click OK to replace all existing tasks in this list, or Cancel to merge with existing tasks.'
-        );
+          const importedTasks = [];
+          jsonData.forEach((row) => {
+            const title = row['Title'] || row['title'] || row['Task'] || row['task'] || row['Name'] || row['name'] || '';
+            const status = row['Status'] || row['status'] || row['Completed'] || row['completed'] || '';
+            const isCompleted = status.toString().toLowerCase() === 'completed' || status === true || status === 1;
 
-        const importedTasks = [];
-        jsonData.forEach((row, index) => {
-          // Try to map common column names
-          const title = row['Title'] || row['title'] || row['Task'] || row['task'] || row['Name'] || row['name'] || '';
-          const status = row['Status'] || row['status'] || row['Completed'] || row['completed'] || '';
-          const isCompleted = status.toString().toLowerCase() === 'completed' || status === true || status === 1;
+            if (title && title.toString().trim()) {
+              const createdDateStr = row['Created Date'] || row['created date'] || row['CreatedDate'] || '';
+              const createdTimeStr = row['Created Time'] || row['created time'] || row['CreatedTime'] || '';
+              const completedDateStr = row['Completed Date'] || row['completed date'] || row['CompletedDate'] || '';
+              const completedTimeStr = row['Completed Time'] || row['completed time'] || row['CompletedTime'] || '';
 
-          if (title && title.toString().trim()) {
-            // Parse dates from Excel
-            const createdDateStr = row['Created Date'] || row['created date'] || row['CreatedDate'] || '';
-            const createdTimeStr = row['Created Time'] || row['created time'] || row['CreatedTime'] || '';
-            const completedDateStr = row['Completed Date'] || row['completed date'] || row['CompletedDate'] || '';
-            const completedTimeStr = row['Completed Time'] || row['completed time'] || row['CompletedTime'] || '';
+              let createdAt = parseDateTime(createdDateStr, createdTimeStr);
+              if (!createdAt) createdAt = now();
 
-            // Parse created date/time
-            let createdAt = parseDateTime(createdDateStr, createdTimeStr);
-            if (!createdAt) {
-              createdAt = now(); // Fallback to current time if parsing fails
-            }
-
-            // Parse completed date/time
-            let completedAt = null;
-            if (isCompleted && completedDateStr) {
-              completedAt = parseDateTime(completedDateStr, completedTimeStr);
-              if (!completedAt) {
-                completedAt = createdAt; // Fallback to created date if parsing fails
+              let completedAt = null;
+              if (isCompleted && completedDateStr) {
+                completedAt = parseDateTime(completedDateStr, completedTimeStr);
+                if (!completedAt) completedAt = createdAt;
+              } else if (isCompleted) {
+                completedAt = createdAt;
               }
-            } else if (isCompleted) {
-              completedAt = createdAt; // Use created date if no completed date provided
+
+              importedTasks.push({
+                id: uid(),
+                title: title.toString().trim().slice(0, 120),
+                completed: isCompleted,
+                createdAt: createdAt,
+                updatedAt: completedAt || createdAt,
+                completedAt: completedAt,
+              });
+            }
+          });
+
+          if (importedTasks.length > 0) {
+            let finalFolderName = sheetName;
+            // Ensure unique name
+            let counter = 1;
+            while (folders.some(f => f.name.toLowerCase() === finalFolderName.toLowerCase())) {
+              finalFolderName = `${sheetName} (${counter})`;
+              counter++;
             }
 
-            importedTasks.push({
-              id: uid(),
-              title: title.toString().trim().slice(0, 120),
-              completed: isCompleted,
-              createdAt: createdAt,
-              updatedAt: completedAt || createdAt,
-              completedAt: completedAt,
-            });
+            const folderId = uid();
+            folders.push({ id: folderId, name: finalFolderName, createdAt: now() });
+            tasksByFolder[folderId] = importedTasks;
+            totalImported += importedTasks.length;
+            newFoldersCreated++;
+            currentFolderId = folderId; // Switch to the last imported list
           }
         });
 
-        if (importedTasks.length === 0) {
-          alert('No valid tasks found in the Excel file. Please ensure the file has a "Title" column.');
+        if (totalImported === 0) {
+          alert('No valid tasks found in the Excel file.');
           return;
         }
 
-        if (!tasksByFolder[currentFolderId]) {
-          tasksByFolder[currentFolderId] = [];
-        }
-
-        if (shouldReplace) {
-          tasksByFolder[currentFolderId] = importedTasks;
-        } else {
-          // Merge: add imported tasks to existing ones
-          tasksByFolder[currentFolderId] = [...importedTasks, ...tasksByFolder[currentFolderId]];
-        }
-
+        persistFolders();
         persistTasks();
+        persistCurrentFolder();
+        renderFolders();
         render();
-        alert(`Successfully imported ${importedTasks.length} task(s) into the current list.`);
+        alert(`Successfully imported ${totalImported} task(s) into ${newFoldersCreated} new list(s).`);
       } catch (error) {
         console.error('Import error:', error);
         alert('Error importing file. Please ensure it is a valid Excel file.');
@@ -2145,11 +2168,17 @@
     const boxSize = 12;
     const boxGap = 4;
     const daysInYear = 365;
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const firstDayDate = new Date(today.getTime() - (daysInYear - 1) * 24 * 60 * 60 * 1000);
+    const firstDay = firstDayDate.getDay();
     
-    // 7 rows (Sunday - Saturday)
-    // 53 columns maximum for 365 days + starting offset
-    const chartHeight = 7 * (boxSize + boxGap);
-    const chartWidth = 53 * (boxSize + boxGap);
+    // Vertical Chart: 14 columns (2 weeks per row)
+    const colsPerRow = 14;
+    const maxRows = Math.ceil((daysInYear + firstDay) / colsPerRow);
+    const chartWidth = colsPerRow * (boxSize + boxGap);
+    const chartHeight = maxRows * (boxSize + boxGap);
 
     let chartArea = el.monthlyChart.querySelector('#chartArea');
     if (!chartArea) {
@@ -2159,9 +2188,6 @@
     }
     chartArea.innerHTML = '';
     el.monthlyChart.setAttribute('viewBox', `0 0 ${chartWidth} ${chartHeight}`);
-
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
     
     // Create an array of the last 365 days
     const days = [];
@@ -2189,7 +2215,7 @@
     });
 
     if (el.activityLabel) {
-      el.activityLabel.textContent = `Activity in the last 365 days`;
+      el.activityLabel.textContent = `Activity (365 days)`;
     }
     el.activityTotals.textContent = `${totalCompleted} tasks`;
 
@@ -2219,14 +2245,13 @@
     const max = Math.max(1, ...days.map(d => d.count));
 
     // Determine starting column offset (day of week for the first day)
-    const firstDay = days[0].date.getDay(); 
-    let currentCol = 0;
-    let currentRow = firstDay;
+    let currentCol = firstDay; // x-axis (0-13)
+    let currentRow = 0; // y-axis (0 to maxRows-1)
 
     days.forEach((day, i) => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       const x = currentCol * (boxSize + boxGap);
-      const y = currentRow * (boxSize + boxGap);
+      const y = ((maxRows - 1) - currentRow) * (boxSize + boxGap);
       
       rect.setAttribute('x', x);
       rect.setAttribute('y', y);
@@ -2236,7 +2261,7 @@
       
       if (day.count === 0) {
         rect.setAttribute('fill', 'var(--border)'); // subtle grey/border color
-        rect.style.opacity = '0.4';
+        rect.style.opacity = '1';
       } else {
         const intensity = Math.min(1, 0.3 + (day.count / max) * 0.7);
         rect.setAttribute('fill', 'var(--accent)');
@@ -2265,10 +2290,10 @@
 
       chartArea.appendChild(rect);
 
-      currentRow++;
-      if (currentRow === 7) {
-        currentRow = 0;
-        currentCol++;
+      currentCol++;
+      if (currentCol === colsPerRow) {
+        currentCol = 0;
+        currentRow++;
       }
     });
   }

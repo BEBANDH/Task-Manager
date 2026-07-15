@@ -59,13 +59,7 @@ body {
 
 /* Layout */
 .app-header {
-  --bg: #000000;
-  --bg-subtle: #1a1a1a;
-  --text: #ffffff;
-  --text-dim: #aaaaaa;
-  --border: rgba(255, 255, 255, 0.1);
-  --primary: #ffffff;
-  --primary-fg: #000000;
+
 
   position: sticky;
   top: 0;
@@ -276,18 +270,18 @@ body {
 
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 20px;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  /* Sidebar | Main */
+  grid-template-columns: 280px 1fr 300px;
+  /* Sidebar | Main | Right Sidebar */
   gap: 40px;
   transition: grid-template-columns 0.3s ease;
 }
 
 .container.sidebar-collapsed {
-  grid-template-columns: 0px 1fr;
+  grid-template-columns: 0px 1fr 300px;
   gap: 0;
 }
 
@@ -308,6 +302,18 @@ body {
   width: 0;
   opacity: 0;
   pointer-events: none;
+}
+
+/* Right Sidebar */
+.right-panel {
+  position: sticky;
+  top: 80px;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 300px;
 }
 
 /* Sidebar */
