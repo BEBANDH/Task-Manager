@@ -111,8 +111,7 @@
                         </svg>
                         Dashboard
                     </button>
-                    <button id="clearCompleted" class="ghost-button" aria-label="Clear completed tasks"
-                        data-tooltip="Clear completed tasks">Clear Completed</button>
+
                 </section>
                 <div class="sidebar-shortcuts" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim);">
                     <div style="font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Shortcuts</div>
@@ -123,6 +122,7 @@
                         <span>Filters (All/Act/Cmp)</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">A / 1 / 2</kbd>
                         <span>Toggle Lock</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">L</kbd>
                         <span>Toggle Sidebar</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">S</kbd>
+                        <span>Cycle List</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">Alt+T</kbd>
                         <span>Cycle Color</span><kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-family: monospace;">C</kbd>
                     </div>
                 </div>
@@ -296,6 +296,16 @@
                     </h4>
                     <div id="dashPriorityList"></div>
                 </div>
+                </div>
+
+                <!-- Bulk Actions -->
+                <div class="bulk-actions-section" style="margin-top: 32px;">
+                    <h4>Bulk Actions</h4>
+                    <button id="dashClearCompletedBtn" class="ghost-button" style="color: var(--danger); border-color: var(--danger); opacity: 0.8;" aria-label="Clear completed tasks">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Clear Completed Tasks
+                    </button>
+                </div>
             </div>
         </div>
     </main>
@@ -347,6 +357,31 @@
         </div>
     </div>
 
+    <!-- Clear Completed Multiple Lists Modal -->
+    <div id="clearMultipleModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3>Select Lists to Clear Completed Tasks</h3>
+            <div id="clearListsContainer" class="export-lists-container"></div>
+            <div class="modal-actions">
+                <button type="button" id="clearMultipleCancel" class="ghost-button">Cancel</button>
+                <button type="button" id="clearMultipleSelectAll" class="ghost-button">Select All</button>
+                <button type="button" id="clearMultipleProceed" class="primary" style="background-color: var(--danger);">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Clear Completed Multiple Modal -->
+    <div id="confirmClearMultipleModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3 style="color: var(--danger);">Warning</h3>
+            <p style="margin: 16px 0 24px; color: var(--text-dim); font-size: 14px;">Are you sure you want to permanently clear all completed tasks from the selected lists? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button type="button" id="confirmClearMultipleCancel" class="ghost-button">No, Cancel</button>
+                <button type="button" id="confirmClearMultipleConfirm" class="primary" style="background-color: var(--danger);">Yes, Clear Tasks</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Changelog & Features Modal -->
     <div id="changelogModal" class="modal" hidden>
         <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 80vh; overflow-y: auto;">
@@ -355,10 +390,23 @@
             </h3>
             
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 3.0 (Current) -->
+                <!-- Version 4.0 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v3.0 (Current Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v4.0 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
+                    </div>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>Dashboard Bulk Actions</strong>: Moved "Clear Completed" to the Dashboard and added selective multi-list clearing.</li>
+                        <li><strong>List Cycling Shortcut</strong>: Added <kbd>Alt+T</kbd> to quickly cycle through your task lists.</li>
+                        <li><strong>UI Fixes</strong>: Improved styling and layout of modal checklist items.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 3.0 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v3.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">

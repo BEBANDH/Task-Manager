@@ -130,6 +130,15 @@
       changelogBtn: document.getElementById('changelogBtn'),
       changelogModal: document.getElementById('changelogModal'),
       changelogModalClose: document.getElementById('changelogModalClose'),
+      dashClearCompletedBtn: document.getElementById('dashClearCompletedBtn'),
+      clearMultipleModal: document.getElementById('clearMultipleModal'),
+      clearListsContainer: document.getElementById('clearListsContainer'),
+      clearMultipleCancel: document.getElementById('clearMultipleCancel'),
+      clearMultipleSelectAll: document.getElementById('clearMultipleSelectAll'),
+      clearMultipleProceed: document.getElementById('clearMultipleProceed'),
+      confirmClearMultipleModal: document.getElementById('confirmClearMultipleModal'),
+      confirmClearMultipleCancel: document.getElementById('confirmClearMultipleCancel'),
+      confirmClearMultipleConfirm: document.getElementById('confirmClearMultipleConfirm'),
     };
   }
 
@@ -397,15 +406,7 @@
     }
   }
 
-  function clearCompleted() {
-    if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
-    const tasks = tasksByFolder[currentFolderId];
-    const anyCompleted = tasks.some(t => t.completed);
-    if (!anyCompleted) return;
-    tasksByFolder[currentFolderId] = tasks.filter(t => !t.completed);
-    persistTasks();
-    render();
-  }
+
 
   function addSubtask(taskId, title) {
     const tasks = getCurrentTasks();
@@ -999,7 +1000,116 @@
 
   // Bulk actions
   function initBulk() {
-    el.clearCompleted.addEventListener('click', clearCompleted);
+    if (el.dashClearCompletedBtn) {
+      el.dashClearCompletedBtn.addEventListener('click', openClearMultipleModal);
+    }
+    
+    if (el.clearMultipleCancel) el.clearMultipleCancel.addEventListener('click', closeClearMultipleModal);
+    if (el.confirmClearMultipleCancel) el.confirmClearMultipleCancel.addEventListener('click', closeConfirmClearMultipleModal);
+    
+    if (el.clearMultipleSelectAll) {
+      el.clearMultipleSelectAll.addEventListener('click', () => {
+        const checkboxes = el.clearListsContainer.querySelectorAll('.export-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        el.clearMultipleSelectAll.textContent = allChecked ? 'Select All' : 'Deselect All';
+      });
+    }
+
+    if (el.clearMultipleProceed) {
+      el.clearMultipleProceed.addEventListener('click', () => {
+        const checkboxes = el.clearListsContainer.querySelectorAll('.export-checkbox:checked');
+        if (checkboxes.length === 0) {
+          alert('Please select at least one list.');
+          return;
+        }
+        openConfirmClearMultipleModal();
+      });
+    }
+
+    if (el.confirmClearMultipleConfirm) {
+      el.confirmClearMultipleConfirm.addEventListener('click', () => {
+        const checkboxes = el.clearListsContainer.querySelectorAll('.export-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+        executeClearMultipleLists(selectedIds);
+      });
+    }
+  }
+
+  function openClearMultipleModal() {
+    if (folders.length === 0) return;
+    el.clearMultipleModal.hidden = false;
+    el.clearMultipleModal.removeAttribute('hidden');
+    el.clearListsContainer.innerHTML = '';
+    
+    let hasAnyCompleted = false;
+    folders.forEach(folder => {
+      const folderTasks = tasksByFolder[folder.id] || [];
+      const completedCount = folderTasks.filter(t => t.completed).length;
+      if (completedCount === 0) return;
+      hasAnyCompleted = true;
+      
+      const label = document.createElement('label');
+      label.className = 'export-list-item';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = folder.id;
+      checkbox.checked = true;
+      checkbox.className = 'export-checkbox';
+      
+      const span = document.createElement('span');
+      span.textContent = `${folder.name} (${completedCount} completed)`;
+      
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      el.clearListsContainer.appendChild(label);
+    });
+    
+    if (!hasAnyCompleted) {
+      el.clearListsContainer.innerHTML = '<p style="color: var(--text-dim); font-size: 14px; text-align: center; padding: 20px 0;">No completed tasks found in any list.</p>';
+      el.clearMultipleSelectAll.style.display = 'none';
+      el.clearMultipleProceed.style.display = 'none';
+    } else {
+      el.clearMultipleSelectAll.style.display = 'inline-block';
+      el.clearMultipleProceed.style.display = 'inline-block';
+      el.clearMultipleSelectAll.textContent = 'Deselect All';
+    }
+  }
+
+  function closeClearMultipleModal() {
+    if (el.clearMultipleModal) el.clearMultipleModal.hidden = true;
+  }
+
+  function openConfirmClearMultipleModal() {
+    el.clearMultipleModal.hidden = true;
+    el.confirmClearMultipleModal.hidden = false;
+    el.confirmClearMultipleModal.removeAttribute('hidden');
+  }
+  
+  function closeConfirmClearMultipleModal() {
+    el.confirmClearMultipleModal.hidden = true;
+    if (el.clearMultipleModal) {
+      el.clearMultipleModal.hidden = false;
+      el.clearMultipleModal.removeAttribute('hidden');
+    }
+  }
+
+  function executeClearMultipleLists(selectedIds) {
+    let totalCleared = 0;
+    selectedIds.forEach(folderId => {
+      const folderTasks = tasksByFolder[folderId] || [];
+      const beforeCount = folderTasks.length;
+      tasksByFolder[folderId] = folderTasks.filter(t => !t.completed);
+      totalCleared += (beforeCount - tasksByFolder[folderId].length);
+    });
+    
+    if (totalCleared > 0) {
+      persistTasks();
+      render();
+    }
+    
+    el.confirmClearMultipleModal.hidden = true;
   }
 
   // Export to Excel
@@ -1532,6 +1642,14 @@
     });
   }
 
+  function cycleFolder() {
+    if (folders.length <= 1) return;
+    const currentIndex = folders.findIndex(f => f.id === currentFolderId);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % folders.length;
+    switchFolder(folders[nextIndex].id);
+  }
+
   // Keyboard Shortcuts
   function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
@@ -1539,6 +1657,12 @@
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable;
 
       if (isInput && e.key !== 'Escape') {
+        return;
+      }
+
+      if (e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        cycleFolder();
         return;
       }
 
