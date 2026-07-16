@@ -1,50 +1,69 @@
 :root {
   color-scheme: dark light;
 
-  /* Premium Minimalist B&W Theme */
-  --bg: #ffffff;
-  --bg-subtle: #f8f8f8;
-  --bg-panel: #fafafa;
-  --text: #000000;
-  --text-dim: #999999;
-  --text-muted: rgba(0, 0, 0, 0.4);
+  /* Premium Slate-based Soft Theme */
+  --bg: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-panel: #ffffff;
+  --text: #0f172a;
+  --text-dim: #475569;
+  --text-muted: #64748b;
 
-  --border: #e5e5e5;
-  --border-active: #000000;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-active: #0f172a;
+  --chart-empty: #e5e7eb;
 
-  --primary: #000000;
+  --primary: #0f172a;
   --primary-fg: #ffffff;
-  --accent: #22c55e;
-  /* Jade green for chart */
+  --accent: #10b981;
+  --accent-gradient: linear-gradient(135deg, #10b981, #14b8a6);
+  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 12px -1px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
 
   --danger: #ef4444;
-  --success: #22c55e;
+  --success: #10b981;
 
-  --font-main: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-main: "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
+  --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --radius: 8px;
 }
 
 [data-theme="dark"] {
-  --bg: #000000;
-  --bg-subtle: #0B0B0B;
-  --bg-panel: #121212;
-  --text: #ffffff;
-  --text-dim: #999999;
-  --text-muted: rgba(255, 255, 255, 0.6);
+  --bg: #0b0f19;
+  --bg-subtle: #131924;
+  --bg-panel: #172033;
+  --text: #f8fafc;
+  --text-dim: #94a3b8;
+  --text-muted: #64748b;
 
-  --border: rgba(255, 255, 255, 0.1);
-  --border-active: #ffffff;
+  --border: #1e293b;
+  --border-active: #f8fafc;
+  --chart-empty: #1e293b;
 
-  --primary: #ffffff;
-  --primary-fg: #000000;
-  --accent: #4ade80;
-  /* Brighter green for dark mode */
+  --primary: #f8fafc;
+  --primary-fg: #0b0f19;
+  --accent: #34d399;
+  --accent-gradient: linear-gradient(135deg, #34d399, #2dd4bf);
+  --accent-glow: color-mix(in srgb, var(--accent) 25%, transparent);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 10px 20px -3px rgba(0, 0, 0, 0.3), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
 }
 
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) transparent;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+::-moz-selection {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 body {
@@ -64,8 +83,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--bg);
-  /* Solid background prevents transparency issues */
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 12px 20px;
   display: flex;
@@ -102,13 +122,14 @@ body {
 }
 
 .app-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   margin: 0;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--text);
+  gap: 12px;
+  font-family: var(--font-display);
   transition: transform 0.2s ease;
 }
 
@@ -220,6 +241,7 @@ body {
   font-size: 18px;
   font-weight: 600;
   color: var(--text);
+  font-family: var(--font-display);
 }
 
 .profile-info p {
@@ -340,6 +362,7 @@ body {
   margin: 0;
   font-weight: 700;
   text-align: left;
+  font-family: var(--font-display);
 }
 
 .folders-list {
@@ -352,8 +375,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  padding-left: 12px;
+  padding: 8px 12px;
   border-radius: 0;
   cursor: pointer;
   color: var(--text-dim);
@@ -367,15 +389,15 @@ body {
   background: var(--bg-subtle);
   color: var(--text);
   padding-left: 16px;
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.02);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .folder-item.active {
   background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
+  color: var(--accent);
   font-weight: 600;
-  border-left: 2px solid var(--primary);
+  border-left: 2px solid var(--accent);
   padding-left: 14px;
 }
 
@@ -389,8 +411,8 @@ body {
 }
 
 .sidebar-actions {
-  margin-top: 32px;
-  padding-top: 24px;
+  margin-top: 24px;
+  padding-top: 16px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -425,6 +447,7 @@ body {
   font-weight: 600;
   margin: 0;
   color: var(--text);
+  font-family: var(--font-display);
 }
 
 .lock-toggle-btn {
@@ -534,14 +557,15 @@ button:hover {
 }
 
 button.primary {
-  background: var(--primary);
-  color: var(--primary-fg);
-  border-color: var(--primary);
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border: none;
 }
 
 button.primary:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px var(--accent-glow);
+  opacity: 0.95;
 }
 
 .icon-button,
@@ -600,6 +624,7 @@ button.delete {
   color: var(--text-muted);
   margin: 0;
   display: none;
+  font-family: var(--font-display);
 }
 
 #progressText {
@@ -633,9 +658,8 @@ button.delete {
   background: var(--bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
   padding: 16px 0;
-  margin: -12px 0 20px 0;
+  margin: -12px 0 8px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -706,6 +730,7 @@ button.delete {
   letter-spacing: 2px;
   margin: 0;
   font-weight: 700;
+  font-family: var(--font-display);
 }
 
 #activityTotals {
@@ -777,16 +802,16 @@ button.delete {
   border-radius: var(--radius);
   background: var(--bg-panel);
   gap: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   opacity: 1;
+  box-shadow: var(--shadow-sm);
 }
 
 .task:hover {
-  background: var(--bg-subtle);
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 6px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--border) 70%, var(--text));
 }
 
 .task:hover .drag-handle {
@@ -851,6 +876,7 @@ button.delete {
   transition: transform 0.2s ease;
   flex: 1;
   min-width: 0;
+  font-family: var(--font-display);
 }
 
 .task:hover .title {
@@ -960,7 +986,6 @@ button.delete {
 }
 
 .subtask.completed .sub-title {
-  text-decoration: line-through;
   color: var(--text-muted);
   opacity: 0.5;
 }
@@ -1025,17 +1050,77 @@ button.delete {
   padding: 18px;
   border-radius: var(--radius);
   background: var(--bg-panel);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
   text-align: left;
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
-  border-color: var(--text-dim);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Dashboard Specific Stat Card Coloring */
+.dashboard-grid .stat-card:nth-child(1) {
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--accent) 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(1) svg {
+  color: var(--accent) !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:nth-child(2) {
+  background: color-mix(in srgb, #f97316 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, #f97316 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(2) svg {
+  color: #f97316 !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:nth-child(3) {
+  background: color-mix(in srgb, #eab308 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, #eab308 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(3) svg {
+  color: #eab308 !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:nth-child(4) {
+  background: color-mix(in srgb, #3b82f6 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, #3b82f6 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(4) svg {
+  color: #3b82f6 !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:nth-child(5) {
+  background: color-mix(in srgb, #a855f7 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, #a855f7 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(5) svg {
+  color: #a855f7 !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:nth-child(6) {
+  background: color-mix(in srgb, #6366f1 5%, var(--bg-panel));
+  border-color: color-mix(in srgb, #6366f1 15%, var(--border));
+}
+.dashboard-grid .stat-card:nth-child(6) svg {
+  color: #6366f1 !important;
+  opacity: 0.25 !important;
+}
+
+.dashboard-grid .stat-card:hover {
+  border-color: color-mix(in srgb, var(--border) 50%, var(--text)) !important;
 }
 
 .stat-card .stat-value {
@@ -1136,15 +1221,25 @@ input[type="checkbox"]:checked {
   border-color: var(--accent);
 }
 
-input[type="checkbox"]:checked::after {
-  content: '✓';
+input[type="checkbox"]::after {
+  content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--primary-fg);
-  font-size: 12px;
-  font-weight: bold;
+  top: 45%;
+  left: 28%;
+  border-right: 2px solid var(--primary-fg);
+  border-bottom: 2px solid var(--primary-fg);
+  transform: rotate(45deg);
+  transform-origin: 0% 100%;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+input[type="checkbox"]:checked::after {
+  opacity: 1;
+  width: 4px;
+  height: 8px;
+  transition: width 0.1s ease-out, height 0.15s ease-out 0.1s;
 }
 
 /* Keyboard Shortcuts Modal */
@@ -1719,12 +1814,22 @@ input[type="checkbox"]:checked::after {
   display: block;
   margin: 0 auto;
 }
+
 .contribution-chart rect {
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
+
+.contribution-chart rect:not([fill="var(--chart-empty)"]) {
+  filter: drop-shadow(0 2px 4px var(--accent-glow));
+}
+
 .contribution-chart rect:hover {
   stroke: var(--text);
   stroke-width: 1.5px;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(1.1);
 }
 
 /* Modal List Checkbox Container */
@@ -1765,4 +1870,19 @@ input[type="checkbox"]:checked::after {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
+}
+
+/* Expandable Search */
+.expandable-search input:focus,
+.expandable-search input:not(:placeholder-shown) {
+  width: 200px !important;
+  opacity: 1 !important;
+  padding: 0 32px 0 12px !important;
+  outline: none;
+  border-color: var(--border) !important;
+  background: var(--bg-subtle) !important;
+}
+
+.expandable-search:focus-within button {
+  color: var(--text) !important;
 }

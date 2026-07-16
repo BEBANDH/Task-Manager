@@ -71,7 +71,7 @@
       progressText: document.getElementById('progressText'),
       progressBar: document.querySelector('.progress-bar'),
       progressFill: document.querySelector('.progress-fill'),
-      themeToggle: document.getElementById('themeToggle'),
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
       clearCompleted: document.getElementById('clearCompleted'),
       filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
       search: document.getElementById('searchInput'),
@@ -224,8 +224,8 @@
     document.documentElement.setAttribute('data-theme', theme);
     applyAccentColor();
 
-    if (el.themeToggle) {
-      el.themeToggle.addEventListener('click', toggleTheme);
+    if (el.themeToggleBtn) {
+      el.themeToggleBtn.addEventListener('click', toggleTheme);
     }
   }
 
@@ -242,9 +242,24 @@
     cyan: { bg: '#a5f3fc', subtle: '#67e8f9', panel: '#cffafe' }
   };
 
+  const GRADIENT_COLORS = {
+    green: { light: 'linear-gradient(135deg, #10b981, #059669)', dark: 'linear-gradient(135deg, #34d399, #059669)' },
+    blue: { light: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', dark: 'linear-gradient(135deg, #60a5fa, #2563eb)' },
+    indigo: { light: 'linear-gradient(135deg, #6366f1, #4f46e5)', dark: 'linear-gradient(135deg, #818cf8, #4f46e5)' },
+    purple: { light: 'linear-gradient(135deg, #a855f7, #7e22ce)', dark: 'linear-gradient(135deg, #c084fc, #7e22ce)' },
+    pink: { light: 'linear-gradient(135deg, #ec4899, #be185d)', dark: 'linear-gradient(135deg, #f472b6, #db2777)' },
+    red: { light: 'linear-gradient(135deg, #ef4444, #b91c1c)', dark: 'linear-gradient(135deg, #f87171, #dc2626)' },
+    orange: { light: 'linear-gradient(135deg, #f97316, #c2410c)', dark: 'linear-gradient(135deg, #fb923c, #ea580c)' },
+    amber: { light: 'linear-gradient(135deg, #f59e0b, #b45309)', dark: 'linear-gradient(135deg, #fbbf24, #d97706)' },
+    teal: { light: 'linear-gradient(135deg, #14b8a6, #0f766e)', dark: 'linear-gradient(135deg, #2dd4bf, #0d9488)' },
+    cyan: { light: 'linear-gradient(135deg, #06b6d4, #0891b2)', dark: 'linear-gradient(135deg, #22d3ee, #0891b2)' }
+  };
+
   function applyAccentColor() {
     const currentAccent = readStorage('tm_accent_color', 'green');
     const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    const gradVal = GRADIENT_COLORS[currentAccent] ? GRADIENT_COLORS[currentAccent][theme] : GRADIENT_COLORS.green[theme];
+    document.documentElement.style.setProperty('--accent-gradient', gradVal);
     
     if (theme === 'light') {
       // In light mode, accent is black, background takes the pastel color
@@ -254,6 +269,11 @@
       document.documentElement.style.setProperty('--bg', pastel.bg);
       document.documentElement.style.setProperty('--bg-subtle', pastel.subtle);
       document.documentElement.style.setProperty('--bg-panel', pastel.panel);
+      
+      if (el.themeToggleBtn) {
+        el.themeToggleBtn.querySelector('.theme-icon-light').style.display = 'block';
+        el.themeToggleBtn.querySelector('.theme-icon-dark').style.display = 'none';
+      }
     } else {
       // In dark mode, reset light mode overrides and use standard dark accent
       const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent].dark : ACCENT_COLORS.green.dark;
@@ -262,6 +282,11 @@
       document.documentElement.style.removeProperty('--bg');
       document.documentElement.style.removeProperty('--bg-subtle');
       document.documentElement.style.removeProperty('--bg-panel');
+      
+      if (el.themeToggleBtn) {
+        el.themeToggleBtn.querySelector('.theme-icon-light').style.display = 'none';
+        el.themeToggleBtn.querySelector('.theme-icon-dark').style.display = 'block';
+      }
     }
   }
 
@@ -347,20 +372,45 @@
     render();
   }
 
-  function persistFolders() {
-    writeStorage(STORAGE_KEYS.folders, folders);
-    // Trigger cloud sync if available
-    if (window.syncCurrentData) {
-      setTimeout(() => window.syncCurrentData(), 100);
-    }
+  let syncTimeoutId = null;
+  function triggerCloudSync() {
+    if (!window.syncCurrentData) return;
+    if (syncTimeoutId) clearTimeout(syncTimeoutId);
+    syncTimeoutId = setTimeout(() => {
+      window.syncCurrentData();
+    }, 1500);
   }
 
+  let persistFoldersTimeoutId = null;
+  function persistFolders() {
+    if (persistFoldersTimeoutId) clearTimeout(persistFoldersTimeoutId);
+    persistFoldersTimeoutId = setTimeout(() => {
+      const write = () => {
+        writeStorage(STORAGE_KEYS.folders, folders);
+        triggerCloudSync();
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(write);
+      } else {
+        write();
+      }
+    }, 300);
+  }
+
+  let persistTasksTimeoutId = null;
   function persistTasks() {
-    writeStorage(STORAGE_KEYS.tasks, tasksByFolder);
-    // Trigger cloud sync if available
-    if (window.syncCurrentData) {
-      setTimeout(() => window.syncCurrentData(), 100);
-    }
+    if (persistTasksTimeoutId) clearTimeout(persistTasksTimeoutId);
+    persistTasksTimeoutId = setTimeout(() => {
+      const write = () => {
+        writeStorage(STORAGE_KEYS.tasks, tasksByFolder);
+        triggerCloudSync();
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(write);
+      } else {
+        write();
+      }
+    }, 300);
   }
 
   // Tasks CRUD
@@ -380,13 +430,65 @@
     render();
   }
 
+  function updateTaskDOMState(task, tasks) {
+    const li = document.querySelector(`.task[data-id="${task.id}"]`);
+    if (!li) return;
+
+    // Toggle completed class
+    li.classList.toggle('completed', task.completed);
+
+    // Toggle checkbox state
+    const cb = li.querySelector('.checkbox');
+    if (cb) cb.checked = task.completed;
+
+    // If it violates active filter, remove from DOM with a smooth transition
+    if ((activeFilter === 'active' && task.completed) || (activeFilter === 'completed' && !task.completed)) {
+      li.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      li.style.opacity = '0';
+      li.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        li.remove();
+        // Check if we need to show empty state
+        const visibleTasks = el.tasks.querySelectorAll('.task');
+        el.empty.hidden = visibleTasks.length !== 0 || (searchQuery.length > 0 || activeFilter !== 'all' || selectedMonth);
+      }, 200);
+    }
+
+    // Update progress numbers and progress bar width
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.completed).length;
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+    if (el.progressText) {
+      el.progressText.textContent = `${percent}% • ${completed}/${total} completed`;
+    }
+    if (el.progressBar) {
+      el.progressBar.setAttribute('aria-valuenow', String(percent));
+    }
+    if (el.progressFill) {
+      el.progressFill.style.width = `${percent}%`;
+    }
+
+    // Snappily re-render activity heatmap SVG
+    renderActivity(tasks);
+  }
+
   function updateTask(id, updates) {
     if (!currentFolderId || !tasksByFolder[currentFolderId]) return;
     const index = tasksByFolder[currentFolderId].findIndex(t => t.id === id);
     if (index === -1) return;
-    tasksByFolder[currentFolderId][index] = { ...tasksByFolder[currentFolderId][index], ...updates, updatedAt: now() };
+    const task = { ...tasksByFolder[currentFolderId][index], ...updates, updatedAt: now() };
+    tasksByFolder[currentFolderId][index] = task;
     persistTasks();
-    render();
+    
+    // Check if it was ONLY a completion status toggle
+    const keys = Object.keys(updates);
+    const isOnlyCompletion = keys.length <= 2 && keys.every(k => k === 'completed' || k === 'completedAt');
+
+    if (isOnlyCompletion && currentView !== 'dashboard') {
+      updateTaskDOMState(task, tasksByFolder[currentFolderId]);
+    } else {
+      render();
+    }
   }
 
   async function deleteTask(id) {
@@ -993,16 +1095,25 @@
     const saved = readStorage(STORAGE_KEYS.search, '');
     el.search.value = saved;
     searchQuery = saved.toLowerCase();
+    
+    let searchDebounceId = null;
     el.search.addEventListener('input', () => {
-      searchQuery = el.search.value.trim().toLowerCase();
-      writeStorage(STORAGE_KEYS.search, el.search.value.trim());
-      render();
+      if (searchDebounceId) clearTimeout(searchDebounceId);
+      searchDebounceId = setTimeout(() => {
+        searchQuery = el.search.value.trim().toLowerCase();
+        writeStorage(STORAGE_KEYS.search, el.search.value.trim());
+        render();
+      }, 250);
     });
 
+    let listSearchDebounceId = null;
     if (el.listSearchInput) {
       el.listSearchInput.addEventListener('input', () => {
-        listSearchQuery = el.listSearchInput.value.trim().toLowerCase();
-        renderFolders();
+        if (listSearchDebounceId) clearTimeout(listSearchDebounceId);
+        listSearchDebounceId = setTimeout(() => {
+          listSearchQuery = el.listSearchInput.value.trim().toLowerCase();
+          renderFolders();
+        }, 200);
       });
     }
   }
@@ -2260,7 +2371,7 @@
       rect.setAttribute('rx', 3);
       
       if (day.count === 0) {
-        rect.setAttribute('fill', 'var(--border)'); // subtle grey/border color
+        rect.setAttribute('fill', 'var(--chart-empty)'); // light grey for empty days
         rect.style.opacity = '1';
       } else {
         const intensity = Math.min(1, 0.3 + (day.count / max) * 0.7);
