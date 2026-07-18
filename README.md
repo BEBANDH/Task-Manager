@@ -16,25 +16,21 @@ A beautiful, premium, and feature-rich task management web application. Engineer
 - **Multiple Lists (Folders)**: Seamlessly organize tasks into dedicated list containers (e.g. Work, Personal, Shopping).
 - **Subtasks tree**: Break complex tasks down into smaller checklists directly inside each task.
 - **Full Text Search**: Instantly look up tasks and folders.
-- **Date & Month Filtering**: Categorize and view tasks by creation years and months.
+- **Compact Card Layout**: Visual task items rendered as sleek two-column square cards.
 
 ### 📊 Productivity Analytics Dashboard
-- **Inline Dashboard Tab**: Switch between task lists and a integrated analytics layout with a single click.
-- **Metrics Tracking**:
-  - **Completion Rate**: Symmetrical progress rates of overall task execution.
-  - **Current & Max Daily Streaks**: Keep track of task completion continuity.
-  - **Most Productive Day**: Weekday-by-weekday productivity counters.
-  - **List Distribution**: Visual breakdown of completion metrics per list.
-- **Active Monthly Chart**: SVG line chart tracking task completions throughout the current year. (Visible/hidden via page header toggle button).
+- **Inline Dashboard Tab**: Switch between task lists and an integrated analytics layout with a single click.
+- **Metrics Tracking**: Symmetrical progress rates of overall task execution, current/max daily streaks, productive weekdays, and list distribution ratios.
+- **Large 365-day Heatmap**: Complete SVG matrix tracking daily completions over a 365-day grid (from Sunday to Saturday) with custom list filtering controls.
 
-### 🔒 Privacy, Security & Lock Options
-- **Modifications Locking**: Freeze a specific list using the lock toggle button (or <kbd>L</kbd> key) to hide completed tasks, checkboxes, edits, deletions, and additions, preventing accidental changes.
-- **Secure Cloud Sync**: Auto-sync all data in real-time to Google Firebase Firestore under secure user auth rules.
-- **Google Sign-In**: Authenticate using your Google Account to restore and secure lists across multiple devices.
+### ⏱️ Circular Focus Timer
+- **Accent Progress Ring**: A circular Pomodoro countdown timer in the sidebar with a visual progress indicator bounded to the active theme accent color.
+- **Quick Adjusters**: Presets (`-10m`, `-5m`, `+5m`, `+10m`) to easily increment or decrement time without tedious click iterations.
+- **Run Log History**: Displays recent focal records in the right sidebar.
 
-### 🎨 Personalization & Performance
-- **Minimalist Theme Layout**: Sleek light/dark modes responsive to system-level settings.
-- **Accent Color Palette**: Clean accent selectors (green, blue, purple, amber, cyan, etc.) to highlight key progress metrics and themes.
+### 🎨 Consolidated Settings Panel
+- **All-in-One Settings**: Control the **AMOLED Black theme toggle**, **Accent Color selectors**, **Bulk Actions** (clear completed from multiple lists), **In-App Changelog**, and **Shortcuts Cheatsheet** in a dedicated tab.
+- **Graphite Dark Default**: Deprecated light theme to provide a high-contrast dark environment.
 - **Backup & Portability**: Direct imports/exports of checklists to/from Microsoft Excel (`.xlsx`) files.
 - **High-Performance Navigation**: Lightning-fast hotkeys for fully mouse-free task management workflows.
 
@@ -50,7 +46,14 @@ Task-Manager-main/
 ├── FIREBASE_SETUP.md       # Firebase setup guidelines
 ├── README.md               # Repository documentation (this file)
 └── js/
-    ├── script.js           # Core state management, CRUD, rendering, and shortcuts
+    ├── main.js             # Orchestrator, view controllers, element caches, and startup setups
+    ├── state.js            # Central shared reactive variables and cloud-sync triggers
+    ├── storage.js          # Low-level LocalStorage read/write wrappers and cookie fallbacks
+    ├── dom.js              # Central shared UI elements cache object
+    ├── timer.js            # Pomodoro countdown algorithms and SVG progress ring bindings
+    ├── charts.js           # 365-day horizontal heatmaps and filter population
+    ├── folders.js          # Folder/list CRUD controllers, lock toggling, and modals
+    ├── tasks.js            # Task/subtask CRUD, priority updates, text editing, and item builders
     ├── config/
     │   ├── firebase-config.example.js  # Template configurations
     │   └── firebase-config.js          # Firestore secret credentials (ignored in git)
@@ -70,7 +73,6 @@ Task-Manager-main/
 | :---: | :--- | :--- |
 | <kbd>N</kbd> | Focus **Add Task** Input field | Anywhere (not typing) |
 | <kbd>/</kbd> | Focus **Search Tasks** Input field | Anywhere (not typing) |
-| <kbd>T</kbd> | Toggle Light / Dark Theme | Anywhere (not typing) |
 | <kbd>A</kbd> | Show **All** tasks | Anywhere (not typing) |
 | <kbd>1</kbd> | Show **Active** tasks | Anywhere (not typing) |
 | <kbd>2</kbd> | Show **Completed** tasks | Anywhere (not typing) |
@@ -137,7 +139,7 @@ graph TD
     Auth[Auth Engine Features/Auth/Auth.js] --> Sync
 ```
 
-- **Separation of Concerns**: Core list rendering (`script.js`), cloud synchronization (`sync.js`), and user authentication (`auth.js`) are decoupled, ensuring the UI remains active and responsive regardless of network latency.
+- **Separation of Concerns**: Core list rendering (`main.js`), cloud synchronization (`sync.js`), and user authentication (`auth.js`) are decoupled, ensuring the UI remains active and responsive regardless of network latency.
 - **Offline First**: Squash remains fully functional offline, reading and writing to Browser `LocalStorage`. When a network connection is re-established, the sync manager reconciles changes with Firestore automatically.
 
 ---
