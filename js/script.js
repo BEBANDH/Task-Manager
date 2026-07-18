@@ -71,7 +71,6 @@
       progressText: document.getElementById('progressText'),
       progressBar: document.querySelector('.progress-bar'),
       progressFill: document.querySelector('.progress-fill'),
-      themeToggleBtn: document.getElementById('themeToggleBtn'),
       clearCompleted: document.getElementById('clearCompleted'),
       filterButtons: Array.from(document.querySelectorAll('.filters .chip')),
       search: document.getElementById('searchInput'),
@@ -111,8 +110,11 @@
       confirmDeleteCancel: document.getElementById('confirmDeleteCancel'),
       confirmDeleteConfirm: document.getElementById('confirmDeleteConfirm'),
       dashboardBtn: document.getElementById('dashboardBtn'),
+      settingsBtn: document.getElementById('settingsBtn'),
       tasksView: document.getElementById('tasksView'),
       dashboardView: document.getElementById('dashboardView'),
+      settingsView: document.getElementById('settingsView'),
+      amoledToggle: document.getElementById('amoledToggle'),
       dashCompletionRate: document.getElementById('dashCompletionRate'),
       dashCurrentStreak: document.getElementById('dashCurrentStreak'),
       dashMaxStreak: document.getElementById('dashMaxStreak'),
@@ -139,6 +141,16 @@
       confirmClearMultipleModal: document.getElementById('confirmClearMultipleModal'),
       confirmClearMultipleCancel: document.getElementById('confirmClearMultipleCancel'),
       confirmClearMultipleConfirm: document.getElementById('confirmClearMultipleConfirm'),
+      dashboardContributionChart: document.getElementById('dashboardContributionChart'),
+      chartListSelector: document.getElementById('chartListSelector'),
+      timerDisplay: document.getElementById('pomodoroTimeDisplay'),
+      timerStartPauseBtn: document.getElementById('pomodoroStartBtn'),
+      timerResetBtn: document.getElementById('pomodoroResetBtn'),
+      timerHistory: document.getElementById('timerHistory'),
+      pomodoroCard: document.getElementById('pomodoroCard'),
+      pomodoroClockView: document.getElementById('pomodoroClockView'),
+      pomodoroStatusIcon: document.getElementById('pomodoroStatusIcon'),
+      pomodoroProgressRing: document.getElementById('pomodoroProgressRing'),
     };
   }
 
@@ -185,19 +197,6 @@
   }
 
   // Theme
-  // Theme logic removed
-  function toggleTheme() {
-    const root = document.documentElement;
-    const current = root.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    writeStorage(STORAGE_KEYS.theme, next);
-    applyAccentColor();
-    if (currentView === 'dashboard') {
-      renderAccentColorPicker();
-    }
-  }
-
   function cycleAccentColor() {
     const keys = Object.keys(ACCENT_COLORS);
     const currentAccent = readStorage('tm_accent_color', 'green');
@@ -214,79 +213,46 @@
   }
 
   function initTheme() {
-    // 1. Check storage
-    let theme = readStorage(STORAGE_KEYS.theme, null);
-    // 2. Fallback to system
-    if (!theme) {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    // 3. Apply
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', 'dark');
     applyAccentColor();
-
-    if (el.themeToggleBtn) {
-      el.themeToggleBtn.addEventListener('click', toggleTheme);
-    }
   }
 
-  const PASTEL_COLORS = {
-    green: { bg: '#bbf7d0', subtle: '#86efac', panel: '#dcfce7' },
-    blue: { bg: '#bfdbfe', subtle: '#93c5fd', panel: '#dbeafe' },
-    indigo: { bg: '#c7d2fe', subtle: '#a5b4fc', panel: '#e0e7ff' },
-    purple: { bg: '#e9d5ff', subtle: '#d8b4fe', panel: '#f3e8ff' },
-    pink: { bg: '#fbcfe8', subtle: '#f9a8d4', panel: '#fce7f3' },
-    red: { bg: '#fecaca', subtle: '#fca5a5', panel: '#fee2e2' },
-    orange: { bg: '#fed7aa', subtle: '#fdba74', panel: '#ffedd5' },
-    amber: { bg: '#fde68a', subtle: '#fcd34d', panel: '#fef3c7' },
-    teal: { bg: '#99f6e4', subtle: '#5eead4', panel: '#ccfbf1' },
-    cyan: { bg: '#a5f3fc', subtle: '#67e8f9', panel: '#cffafe' }
-  };
-
   const GRADIENT_COLORS = {
-    green: { light: 'linear-gradient(135deg, #10b981, #059669)', dark: 'linear-gradient(135deg, #34d399, #059669)' },
-    blue: { light: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', dark: 'linear-gradient(135deg, #60a5fa, #2563eb)' },
-    indigo: { light: 'linear-gradient(135deg, #6366f1, #4f46e5)', dark: 'linear-gradient(135deg, #818cf8, #4f46e5)' },
-    purple: { light: 'linear-gradient(135deg, #a855f7, #7e22ce)', dark: 'linear-gradient(135deg, #c084fc, #7e22ce)' },
-    pink: { light: 'linear-gradient(135deg, #ec4899, #be185d)', dark: 'linear-gradient(135deg, #f472b6, #db2777)' },
-    red: { light: 'linear-gradient(135deg, #ef4444, #b91c1c)', dark: 'linear-gradient(135deg, #f87171, #dc2626)' },
-    orange: { light: 'linear-gradient(135deg, #f97316, #c2410c)', dark: 'linear-gradient(135deg, #fb923c, #ea580c)' },
-    amber: { light: 'linear-gradient(135deg, #f59e0b, #b45309)', dark: 'linear-gradient(135deg, #fbbf24, #d97706)' },
-    teal: { light: 'linear-gradient(135deg, #14b8a6, #0f766e)', dark: 'linear-gradient(135deg, #2dd4bf, #0d9488)' },
-    cyan: { light: 'linear-gradient(135deg, #06b6d4, #0891b2)', dark: 'linear-gradient(135deg, #22d3ee, #0891b2)' }
+    green: 'linear-gradient(135deg, #34d399, #059669)',
+    blue: 'linear-gradient(135deg, #60a5fa, #2563eb)',
+    indigo: 'linear-gradient(135deg, #818cf8, #4f46e5)',
+    purple: 'linear-gradient(135deg, #a855f7, #7e22ce)',
+    pink: 'linear-gradient(135deg, #f472b6, #db2777)',
+    red: 'linear-gradient(135deg, #f87171, #dc2626)',
+    orange: 'linear-gradient(135deg, #fb923c, #ea580c)',
+    amber: 'linear-gradient(135deg, #fbbf24, #d97706)',
+    teal: 'linear-gradient(135deg, #2dd4bf, #0d9488)',
+    cyan: 'linear-gradient(135deg, #22d3ee, #0891b2)'
   };
 
   function applyAccentColor() {
     const currentAccent = readStorage('tm_accent_color', 'green');
-    const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    const gradVal = GRADIENT_COLORS[currentAccent] ? GRADIENT_COLORS[currentAccent][theme] : GRADIENT_COLORS.green[theme];
+    const gradVal = GRADIENT_COLORS[currentAccent] || GRADIENT_COLORS.green;
     document.documentElement.style.setProperty('--accent-gradient', gradVal);
     
-    if (theme === 'light') {
-      // In light mode, accent is black, background takes the pastel color
-      const pastel = PASTEL_COLORS[currentAccent] || PASTEL_COLORS.green;
-      document.documentElement.style.setProperty('--accent', '#000000');
-      document.documentElement.style.setProperty('--text', '#000000');
-      document.documentElement.style.setProperty('--bg', pastel.bg);
-      document.documentElement.style.setProperty('--bg-subtle', pastel.subtle);
-      document.documentElement.style.setProperty('--bg-panel', pastel.panel);
-      
-      if (el.themeToggleBtn) {
-        el.themeToggleBtn.querySelector('.theme-icon-light').style.display = 'block';
-        el.themeToggleBtn.querySelector('.theme-icon-dark').style.display = 'none';
-      }
+    // Always Dark mode accents
+    const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent].dark : ACCENT_COLORS.green.dark;
+    document.documentElement.style.setProperty('--accent', colorVal);
+    document.documentElement.style.removeProperty('--text');
+    
+    const amoled = readStorage('tm_amoled_theme', false);
+    if (amoled) {
+      document.documentElement.style.setProperty('--bg', '#000000');
+      document.documentElement.style.setProperty('--bg-subtle', '#0a0a0a');
+      document.documentElement.style.setProperty('--bg-panel', '#121212');
+      document.documentElement.style.setProperty('--border', '#262626');
+      document.documentElement.style.setProperty('--chart-empty', '#1a1a1a');
     } else {
-      // In dark mode, reset light mode overrides and use standard dark accent
-      const colorVal = ACCENT_COLORS[currentAccent] ? ACCENT_COLORS[currentAccent].dark : ACCENT_COLORS.green.dark;
-      document.documentElement.style.setProperty('--accent', colorVal);
-      document.documentElement.style.removeProperty('--text');
       document.documentElement.style.removeProperty('--bg');
       document.documentElement.style.removeProperty('--bg-subtle');
       document.documentElement.style.removeProperty('--bg-panel');
-      
-      if (el.themeToggleBtn) {
-        el.themeToggleBtn.querySelector('.theme-icon-light').style.display = 'none';
-        el.themeToggleBtn.querySelector('.theme-icon-dark').style.display = 'block';
-      }
+      document.documentElement.style.removeProperty('--border');
+      document.documentElement.style.removeProperty('--chart-empty');
     }
   }
 
@@ -469,7 +435,7 @@
     }
 
     // Snappily re-render activity heatmap SVG
-    renderActivity(tasks);
+    if (currentView === 'dashboard') renderDashboardChart();
   }
 
   function updateTask(id, updates) {
@@ -714,17 +680,31 @@
   }
 
   function render() {
+    if (currentView === 'settings') {
+      if (el.tasksView) el.tasksView.style.display = 'none';
+      if (el.dashboardView) el.dashboardView.style.display = 'none';
+      if (el.settingsView) el.settingsView.style.display = 'block';
+      if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+      if (el.settingsBtn) el.settingsBtn.classList.add('active');
+      renderAccentColorPicker();
+      return;
+    }
+
     if (currentView === 'dashboard') {
       if (el.tasksView) el.tasksView.style.display = 'none';
+      if (el.settingsView) el.settingsView.style.display = 'none';
       if (el.dashboardView) el.dashboardView.style.display = 'block';
       if (el.dashboardBtn) el.dashboardBtn.classList.add('active');
+      if (el.settingsBtn) el.settingsBtn.classList.remove('active');
       renderDashboard();
       return;
     }
 
     if (el.tasksView) el.tasksView.style.display = 'block';
     if (el.dashboardView) el.dashboardView.style.display = 'none';
+    if (el.settingsView) el.settingsView.style.display = 'none';
     if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+    if (el.settingsBtn) el.settingsBtn.classList.remove('active');
 
     const tasks = getCurrentTasks();
     const { total, completed, filtered } = getRenderData(tasks);
@@ -775,39 +755,8 @@
     // List
     el.tasks.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    let lastDateStr = null;
     filtered.forEach(task => {
       try {
-        const taskDate = new Date(task.createdAt);
-        const dateStr = taskDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-        
-        if (dateStr !== lastDateStr) {
-          const dateHeader = document.createElement('div');
-          dateHeader.className = 'task-date-header';
-          dateHeader.style.display = 'flex';
-          dateHeader.style.alignItems = 'center';
-          dateHeader.style.gap = '12px';
-          dateHeader.style.margin = '16px 0 8px 0';
-          
-          const text = document.createElement('span');
-          text.textContent = dateStr;
-          text.style.fontSize = '12px';
-          text.style.fontWeight = '600';
-          text.style.color = 'var(--text-dim)';
-          text.style.whiteSpace = 'nowrap';
-          
-          const hr = document.createElement('hr');
-          hr.style.flex = '1';
-          hr.style.border = 'none';
-          hr.style.borderTop = '1px solid var(--border)';
-          hr.style.margin = '0';
-          
-          dateHeader.append(text, hr);
-          fragment.appendChild(dateHeader);
-          
-          lastDateStr = dateStr;
-        }
-
         fragment.appendChild(renderTaskItem(task));
       } catch (err) {
         console.error('Render task failed', err);
@@ -815,7 +764,7 @@
     });
     el.tasks.appendChild(fragment);
     // Activity
-    renderActivity(tasks);
+    if (currentView === 'dashboard') renderDashboardChart();
   }
 
   function getRenderData(tasks) {
@@ -854,7 +803,7 @@
     const content = document.createElement('div');
     content.className = 'task-content-wrapper';
 
-    // Header (Title + Date)
+    // Header (Title only)
     const header = document.createElement('div');
     header.className = 'task-header';
 
@@ -866,12 +815,18 @@
     title.setAttribute('aria-label', 'Task title');
     title.contentEditable = 'false';
 
+    header.append(title);
+
+    // Meta Row (Date + Actions)
+    const metaRow = document.createElement('div');
+    metaRow.className = 'task-meta-row';
+
     const meta = document.createElement('span');
     meta.className = 'meta';
     const metaText = document.createTextNode(formatDateTime(task.createdAt));
     meta.appendChild(metaText);
 
-    header.append(title, meta);
+    metaRow.append(meta);
 
     // Subtasks List (Always Visible)
     const subList = document.createElement('ul');
@@ -902,7 +857,7 @@
     subForm.append(subInput, subAddBtn);
     subPanel.append(subForm);
 
-    content.append(header, subList, subPanel);
+    content.append(header, metaRow, subList, subPanel);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -1014,8 +969,9 @@
     }
 
     actions.append(priorityBtn, editBtn, delBtn, subToggle);
+    metaRow.append(actions);
 
-    li.append(checkbox, content, actions);
+    li.append(checkbox, content);
 
     // Editing behavior
     function enterEdit() {
@@ -1879,14 +1835,7 @@
       btn.setAttribute('title', colorKey.charAt(0).toUpperCase() + colorKey.slice(1));
       btn.setAttribute('aria-label', `Select ${colorKey} accent color`);
 
-      if (colorKey === currentAccent) {
-        const check = document.createElement('span');
-        check.textContent = '✓';
-        check.style.color = theme === 'dark' ? '#000000' : '#ffffff';
-        check.style.fontWeight = 'bold';
-        check.style.fontSize = '14px';
-        btn.appendChild(check);
-      }
+      // Checked state border indicates selection, no tick mark text needed.
 
       btn.addEventListener('click', () => {
         writeStorage('tm_accent_color', colorKey);
@@ -1904,13 +1853,37 @@
 
     el.dashboardBtn.addEventListener('click', () => {
       currentView = 'dashboard';
+      if (el.settingsBtn) el.settingsBtn.classList.remove('active');
       renderFolders();
       render();
     });
   }
 
+  function initSettings() {
+    if (!el.settingsBtn) return;
+
+    el.settingsBtn.addEventListener('click', () => {
+      currentView = 'settings';
+      if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+      renderFolders();
+      render();
+    });
+
+    if (el.amoledToggle) {
+      const amoled = readStorage('tm_amoled_theme', false);
+      el.amoledToggle.checked = amoled;
+      
+      el.amoledToggle.addEventListener('change', () => {
+        writeStorage('tm_amoled_theme', el.amoledToggle.checked);
+        applyAccentColor();
+        render();
+      });
+    }
+  }
+
   function renderDashboard() {
-    renderAccentColorPicker();
+    populateChartDropdown();
+    renderDashboardChart();
 
     let totalTasksCount = 0;
     let totalCompletedCount = 0;
@@ -2208,6 +2181,9 @@
     initImportExport();
     initConfirmDeleteModal();
     initDashboard();
+    initSettings();
+    initTimer();
+    initDashboardChart();
     initLockToggle();
     initChartVisibility();
     initChangelog();
@@ -2272,35 +2248,209 @@
     });
   }
 
-  // Activity (monthly chart)
-  // Activity (contribution chart)
-  function renderActivity(tasks) {
-    if (!el.monthlyChart || !el.activityTotals) return;
+  // Simple Timer State Variables
+  let timerDuration = parseInt(readStorage('tm_timer_duration', 25)) * 60; // default 25 minutes
+  let timerTimeLeft = timerDuration;
+  let isTimerRunning = false;
+  let timerInterval = null;
+  let timerHistoryData = [];
+
+  function initTimer() {
+    if (!el.timerDisplay) return;
+
+    timerHistoryData = readStorage('tm_timer_history', []);
+    renderTimerHistory();
+
+    // Quick adjuster controls (-10m, -5m, +5m, +10m)
+    document.querySelectorAll('.pomo-adjust-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const changeSecs = parseInt(btn.dataset.change) || 0;
+        
+        let newDuration = timerDuration + changeSecs;
+        // Bound between 1 minute (60s) and 180 minutes (10800s)
+        newDuration = Math.max(60, Math.min(10800, newDuration));
+        
+        timerDuration = newDuration;
+        writeStorage('tm_timer_duration', Math.round(timerDuration / 60));
+        
+        if (!isTimerRunning) {
+          timerTimeLeft = timerDuration;
+        } else {
+          timerTimeLeft = Math.max(0, Math.min(timerDuration, timerTimeLeft + changeSecs));
+        }
+        updateTimerUI();
+      });
+    });
+
+    // Main Control Handlers
+    el.timerStartPauseBtn.addEventListener('click', () => {
+      if (isTimerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    });
+
+    el.timerResetBtn.addEventListener('click', () => {
+      resetTimer();
+    });
+
+    // Initialize layout
+    updateTimerUI();
+  }
+
+  function startTimer() {
+    if (timerTimeLeft <= 0) return;
+    isTimerRunning = true;
+    updateTimerUI();
+
+    timerInterval = setInterval(() => {
+      timerTimeLeft--;
+      if (timerTimeLeft <= 0) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        
+        // Alert visually (flash)
+        alertVisualTimerFinished();
+
+        // Log completion to history
+        addTimerToHistory(timerDuration);
+      }
+      updateTimerUI();
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    isTimerRunning = false;
+    if (timerInterval) clearInterval(timerInterval);
+    updateTimerUI();
+  }
+
+  function resetTimer() {
+    pauseTimer();
+    timerTimeLeft = timerDuration;
+    updateTimerUI();
+  }
+
+  function updateTimerUI() {
+    // 1. Digital Display
+    const mins = Math.floor(timerTimeLeft / 60);
+    const secs = timerTimeLeft % 60;
+    const minStr = String(mins).padStart(2, '0');
+    const secStr = String(secs).padStart(2, '0');
+    if (el.timerDisplay) {
+      el.timerDisplay.textContent = `${minStr}:${secStr}`;
+    }
+
+    // 2. SVG Progress Ring
+    if (el.pomodoroProgressRing) {
+      const ringLength = 502.6; // Circumference of r=80 circle
+      const offset = timerDuration > 0 ? (1 - (timerTimeLeft / timerDuration)) * ringLength : 0;
+      el.pomodoroProgressRing.style.strokeDashoffset = offset;
+    }
+
+    // 3. Action button text & state
+    if (el.timerStartPauseBtn) {
+      el.timerStartPauseBtn.textContent = isTimerRunning ? 'PAUSE' : 'START';
+      if (isTimerRunning) {
+        el.timerStartPauseBtn.classList.add('active');
+      } else {
+        el.timerStartPauseBtn.classList.remove('active');
+      }
+    }
+  }
+
+  function alertVisualTimerFinished() {
+    const display = el.timerDisplay;
+    if (!display) return;
+    let count = 0;
+    const interval = setInterval(() => {
+      display.style.color = count % 2 === 0 ? 'var(--danger)' : 'var(--text)';
+      count++;
+      if (count >= 10) {
+        clearInterval(interval);
+        display.style.color = 'var(--text)';
+      }
+    }, 300);
+  }
+
+  function addTimerToHistory(durationSecs) {
+    const mins = Math.round(durationSecs / 60);
+    const date = new Date();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const logStr = `${mins}m completed at ${timeStr}`;
+    
+    timerHistoryData.unshift(logStr);
+    if (timerHistoryData.length > 5) {
+      timerHistoryData.pop();
+    }
+    writeStorage('tm_timer_history', timerHistoryData);
+    renderTimerHistory();
+  }
+
+  function renderTimerHistory() {
+    if (!el.timerHistory) return;
+    el.timerHistory.innerHTML = '';
+    if (timerHistoryData.length === 0) {
+      el.timerHistory.innerHTML = '<li style="font-style: italic;">No runs logged</li>';
+      return;
+    }
+    timerHistoryData.forEach(log => {
+      const li = document.createElement('span'); // make it display inline or as a block
+      li.textContent = log;
+      li.style.display = 'block';
+      li.style.borderBottom = '1px solid var(--border)';
+      li.style.padding = '6px 0';
+      el.timerHistory.appendChild(li);
+    });
+  }
+
+  function populateChartDropdown() {
+    if (!el.chartListSelector) return;
+    const currentVal = el.chartListSelector.value || 'all';
+    el.chartListSelector.innerHTML = '<option value="all">All Lists (Combined)</option>';
+    folders.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      el.chartListSelector.appendChild(opt);
+    });
+    if (Array.from(el.chartListSelector.options).some(opt => opt.value === currentVal)) {
+      el.chartListSelector.value = currentVal;
+    } else {
+      el.chartListSelector.value = 'all';
+    }
+  }
+
+  function initDashboardChart() {
+    if (!el.chartListSelector) return;
+    el.chartListSelector.addEventListener('change', () => {
+      renderDashboardChart();
+    });
+  }
+
+  function renderDashboardChart() {
+    const selector = el.chartListSelector;
+    const chart = el.dashboardContributionChart;
+    if (!selector || !chart) return;
+    
+    const selectedListId = selector.value || 'all';
+    
+    let filteredTasks = [];
+    if (selectedListId === 'all') {
+      Object.values(tasksByFolder).forEach(listTasks => {
+        filteredTasks = filteredTasks.concat(listTasks);
+      });
+    } else {
+      filteredTasks = tasksByFolder[selectedListId] || [];
+    }
+    
     const boxSize = 12;
     const boxGap = 4;
     const daysInYear = 365;
-
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const firstDayDate = new Date(today.getTime() - (daysInYear - 1) * 24 * 60 * 60 * 1000);
-    const firstDay = firstDayDate.getDay();
     
-    // Vertical Chart: 14 columns (2 weeks per row)
-    const colsPerRow = 14;
-    const maxRows = Math.ceil((daysInYear + firstDay) / colsPerRow);
-    const chartWidth = colsPerRow * (boxSize + boxGap);
-    const chartHeight = maxRows * (boxSize + boxGap);
-
-    let chartArea = el.monthlyChart.querySelector('#chartArea');
-    if (!chartArea) {
-      chartArea = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      chartArea.id = 'chartArea';
-      el.monthlyChart.appendChild(chartArea);
-    }
-    chartArea.innerHTML = '';
-    el.monthlyChart.setAttribute('viewBox', `0 0 ${chartWidth} ${chartHeight}`);
-    
-    // Create an array of the last 365 days
     const days = [];
     for (let i = daysInYear - 1; i >= 0; i--) {
       const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
@@ -2310,10 +2460,9 @@
         count: 0
       });
     }
-
-    // Tally completed tasks
+    
     let totalCompleted = 0;
-    tasks.forEach(t => {
+    filteredTasks.forEach(t => {
       if (!t.completedAt) return;
       const d = new Date(t.completedAt);
       const diffTime = today.getTime() - d.getTime();
@@ -2325,11 +2474,31 @@
       }
     });
 
-    if (el.activityLabel) {
-      el.activityLabel.textContent = `Activity (365 days)`;
+    const totalsText = document.getElementById('dashboardChartTotals');
+    if (totalsText) {
+      totalsText.textContent = `${totalCompleted} tasks completed in the last 365 days`;
     }
-    el.activityTotals.textContent = `${totalCompleted} tasks`;
-
+    
+    let chartArea = chart.querySelector('#dashboardChartArea');
+    if (!chartArea) {
+      chartArea = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      chartArea.id = 'dashboardChartArea';
+      chart.appendChild(chartArea);
+    }
+    chartArea.innerHTML = '';
+    
+    const startDate = days[0].date;
+    const startDayOfWeek = startDate.getDay();
+    
+    const totalCols = Math.ceil((daysInYear + startDayOfWeek) / 7);
+    const leftOffset = 38;
+    const topOffset = 22;
+    
+    const chartWidth = leftOffset + totalCols * (boxSize + boxGap) + 10;
+    const chartHeight = topOffset + 7 * (boxSize + boxGap) + 5;
+    
+    chart.setAttribute('viewBox', `0 0 ${chartWidth} ${chartHeight}`);
+    
     let tooltip = document.querySelector('.chart-tooltip');
     if (!tooltip) {
       tooltip = document.createElement('div');
@@ -2351,43 +2520,73 @@
       tooltip.style.opacity = '0';
       document.body.appendChild(tooltip);
     }
-
-    // Determine max to scale colors
+    
     const max = Math.max(1, ...days.map(d => d.count));
+    
+    // Draw day labels (Sun to Sat)
+    const dayLabels = [
+      { label: 'Sun', row: 0 },
+      { label: 'Mon', row: 1 },
+      { label: 'Tue', row: 2 },
+      { label: 'Wed', row: 3 },
+      { label: 'Thu', row: 4 },
+      { label: 'Fri', row: 5 },
+      { label: 'Sat', row: 6 }
+    ];
+    dayLabels.forEach(lbl => {
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', 5);
+      text.setAttribute('y', topOffset + lbl.row * (boxSize + boxGap) + 9.5);
+      text.setAttribute('fill', 'var(--text-dim)');
+      text.style.fontSize = '9.5px';
+      text.style.fontFamily = 'var(--font-display)';
+      text.textContent = lbl.label;
+      chartArea.appendChild(text);
+    });
 
-    // Determine starting column offset (day of week for the first day)
-    let currentCol = firstDay; // x-axis (0-13)
-    let currentRow = 0; // y-axis (0 to maxRows-1)
-
+    let prevMonth = -1;
     days.forEach((day, i) => {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      const x = currentCol * (boxSize + boxGap);
-      const y = ((maxRows - 1) - currentRow) * (boxSize + boxGap);
+      const dayIndex = i + startDayOfWeek;
+      const col = Math.floor(dayIndex / 7);
+      const row = dayIndex % 7;
       
-      rect.setAttribute('x', x);
-      rect.setAttribute('y', y);
+      // Month labels
+      const m = day.date.getMonth();
+      if (m !== prevMonth && row === 0 && col > 0) {
+        const monthText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        monthText.setAttribute('x', leftOffset + col * (boxSize + boxGap));
+        monthText.setAttribute('y', 12);
+        monthText.setAttribute('fill', 'var(--text-dim)');
+        monthText.style.fontSize = '9px';
+        monthText.style.fontFamily = 'var(--font-display)';
+        monthText.textContent = day.date.toLocaleString(undefined, { month: 'short' });
+        chartArea.appendChild(monthText);
+        prevMonth = m;
+      }
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', leftOffset + col * (boxSize + boxGap));
+      rect.setAttribute('y', topOffset + row * (boxSize + boxGap));
       rect.setAttribute('width', boxSize);
       rect.setAttribute('height', boxSize);
-      rect.setAttribute('rx', 3);
+      rect.setAttribute('rx', 2);
       
       if (day.count === 0) {
-        rect.setAttribute('fill', 'var(--chart-empty)'); // light grey for empty days
+        rect.setAttribute('fill', 'var(--chart-empty)');
         rect.style.opacity = '1';
       } else {
         const intensity = Math.min(1, 0.3 + (day.count / max) * 0.7);
         rect.setAttribute('fill', 'var(--accent)');
         rect.style.opacity = intensity;
       }
-
+      
       rect.addEventListener('mouseenter', (e) => {
-        if (window.innerWidth <= 1024) return; // Disable tooltip on mobile
-        
-        tooltip.textContent = `${day.count} task${day.count === 1 ? '' : 's'} on ${day.dateStr}`;
+        tooltip.textContent = `${day.count} task${day.count === 1 ? '' : 's'} completed on ${day.dateStr}`;
         tooltip.style.display = 'block';
         tooltip.style.opacity = '1';
         
         const tooltipX = e.pageX;
-        const tooltipY = e.pageY - 30; // above cursor
+        const tooltipY = e.pageY - 30;
         
         tooltip.style.left = `${tooltipX}px`;
         tooltip.style.transform = 'translateX(-50%)';
@@ -2398,14 +2597,8 @@
         tooltip.style.opacity = '0';
         tooltip.style.display = 'none';
       });
-
+      
       chartArea.appendChild(rect);
-
-      currentCol++;
-      if (currentCol === colsPerRow) {
-        currentCol = 0;
-        currentRow++;
-      }
     });
   }
 
