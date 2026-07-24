@@ -7,16 +7,108 @@ let currentModalFolderId = null;
 let submitHandler = null;
 let cancelHandler = null;
 
-export function createFolder(name, description = '') {
+export async function shareFolder(id) {
+  const folder = state.folders.find(f => f.id === id);
+  if (!folder) return;
+
+  const tasks = state.tasksByFolder[id] || [];
+  // Sort tasks by date (createdAt)
+  const sortedTasks = [...tasks].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+  const payload = {
+    folderName: folder.name,
+    description: folder.description || '',
+    tasks: sortedTasks,
+    sharedAt: Date.now()
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_) {}
+    // Fallback if clipboard API is blocked on unsecure context / localhost
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    let success = false;
+    try {
+      success = document.execCommand('copy');
+    } catch (_) {}
+    document.body.removeChild(textarea);
+    return success;
+  };
+
+  try {
+    let shareUrl = '';
+    if (window.firebaseDb && window.firebaseDb.db) {
+      const { db, doc, setDoc } = window.firebaseDb;
+      const shareId = uid();
+      const shareRef = doc(db, 'shared_lists', shareId);
+
+      await setDoc(shareRef, payload);
+      shareUrl = `${window.location.origin}${window.location.pathname}?list=${shareId}`;
+    } else {
+      // Lightweight payload for URL parameter share (strip IDs, unused timestamps, metadata)
+      const compactPayload = {
+        n: folder.name,
+        d: folder.description || '',
+        t: sortedTasks.map(t => ({
+          t: t.title,
+          c: t.completed ? 1 : 0,
+          d: t.createdAt || 0,
+          s: Array.isArray(t.subtasks) ? t.subtasks.map(sub => ({ t: sub.title, c: sub.completed ? 1 : 0 })) : []
+        }))
+      };
+      const jsonStr = JSON.stringify(compactPayload);
+      const encoded = btoa(encodeURIComponent(jsonStr));
+      shareUrl = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+    }
+
+    const copied = await copyToClipboard(shareUrl);
+    if (copied) {
+      alert(`Read-only link copied to clipboard!\n\n${shareUrl}`);
+    } else {
+      prompt('Copy your read-only share link below:', shareUrl);
+    }
+  } catch (err) {
+    console.error('Error creating share link:', err);
+    // If Firestore rules reject `/shared_lists`, fallback to encoding URL parameter directly
+    try {
+      const jsonStr = JSON.stringify(payload);
+      const encoded = btoa(encodeURIComponent(jsonStr));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+      const copied = await copyToClipboard(shareUrl);
+      if (copied) {
+        alert(`Read-only link copied to clipboard!\n\n${shareUrl}`);
+      } else {
+        prompt('Copy your read-only share link below:', shareUrl);
+      }
+    } catch (fallbackErr) {
+      alert(`Failed to generate share link: ${fallbackErr.message || err.message}`);
+    }
+  }
+}
+
+export function createFolder(name, description = '', type = 'standard') {
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (state.folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
     alert('A list with this name already exists.');
     return null;
   }
-  const folder = { id: uid(), name: trimmed, description: description.trim(), createdAt: now() };
+  const folder = { id: uid(), name: trimmed, description: description.trim(), type: type, createdAt: now() };
   state.folders.push(folder);
   state.tasksByFolder[folder.id] = [];
+  if (type === 'scheduled') {
+    state.schedulesByFolder[folder.id] = [];
+  }
   persistFolders();
   persistTasks();
   renderFolders();
@@ -105,7 +197,7 @@ export function renderFolders() {
 
     const name = document.createElement('span');
     name.className = 'folder-name';
-    name.textContent = folder.name;
+    name.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
     name.setAttribute('title', folder.name);
 
     const actions = document.createElement('div');
@@ -180,7 +272,9 @@ export function openFolderModal(folderId = null, currentName = '') {
     if (currentModalFolderId) {
       renameFolder(currentModalFolderId, name, description);
     } else {
-      createFolder(name, description);
+      const typeRadio = el.folderForm.querySelector('input[name="folderType"]:checked');
+      const selectedType = typeRadio ? typeRadio.value : 'standard';
+      createFolder(name, description, selectedType);
     }
     closeFolderModal();
   };

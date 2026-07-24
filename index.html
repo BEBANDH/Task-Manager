@@ -110,7 +110,6 @@
                         </svg>
                         Dashboard
                     </button>
-
                     <button id="settingsBtn" class="ghost-button" aria-label="Open settings"
                         data-tooltip="Open settings">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -121,6 +120,15 @@
                         Settings
                     </button>
 
+                    <!-- Embossed Small Dark ASCII Art Footer -->
+                    <div class="sidebar-ascii-footer" aria-hidden="true">
+                        <pre>
+ ___ ___  _   _ ___ ___ _  _ 
+/ __/ _ \| | | / __/ \ | || |
+\__ \ (_) | |_| \__ \  | __ |
+|___/\__\_\\___/|___/_/|_||_|
+                        </pre>
+                    </div>
                 </section>
             </aside>
         </div>
@@ -130,6 +138,15 @@
                 <div class="list-header"
                     style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                     <h2 id="activeListNameDisplay"></h2>
+                    <button id="downloadSharedExcelBtn" class="lock-toggle-btn" aria-label="Export list to Excel" title="Export list to Excel"
+                        style="display: none; align-items: center; gap: 6px; background: #1a1a1a; border-color: #333333; color: #f3f4f6;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Excel</span>
+                    </button>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="expandable-search" style="position: relative; display: flex; align-items: center;">
                             <button id="searchToggleBtn" class="lock-toggle-btn" aria-label="Toggle Search"
@@ -145,6 +162,17 @@
                                 aria-label="Search tasks"
                                 style="width: 32px; height: 32px; padding: 0; opacity: 0; transition: all 0.3s ease; border-radius: 16px; border: 1px solid transparent; background: transparent; color: var(--text); z-index: 1;">
                         </div>
+                        <button id="shareListBtn" class="lock-toggle-btn" aria-label="Share Read-Only List" title="Share Read-Only List"
+                            style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: flex; align-items: center;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                    <polyline points="16 6 12 2 8 6"></polyline>
+                                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                                </svg>
+                            </span>
+                            <span>Share</span>
+                        </button>
                         <button id="lockToggleBtn" class="lock-toggle-btn" aria-label="Toggle Lock List"
                             style="display: inline-flex; align-items: center; gap: 6px;">
                             <span id="lockToggleIcon" style="display: flex; align-items: center;">
@@ -510,9 +538,60 @@
                 <textarea id="folderDescriptionInput" placeholder="List description (optional, max 100 chars)..."
                     aria-label="List description" maxlength="100" rows="2"
                     style="width: 100%; margin-top: 12px; resize: none;"></textarea>
+                
+                <div style="margin-top: 16px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 8px;">List Type</label>
+                    <div style="display: flex; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text);">
+                            <input type="radio" name="folderType" value="standard" checked> Standard List
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text);">
+                            <input type="radio" name="folderType" value="scheduled"> ⏰ Scheduled List
+                        </label>
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" id="folderModalCancel" class="ghost-button">Cancel</button>
                     <button type="submit" class="primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Schedule Modal -->
+    <div id="scheduleModal" class="modal" hidden>
+        <div class="modal-content">
+            <h3>Add Scheduled Task</h3>
+            <form id="scheduleForm">
+                <input id="scheduleTitleInput" type="text" placeholder="Alarm task title (e.g. Take Workout Shake)..." required maxlength="80">
+                
+                <div style="margin-top: 14px;">
+                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600;">Alarm Time</label>
+                    <input id="scheduleTimeInput" type="time" required style="width: 100%; margin-top: 4px; padding: 8px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 6px;">Repeat Days</label>
+                    <div id="scheduleDaysContainer" style="display: flex; justify-content: space-between; gap: 4px;">
+                        <button type="button" class="day-select-btn active" data-day="0">S</button>
+                        <button type="button" class="day-select-btn active" data-day="1">M</button>
+                        <button type="button" class="day-select-btn active" data-day="2">T</button>
+                        <button type="button" class="day-select-btn active" data-day="3">W</button>
+                        <button type="button" class="day-select-btn active" data-day="4">T</button>
+                        <button type="button" class="day-select-btn active" data-day="5">F</button>
+                        <button type="button" class="day-select-btn active" data-day="6">S</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600;">End Date (Optional)</label>
+                    <input id="scheduleEndDateInput" type="date" style="width: 100%; margin-top: 4px; padding: 8px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="scheduleModalCancel" class="ghost-button">Cancel</button>
+                    <button type="submit" class="primary">Add Schedule</button>
                 </div>
             </form>
         </div>
@@ -582,12 +661,29 @@
             </h3>
 
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 5.0 (Current) -->
+                <!-- Version 5.5 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.0 (Current
-                            Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.5 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
+                    </div>
+                    <ul
+                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>⏰ Scheduled Lists (Prototype)</strong>: Introduced a new recurring list type with an Alarm Clock UI layout. Allows scheduling tasks across days of the week with custom alarm times. <em>(Note: Currently in prototype state)</em>.</li>
+                        <li><strong>🔗 Read-Only Shared List Links</strong>: Instant generation of read-only share URLs using Firestore collections (or URL parameter fallback). recipients can view tasks chronologically without needing to log in.</li>
+                        <li><strong>📥 Excel Download on Shared Links</strong>: Added a 1-click <em>Download Excel</em> button on shared read-only pages so recipients can export and import lists into their own workspace.</li>
+                        <li><strong>🕶️ Pure AMOLED Read-Only View</strong>: Enforced pure AMOLED black styling, monochrome elements, and zero interactive controls when opening shared links.</li>
+                        <li><strong>📱 Mobile Responsiveness Overhaul</strong>: Re-engineered layout breakpoints for sidebars, list headers, task cards, and Pomodoro controls for small viewports.</li>
+                        <li><strong>🎨 Sidebar ASCII Footer Art</strong>: Embedded a clean micro-block SQUASH ASCII watermark in the left panel.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 5.0 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul

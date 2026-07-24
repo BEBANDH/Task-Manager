@@ -3,6 +3,7 @@ import { writeStorage, STORAGE_KEYS } from './storage.js';
 export const state = {
   folders: [],
   tasksByFolder: {},
+  schedulesByFolder: {},
   currentFolderId: null,
   currentView: 'tasks', // 'tasks' | 'dashboard' | 'settings'
   activeFilter: 'all',  // 'all' | 'active' | 'completed'

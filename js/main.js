@@ -3,8 +3,9 @@ import { state, getCurrentTasks, isCurrentFolderLocked, persistFolders, persistT
 import { readStorage, writeStorage, readCookieJSON, now, uid, STORAGE_KEYS } from './storage.js';
 import { initTimer } from './timer.js';
 import { renderDashboardChart, populateChartDropdown } from './charts.js';
-import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock } from './folders.js';
+import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock, shareFolder } from './folders.js';
 import { addTask, initConfirmDeleteModal, closeConfirmDeleteModal, getRenderData, renderTaskItem } from './tasks.js';
+import { loadSchedules, renderScheduledView, createSchedule } from './schedules.js';
 
 // DOM elements cache builder
 function initElements() {
@@ -71,6 +72,7 @@ function initElements() {
   el.lockToggleBtn = document.getElementById('lockToggleBtn');
   el.lockToggleIcon = document.getElementById('lockToggleIcon');
   el.lockToggleText = document.getElementById('lockToggleText');
+  el.shareListBtn = document.getElementById('shareListBtn');
   el.activeListNameDisplay = document.getElementById('activeListNameDisplay');
   el.toggleChartBtn = document.getElementById('toggleChartBtn');
   el.changelogBtn = document.getElementById('changelogBtn');
@@ -131,7 +133,7 @@ export function render() {
   const currentFolder = state.folders.find(f => f.id === state.currentFolderId);
   if (currentFolder) {
     if (el.activeListNameDisplay) {
-      el.activeListNameDisplay.textContent = currentFolder.name;
+      el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
     }
     const isLocked = !!currentFolder.locked;
     if (el.lockToggleIcon) {
@@ -147,11 +149,14 @@ export function render() {
     }
     if (el.input) {
       el.input.disabled = isLocked;
-      el.input.placeholder = isLocked ? 'This list is locked...' : 'Add a task...';
+      el.input.placeholder = isLocked 
+        ? 'This list is locked...' 
+        : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
     }
     const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
     if (addBtn) {
       addBtn.disabled = isLocked;
+      addBtn.textContent = currentFolder.type === 'scheduled' ? 'Alarm +' : 'Add Task';
     }
   }
   if (el.listDescriptionDisplay) {
@@ -162,6 +167,12 @@ export function render() {
       el.listDescriptionDisplay.textContent = '';
       el.listDescriptionDisplay.style.display = 'none';
     }
+  }
+
+  // Route to Scheduled Alarm View if type is 'scheduled'
+  if (currentFolder && currentFolder.type === 'scheduled') {
+    renderScheduledView(currentFolder.id);
+    return;
   }
 
   // Empty state
@@ -712,6 +723,7 @@ function initFolders() {
 
 // Load
 function load() {
+  loadSchedules();
   state.folders = readStorage(STORAGE_KEYS.folders, []);
   if (!Array.isArray(state.folders)) state.folders = [];
 
@@ -991,6 +1003,12 @@ function initSearch() {
 function initForm() {
   el.form.addEventListener('submit', (e) => {
     e.preventDefault();
+    const currentFolder = state.folders.find(f => f.id === state.currentFolderId);
+    if (currentFolder && currentFolder.type === 'scheduled') {
+      openScheduleModal();
+      return;
+    }
+
     const value = el.input.value.trim();
     if (value.length === 0) {
       el.input.focus();
@@ -1001,6 +1019,74 @@ function initForm() {
     addTask(value);
     el.input.value = '';
     el.input.focus();
+  });
+
+  initScheduleModal();
+}
+
+function openScheduleModal() {
+  const modal = document.getElementById('scheduleModal');
+  if (!modal) return;
+  modal.hidden = false;
+  modal.removeAttribute('hidden');
+  
+  const input = document.getElementById('scheduleTitleInput');
+  if (input) {
+    if (el.input && el.input.value.trim()) {
+      input.value = el.input.value.trim();
+      el.input.value = '';
+    }
+    input.focus();
+  }
+}
+
+function closeScheduleModal() {
+  const modal = document.getElementById('scheduleModal');
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute('hidden', '');
+}
+
+function initScheduleModal() {
+  const modal = document.getElementById('scheduleModal');
+  const form = document.getElementById('scheduleForm');
+  const cancelBtn = document.getElementById('scheduleModalCancel');
+  const daysContainer = document.getElementById('scheduleDaysContainer');
+
+  if (!modal || !form) return;
+
+  if (cancelBtn) cancelBtn.addEventListener('click', closeScheduleModal);
+
+  if (daysContainer) {
+    daysContainer.querySelectorAll('.day-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+      });
+    });
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const titleInput = document.getElementById('scheduleTitleInput');
+    const timeInput = document.getElementById('scheduleTimeInput');
+    const endDateInput = document.getElementById('scheduleEndDateInput');
+
+    const title = titleInput.value.trim();
+    const time = timeInput.value;
+    const endDate = endDateInput ? endDateInput.value : null;
+
+    const activeDayBtns = daysContainer ? daysContainer.querySelectorAll('.day-select-btn.active') : [];
+    const daysOfWeek = Array.from(activeDayBtns).map(btn => parseInt(btn.dataset.day, 10));
+
+    if (!title || !time) return;
+
+    createSchedule(state.currentFolderId, title, time, daysOfWeek, null, endDate);
+    closeScheduleModal();
+    form.reset();
+    if (daysContainer) {
+      daysContainer.querySelectorAll('.day-select-btn').forEach(b => b.classList.add('active'));
+    }
+    render();
   });
 }
 
@@ -1489,9 +1575,149 @@ function formatTime(ts) {
   }
 }
 
+// Check URL for shared read-only list
+async function checkSharedUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const shareId = params.get('list');
+  const shareData = params.get('share');
+
+  if (!shareId && !shareData) return false;
+
+  document.body.classList.add('read-only-share-view');
+
+  let title = 'Shared List';
+  let description = '';
+  let tasks = [];
+
+  if (shareId) {
+    // Wait briefly for firebaseDb if loading asynchronously
+    let retries = 0;
+    while (!window.firebaseDb && retries < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      retries++;
+    }
+
+    if (window.firebaseDb && window.firebaseDb.db) {
+      try {
+        const { db, doc, getDoc } = window.firebaseDb;
+        const shareRef = doc(db, 'shared_lists', shareId);
+        const snap = await getDoc(shareRef);
+
+        if (snap.exists()) {
+          const data = snap.data();
+          title = data.folderName || 'Shared List';
+          description = data.description || '';
+          tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        } else {
+          alert('Shared list not found or expired.');
+          return false;
+        }
+      } catch (err) {
+        console.error('Failed to load shared list from Firestore:', err);
+        alert('Failed to load shared list.');
+        return false;
+      }
+    }
+  } else if (shareData) {
+    try {
+      const decoded = decodeURIComponent(atob(shareData));
+      const payload = JSON.parse(decoded);
+      title = payload.n || payload.folderName || 'Shared List';
+      description = payload.d || payload.description || '';
+      
+      const rawTasks = Array.isArray(payload.t) ? payload.t : (Array.isArray(payload.tasks) ? payload.tasks : []);
+      tasks = rawTasks.map(t => {
+        if (t.title !== undefined) return t; // Already standard format
+        return {
+          title: t.t,
+          completed: !!t.c,
+          createdAt: t.d || 0,
+          subtasks: Array.isArray(t.s) ? t.s.map(sub => ({ title: sub.t, completed: !!sub.c })) : []
+        };
+      });
+    } catch (err) {
+      console.error('Failed to decode share data:', err);
+      alert('Invalid share link format.');
+      return false;
+    }
+  }
+
+  // Render pure read-only view
+  if (el.activeListNameDisplay) el.activeListNameDisplay.textContent = title;
+  if (el.listDescriptionDisplay) {
+    if (description) {
+      el.listDescriptionDisplay.textContent = description;
+      el.listDescriptionDisplay.style.display = 'block';
+    } else {
+      el.listDescriptionDisplay.style.display = 'none';
+    }
+  }
+
+  // Sort tasks strictly by date
+  tasks.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+  if (el.tasks) {
+    el.tasks.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    tasks.forEach(task => {
+      try {
+        frag.appendChild(renderTaskItem(task));
+      } catch (_) {}
+    });
+    el.tasks.appendChild(frag);
+  }
+
+  if (el.empty) {
+    el.empty.hidden = tasks.length !== 0;
+  }
+
+  // Display and bind Download Excel button for recipient
+  const downloadBtn = document.getElementById('downloadSharedExcelBtn');
+  if (downloadBtn) {
+    downloadBtn.style.display = 'inline-flex';
+    downloadBtn.addEventListener('click', () => {
+      if (typeof XLSX === 'undefined' || !XLSX || !XLSX.utils) {
+        alert('Excel library not loaded.');
+        return;
+      }
+      const data = tasks.map(t => ({
+        'Title': t.title,
+        'Status': t.completed ? 'Completed' : 'Active',
+        'Created Date': formatDate(t.createdAt),
+        'Created Time': formatTime(t.createdAt),
+        'Completed Date': t.completedAt ? formatDate(t.completedAt) : '',
+        'Completed Time': t.completedAt ? formatTime(t.completedAt) : ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+
+      const safeName = title.replace(/[^a-z0-9]/gi, '_');
+      const filename = `${safeName}_shared.xlsx`;
+      XLSX.writeFile(wb, filename);
+    });
+  }
+
+  return true;
+}
+
+function initShareListBtn() {
+  if (!el.shareListBtn) return;
+  el.shareListBtn.addEventListener('click', () => {
+    if (state.currentFolderId) {
+      shareFolder(state.currentFolderId);
+    }
+  });
+}
+
 // Bootstrap
-function init() {
+async function init() {
   initElements();
+  
+  const isShared = await checkSharedUrl();
+  if (isShared) return; // Stop normal app init if viewing shared list
+
   load();
   initTheme();
   initFolders();
@@ -1506,6 +1732,7 @@ function init() {
   initTimer();
   initDashboardChart();
   initLockToggle();
+  initShareListBtn();
   initChartVisibility();
   initChangelog();
   initKeyboardShortcuts();
