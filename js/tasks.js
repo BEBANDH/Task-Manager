@@ -117,6 +117,9 @@ export function showConfirmDeleteModal(message) {
   el.confirmDeleteMessage.textContent = message;
   el.confirmDeleteModal.hidden = false;
   el.confirmDeleteModal.removeAttribute('hidden');
+  if (el.confirmDeleteConfirm) {
+    el.confirmDeleteConfirm.focus();
+  }
   return new Promise((resolve) => {
     state.confirmDeleteResolve = resolve;
   });

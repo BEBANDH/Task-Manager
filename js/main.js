@@ -64,7 +64,9 @@ function initElements() {
   el.dashCurrentStreak = document.getElementById('dashCurrentStreak');
   el.dashMaxStreak = document.getElementById('dashMaxStreak');
   el.dashActiveTasks = document.getElementById('dashActiveTasks');
-  el.dashAvgTime = document.getElementById('dashAvgTime');
+  el.dashPriorityRatio = document.getElementById('dashPriorityRatio');
+  el.dashWeeklyGoal = document.getElementById('dashWeeklyGoal');
+  el.dashStagnantTasks = document.getElementById('dashStagnantTasks');
   el.dashBusiestDay = document.getElementById('dashBusiestDay');
   el.dashListDistribution = document.getElementById('dashListDistribution');
   el.dashPriorityList = document.getElementById('dashPriorityList');
@@ -800,6 +802,33 @@ function load() {
       return { ...t, completedAt, subtasks };
     });
   });
+
+  // Auto cleanup orphan list tasks from deleted lists
+  purgeOrphanTasks(false);
+}
+
+export function purgeOrphanTasks(showAlert = true) {
+  const activeIds = new Set(state.folders.map(f => f.id));
+  let purgedCount = 0;
+
+  Object.keys(state.tasksByFolder).forEach(folderId => {
+    if (!activeIds.has(folderId)) {
+      purgedCount += (state.tasksByFolder[folderId] || []).length;
+      delete state.tasksByFolder[folderId];
+    }
+  });
+
+  if (purgedCount > 0) {
+    persistTasks();
+  }
+
+  if (showAlert) {
+    if (purgedCount > 0) {
+      alert(`Successfully purged history for ${purgedCount} task(s) from deleted lists.`);
+    } else {
+      alert('No orphan task history found. Your history is clean!');
+    }
+  }
 }
 
 // Sidebar Toggle
@@ -903,6 +932,21 @@ function initKeyboardShortcuts() {
 
     const key = e.key.toLowerCase();
     const isModalOpen = !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || (el.changelogModal && !el.changelogModal.hidden);
+
+    if (e.key === 'Enter') {
+      const activeModal = document.querySelector('.modal:not([hidden])');
+      if (activeModal) {
+        // If focusing a button or inside textarea/input, let standard form submit or click handle it
+        if (active.tagName === 'TEXTAREA') return;
+        
+        const primaryBtn = activeModal.querySelector('.modal-actions button.primary, .modal-actions button[type="submit"]');
+        if (primaryBtn) {
+          e.preventDefault();
+          primaryBtn.click();
+          return;
+        }
+      }
+    }
 
     if (e.key === 'Escape') {
       if (!el.folderModal.hidden) closeFolderModal();
@@ -1120,28 +1164,44 @@ function initSettings() {
       render();
     });
   }
+
+  const purgeBtn = document.getElementById('purgeOrphansBtn');
+  if (purgeBtn) {
+    purgeBtn.addEventListener('click', () => {
+      purgeOrphanTasks(true);
+      render();
+    });
+  }
 }
 
 function renderDashboard() {
   populateChartDropdown();
   renderDashboardChart();
 
+  const activeFolderIds = new Set(state.folders.map(f => f.id));
+
   let totalTasksCount = 0;
   let totalCompletedCount = 0;
-  Object.values(state.tasksByFolder).forEach(listTasks => {
-    totalTasksCount += listTasks.length;
-    totalCompletedCount += listTasks.filter(t => t.completed).length;
+  Object.keys(state.tasksByFolder).forEach(folderId => {
+    if (activeFolderIds.has(folderId)) {
+      const listTasks = state.tasksByFolder[folderId] || [];
+      totalTasksCount += listTasks.length;
+      totalCompletedCount += listTasks.filter(t => t.completed).length;
+    }
   });
   const rate = totalTasksCount > 0 ? Math.round((totalCompletedCount / totalTasksCount) * 100) : 0;
   el.dashCompletionRate.textContent = `${rate}% (${totalCompletedCount}/${totalTasksCount})`;
 
   const completedDates = [];
-  Object.values(state.tasksByFolder).forEach(listTasks => {
-    listTasks.forEach(task => {
-      if (task.completed && task.completedAt) {
-        completedDates.push(new Date(task.completedAt).toDateString());
-      }
-    });
+  Object.keys(state.tasksByFolder).forEach(folderId => {
+    if (activeFolderIds.has(folderId)) {
+      const listTasks = state.tasksByFolder[folderId] || [];
+      listTasks.forEach(task => {
+        if (task.completed && task.completedAt) {
+          completedDates.push(new Date(task.completedAt).toDateString());
+        }
+      });
+    }
   });
   
   const uniqueDates = Array.from(new Set(completedDates)).map(d => new Date(d));
@@ -1198,59 +1258,109 @@ function renderDashboard() {
   el.dashMaxStreak.textContent = `${maxStreak} day${maxStreak !== 1 ? 's' : ''}`;
 
   let activeTasksCount = 0;
-  let totalCompletionTime = 0;
-  let completedCountWithDates = 0;
-  
-  Object.values(state.tasksByFolder).forEach(listTasks => {
-    listTasks.forEach(task => {
-      if (!task.completed) {
-        activeTasksCount++;
-      } else if (task.completedAt && task.createdAt) {
-        const diffMs = task.completedAt - task.createdAt;
-        if (diffMs >= 0) {
-          totalCompletionTime += diffMs;
-          completedCountWithDates++;
+  let highPriorityPendingCount = 0;
+  let normalPriorityPendingCount = 0;
+  let stagnantTaskCount = 0;
+  let weeklyCompletedCount = 0;
+
+  const FourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+  const nowTs = Date.now();
+
+  // Calculate Start & End of Current Week for Weekly Target
+  const startOfWeekTime = new Date();
+  startOfWeekTime.setDate(startOfWeekTime.getDate() - startOfWeekTime.getDay());
+  startOfWeekTime.setHours(0, 0, 0, 0);
+
+  const endOfWeekTime = new Date(startOfWeekTime);
+  endOfWeekTime.setDate(endOfWeekTime.getDate() + 6);
+  endOfWeekTime.setHours(23, 59, 59, 999);
+
+  Object.keys(state.tasksByFolder).forEach(folderId => {
+    if (activeFolderIds.has(folderId)) {
+      const listTasks = state.tasksByFolder[folderId] || [];
+      listTasks.forEach(task => {
+        if (!task.completed) {
+          activeTasksCount++;
+          if (task.highPriority) {
+            highPriorityPendingCount++;
+          } else {
+            normalPriorityPendingCount++;
+          }
+
+          // Stagnant Task check (>14 days old and unedited/uncompleted)
+          const createdOrUpdated = task.updatedAt || task.createdAt || nowTs;
+          if (nowTs - createdOrUpdated > FourteenDaysMs) {
+            stagnantTaskCount++;
+          }
+        } else if (task.completedAt) {
+          const compTime = new Date(task.completedAt).getTime();
+          if (compTime >= startOfWeekTime.getTime() && compTime <= endOfWeekTime.getTime()) {
+            weeklyCompletedCount++;
+          }
         }
-      }
-    });
+      });
+    }
   });
 
-  el.dashActiveTasks.textContent = activeTasksCount;
-
-  let avgCompletionTimeStr = "N/A";
-  if (completedCountWithDates > 0) {
-    const avgMs = totalCompletionTime / completedCountWithDates;
-    const avgHours = avgMs / (1000 * 60 * 60);
-    if (avgHours < 24) {
-      const roundedHours = Math.round(avgHours);
-      avgCompletionTimeStr = `${roundedHours} hour${roundedHours !== 1 ? 's' : ''}`;
-    } else {
-      const avgDays = avgHours / 24;
-      const roundedDays = Math.round(avgDays);
-      avgCompletionTimeStr = `${roundedDays} day${roundedDays !== 1 ? 's' : ''}`;
-    }
+  if (el.dashActiveTasks) el.dashActiveTasks.textContent = activeTasksCount;
+  
+  // 1. Priority Breakdown Ratio (High vs Normal Tasks)
+  if (el.dashPriorityRatio) {
+    el.dashPriorityRatio.textContent = `${highPriorityPendingCount} High / ${normalPriorityPendingCount} Normal`;
   }
-  el.dashAvgTime.textContent = avgCompletionTimeStr;
 
+  // 2. Weekly Goal Completion Target (20 Tasks Target)
+  const WEEKLY_GOAL_TARGET = 20;
+  const weeklyPct = Math.round((weeklyCompletedCount / WEEKLY_GOAL_TARGET) * 100);
+  if (el.dashWeeklyGoal) {
+    el.dashWeeklyGoal.textContent = `${weeklyCompletedCount} / ${WEEKLY_GOAL_TARGET} (${weeklyPct}%)`;
+  }
+
+  // 3. List Health & Stagnant Task Warning (>14 Days)
+  if (el.dashStagnantTasks) {
+    el.dashStagnantTasks.textContent = `${stagnantTaskCount} Task${stagnantTaskCount !== 1 ? 's' : ''}`;
+    el.dashStagnantTasks.style.color = stagnantTaskCount > 0 ? 'var(--amber, #f59e0b)' : 'var(--text)';
+  }
+
+  // Most Productive Day (This Week) Calculation
   const weekdayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
   const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  
+  // Calculate Start of Current Week (Sunday 00:00:00)
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  // Calculate End of Current Week (Saturday 23:59:59)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
   let maxDay = -1;
   let maxCount = 0;
-  Object.values(state.tasksByFolder).forEach(listTasks => {
-    listTasks.forEach(task => {
-      if (task.completed && task.completedAt) {
-        const day = new Date(task.completedAt).getDay();
-        weekdayCounts[day]++;
-      }
-    });
+  
+  Object.keys(state.tasksByFolder).forEach(folderId => {
+    if (activeFolderIds.has(folderId)) {
+      const listTasks = state.tasksByFolder[folderId] || [];
+      listTasks.forEach(task => {
+        if (task.completed && task.completedAt) {
+          const compTime = new Date(task.completedAt).getTime();
+          if (compTime >= startOfWeek.getTime() && compTime <= endOfWeek.getTime()) {
+            const day = new Date(task.completedAt).getDay();
+            weekdayCounts[day]++;
+          }
+        }
+      });
+    }
   });
+
   for (let i = 0; i < 7; i++) {
     if (weekdayCounts[i] > maxCount) {
       maxCount = weekdayCounts[i];
       maxDay = i;
     }
   }
-  el.dashBusiestDay.textContent = maxDay !== -1 && maxCount > 0 ? `${weekdayNames[maxDay]} (${maxCount} completed)` : "No tasks completed yet";
+  el.dashBusiestDay.textContent = maxDay !== -1 && maxCount > 0 ? `${weekdayNames[maxDay]} (${maxCount} completed)` : "None this week";
 
   // Distribution
   el.dashListDistribution.innerHTML = '';

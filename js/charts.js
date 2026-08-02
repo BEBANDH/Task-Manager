@@ -9,7 +9,15 @@ export function renderDashboardChart() {
   const selectedListId = selector.value || 'all';
   
   let filteredTasks = [];
-  if (selectedListId === 'all') {
+  const activeFolderIds = new Set(state.folders.map(f => f.id));
+
+  if (selectedListId === 'active') {
+    Object.keys(state.tasksByFolder).forEach(folderId => {
+      if (activeFolderIds.has(folderId)) {
+        filteredTasks = filteredTasks.concat(state.tasksByFolder[folderId] || []);
+      }
+    });
+  } else if (selectedListId === 'all') {
     Object.values(state.tasksByFolder).forEach(listTasks => {
       filteredTasks = filteredTasks.concat(listTasks);
     });
@@ -174,8 +182,11 @@ export function renderDashboardChart() {
 
 export function populateChartDropdown() {
   if (!el.chartListSelector) return;
-  const currentVal = el.chartListSelector.value || 'all';
-  el.chartListSelector.innerHTML = '<option value="all">All Lists (Combined)</option>';
+  const currentVal = el.chartListSelector.value || 'active';
+  el.chartListSelector.innerHTML = `
+    <option value="active">Active Lists Only (Excludes Deleted)</option>
+    <option value="all">All Lists & Historical Archives (Combined)</option>
+  `;
   state.folders.forEach(f => {
     const opt = document.createElement('option');
     opt.value = f.id;

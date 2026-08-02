@@ -288,12 +288,34 @@
                     <div class="stat-card" style="position: relative;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                            style="position: absolute; top: 12px; right: 12px; opacity: 0.15;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
+                            style="position: absolute; top: 12px; right: 12px; opacity: 0.15; color: var(--danger);">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15"></line>
                         </svg>
-                        <div id="dashAvgTime" class="stat-value">N/A</div>
-                        <div class="stat-label">Avg Completion Time</div>
+                        <div id="dashPriorityRatio" class="stat-value" style="font-size: 16px;">0 High / 0 Normal</div>
+                        <div class="stat-label">Priority Ratio (Pending)</div>
+                    </div>
+                    <div class="stat-card" style="position: relative;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            style="position: absolute; top: 12px; right: 12px; opacity: 0.15; color: var(--accent);">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="6"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                        </svg>
+                        <div id="dashWeeklyGoal" class="stat-value accent" style="font-size: 16px;">0 / 20 (0%)</div>
+                        <div class="stat-label">Weekly Goal (20 Tasks)</div>
+                    </div>
+                    <div class="stat-card" style="position: relative;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            style="position: absolute; top: 12px; right: 12px; opacity: 0.15; color: var(--amber, #f59e0b);">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <div id="dashStagnantTasks" class="stat-value" style="font-size: 16px;">0 Tasks</div>
+                        <div class="stat-label">Stagnant Tasks (>14 Days)</div>
                     </div>
                     <div class="stat-card" style="position: relative;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -305,7 +327,7 @@
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
                         <div id="dashBusiestDay" class="stat-value" style="font-size: 15px;">None</div>
-                        <div class="stat-label">Most Productive Day</div>
+                        <div class="stat-label">Most Productive Day (This Week)</div>
                     </div>
                 </div>
 
@@ -380,18 +402,35 @@
                     </div>
                     <div class="setting-item" style="margin-bottom: 24px;">
                         <label>Bulk Actions</label>
-                        <button id="dashClearCompletedBtn" class="ghost-button"
-                            style="color: var(--danger); border-color: var(--danger); opacity: 0.8;"
-                            aria-label="Clear completed tasks">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-right: 8px;">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                </path>
-                            </svg>
-                            Clear Completed Tasks
-                        </button>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button id="dashClearCompletedBtn" class="ghost-button"
+                                style="color: var(--danger); border-color: var(--danger); opacity: 0.8;"
+                                aria-label="Clear completed tasks">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-right: 8px;">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
+                                </svg>
+                                Clear Completed Tasks
+                            </button>
+                            <button id="purgeOrphansBtn" class="ghost-button"
+                                style="color: var(--text-dim); border-color: var(--border);"
+                                aria-label="Purge Deleted Lists History"
+                                title="Purge historical data belonging to deleted lists">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-right: 8px;">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                                Purge Deleted Lists History
+                            </button>
+                        </div>
                     </div>
                     <div class="setting-item" style="margin-bottom: 24px;">
                         <label>App Features & Updates</label>
@@ -661,11 +700,27 @@
             </h3>
 
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 5.5 (Current) -->
+                <!-- Version 5.6 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.5 (Current Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.6 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
+                    </div>
+                    <ul
+                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>📊 Upgraded Dashboard Metrics</strong>: Replaced static average time with <em>Priority Breakdown Ratio</em>, <em>Weekly Goal (20 Tasks) Target Tracker</em>, and <em>Stagnant Tasks (>14 Days) Warning</em>.</li>
+                        <li><strong>🧹 Ghost List & Orphan History Purge</strong>: Added automatic startup cleanup, active-lists default heatmap filtering, and a manual <em>Purge Deleted Lists History</em> button in Settings.</li>
+                        <li><strong>📅 Weekly Most Productive Day</strong>: Updated busiest day calculation to dynamically track and reset for the current calendar week (Sun-Sat).</li>
+                        <li><strong>⌨️ Enter Key Dialog Confirmations</strong>: Pressing <kbd>Enter</kbd> in modal dialogs (such as Task Delete confirmation) automatically confirms the primary action.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 5.5 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.5</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul
