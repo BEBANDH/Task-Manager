@@ -96,14 +96,21 @@ export async function shareFolder(id) {
   }
 }
 
-export function createFolder(name, description = '', type = 'standard') {
+export function createFolder(name, description = '', type = 'standard', category = 'General') {
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (state.folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
     alert('A list with this name already exists.');
     return null;
   }
-  const folder = { id: uid(), name: trimmed, description: description.trim(), type: type, createdAt: now() };
+  const folder = { 
+    id: uid(), 
+    name: trimmed, 
+    description: description.trim(), 
+    category: category.trim() || 'General',
+    type: type, 
+    createdAt: now() 
+  };
   state.folders.push(folder);
   state.tasksByFolder[folder.id] = [];
   if (type === 'scheduled') {
@@ -116,7 +123,7 @@ export function createFolder(name, description = '', type = 'standard') {
   return folder;
 }
 
-export function renameFolder(id, newName, newDescription = '') {
+export function renameFolder(id, newName, newDescription = '', newCategory = 'General') {
   const trimmed = newName.trim();
   if (!trimmed) return;
   const folder = state.folders.find(f => f.id === id);
@@ -127,6 +134,7 @@ export function renameFolder(id, newName, newDescription = '') {
   }
   folder.name = trimmed;
   folder.description = newDescription.trim();
+  folder.category = newCategory.trim() || 'General';
   persistFolders();
   renderFolders();
   render();
@@ -167,6 +175,7 @@ export function switchFolder(id) {
   state.currentFolderId = id;
   state.currentView = 'tasks';
   writeStorage(STORAGE_KEYS.currentFolder, state.currentFolderId);
+  writeStorage('tm_current_view_v2', 'tasks');
   renderFolders();
   render();
 }
@@ -181,6 +190,10 @@ export function toggleCurrentFolderLock() {
 }
 
 export function renderFolders() {
+  const allTasksBtn = document.getElementById('allTasksBtn');
+  if (allTasksBtn) {
+    allTasksBtn.classList.toggle('active', state.currentView === 'allTasks');
+  }
   if (!el.foldersList) return;
   el.foldersList.innerHTML = '';
   const fragment = document.createDocumentFragment();
@@ -199,6 +212,13 @@ export function renderFolders() {
     name.className = 'folder-name';
     name.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
     name.setAttribute('title', folder.name);
+
+    if (folder.category && folder.category !== 'General') {
+      const catBadge = document.createElement('span');
+      catBadge.className = 'category-badge-label';
+      catBadge.textContent = folder.category;
+      name.appendChild(catBadge);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'folder-actions';
@@ -232,9 +252,48 @@ export function renderFolders() {
 
     li.addEventListener('click', () => switchFolder(folder.id));
 
+    // Drag and Drop
+    li.draggable = true;
+    li.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', folder.id);
+      e.dataTransfer.effectAllowed = 'move';
+      li.style.opacity = '0.5';
+    });
+    li.addEventListener('dragend', () => {
+      li.style.opacity = '1';
+    });
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      li.style.borderTop = '2px solid var(--accent)';
+    });
+    li.addEventListener('dragleave', () => {
+      li.style.borderTop = '';
+    });
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      li.style.borderTop = '';
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (draggedId && draggedId !== folder.id) {
+        reorderFolders(draggedId, folder.id);
+      }
+    });
+
     fragment.appendChild(li);
   });
   el.foldersList.appendChild(fragment);
+}
+
+function reorderFolders(draggedId, targetId) {
+  const draggedIndex = state.folders.findIndex(f => f.id === draggedId);
+  const targetIndex = state.folders.findIndex(f => f.id === targetId);
+  if (draggedIndex === -1 || targetIndex === -1) return;
+
+  const [draggedFolder] = state.folders.splice(draggedIndex, 1);
+  state.folders.splice(targetIndex, 0, draggedFolder);
+  
+  persistFolders();
+  renderFolders();
 }
 
 export function openFolderModal(folderId = null, currentName = '') {
@@ -245,12 +304,24 @@ export function openFolderModal(folderId = null, currentName = '') {
   el.folderNameInput.value = currentName;
 
   let currentDescription = '';
+  let currentCategory = 'General';
   if (folderId) {
     const folder = state.folders.find(f => f.id === folderId);
     currentDescription = folder?.description || '';
+    currentCategory = folder?.category || 'General';
   }
   if (el.folderDescriptionInput) {
     el.folderDescriptionInput.value = currentDescription;
+  }
+
+  const categoryInput = document.getElementById('folderCategoryInput');
+  const datalist = document.getElementById('categorySuggestions');
+  if (datalist) {
+    const existingCats = Array.from(new Set(state.folders.map(f => f.category || 'General'))).filter(Boolean);
+    datalist.innerHTML = existingCats.map(c => `<option value="${c}"></option>`).join('');
+  }
+  if (categoryInput) {
+    categoryInput.value = currentCategory;
   }
 
   if (submitHandler) {
@@ -264,17 +335,19 @@ export function openFolderModal(folderId = null, currentName = '') {
     e.preventDefault();
     const name = el.folderNameInput.value.trim();
     const description = el.folderDescriptionInput ? el.folderDescriptionInput.value.trim() : '';
+    const category = categoryInput ? (categoryInput.value.trim() || 'General') : 'General';
+
     if (!name) {
       el.folderNameInput.focus();
       return;
     }
 
     if (currentModalFolderId) {
-      renameFolder(currentModalFolderId, name, description);
+      renameFolder(currentModalFolderId, name, description, category);
     } else {
       const typeRadio = el.folderForm.querySelector('input[name="folderType"]:checked');
       const selectedType = typeRadio ? typeRadio.value : 'standard';
-      createFolder(name, description, selectedType);
+      createFolder(name, description, selectedType, category);
     }
     closeFolderModal();
   };

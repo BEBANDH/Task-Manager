@@ -6,7 +6,8 @@ export const STORAGE_KEYS = {
   filter: 'tm_filter_v1',
   search: 'tm_search_v1',
   monthFilter: 'tm_month_filter_v1',
-  yearFilter: 'tm_year_filter_v1'
+  yearFilter: 'tm_year_filter_v1',
+  shortcuts: 'tm_shortcuts_v1'
 };
 
 export const now = () => Date.now();

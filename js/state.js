@@ -11,6 +11,8 @@ export const state = {
   selectedMonth: '',
   selectedYear: '',
   expandedTasks: new Set(),
+  collapsedCategories: new Set(),
+  collapsedLists: new Set(),
   confirmDeleteResolve: null,
   listSearchQuery: '',
   ACCENT_COLORS: {
@@ -28,6 +30,17 @@ export const state = {
 };
 
 export const getCurrentTasks = () => {
+  if (state.currentView === 'allTasks') {
+    const all = [];
+    state.folders.forEach(folder => {
+      const listTasks = state.tasksByFolder[folder.id] || [];
+      listTasks.forEach(t => {
+        all.push({ ...t, _folderId: folder.id, _folderName: folder.name });
+      });
+    });
+    all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return all;
+  }
   if (!state.currentFolderId) return [];
   return state.tasksByFolder[state.currentFolderId] || [];
 };

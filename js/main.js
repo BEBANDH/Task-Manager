@@ -1,11 +1,11 @@
 import { el } from './dom.js';
 import { state, getCurrentTasks, isCurrentFolderLocked, persistFolders, persistTasks } from './state.js';
 import { readStorage, writeStorage, readCookieJSON, now, uid, STORAGE_KEYS } from './storage.js';
-import { initTimer } from './timer.js';
 import { renderDashboardChart, populateChartDropdown } from './charts.js';
 import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock, shareFolder } from './folders.js';
 import { addTask, initConfirmDeleteModal, closeConfirmDeleteModal, getRenderData, renderTaskItem } from './tasks.js';
 import { loadSchedules, renderScheduledView, createSchedule } from './schedules.js';
+import { renderCategoriesView, expandAllCategories, collapseAllCategories } from './categories.js';
 
 // DOM elements cache builder
 function initElements() {
@@ -13,9 +13,6 @@ function initElements() {
   el.input = document.getElementById('taskInput');
   el.tasks = document.getElementById('tasks');
   el.empty = document.getElementById('emptyState');
-  el.progressText = document.getElementById('progressText');
-  el.progressBar = document.querySelector('.progress-bar');
-  el.progressFill = document.querySelector('.progress-fill');
   el.clearCompleted = document.getElementById('clearCompleted');
   el.filterButtons = Array.from(document.querySelectorAll('.filters .chip'));
   el.search = document.getElementById('searchInput');
@@ -29,7 +26,9 @@ function initElements() {
   el.yAxisMin = document.getElementById('yAxisMin');
   el.xAxisLabels = document.getElementById('xAxisLabels');
   el.exportBtn = document.getElementById('exportBtn');
+  el.exportWordBtn = document.getElementById('exportWordBtn');
   el.exportMultipleBtn = document.getElementById('exportMultipleBtn');
+  el.exportMultipleWord = document.getElementById('exportMultipleWord');
   el.exportMultipleModal = document.getElementById('exportMultipleModal');
   el.exportListsContainer = document.getElementById('exportListsContainer');
   el.exportMultipleCancel = document.getElementById('exportMultipleCancel');
@@ -45,6 +44,7 @@ function initElements() {
   el.folderDescriptionInput = document.getElementById('folderDescriptionInput');
   el.folderModalCancel = document.getElementById('folderModalCancel');
   el.folderModalTitle = document.getElementById('folderModalTitle');
+  el.activeListNameDisplay = document.getElementById('activeListNameDisplay');
   el.listDescriptionDisplay = document.getElementById('listDescriptionDisplay');
   el.listSearchInput = document.getElementById('listSearchInput');
   el.sidebarToggle = document.getElementById('sidebarToggle');
@@ -56,9 +56,14 @@ function initElements() {
   el.confirmDeleteConfirm = document.getElementById('confirmDeleteConfirm');
   el.dashboardBtn = document.getElementById('dashboardBtn');
   el.settingsBtn = document.getElementById('settingsBtn');
+  el.allTasksBtn = document.getElementById('allTasksBtn');
   el.tasksView = document.getElementById('tasksView');
   el.dashboardView = document.getElementById('dashboardView');
   el.settingsView = document.getElementById('settingsView');
+  el.categoriesView = document.getElementById('categoriesView');
+  el.categoriesBtn = document.getElementById('categoriesBtn');
+  el.expandAllCategoriesBtn = document.getElementById('expandAllCategoriesBtn');
+  el.collapseAllCategoriesBtn = document.getElementById('collapseAllCategoriesBtn');
   el.amoledToggle = document.getElementById('amoledToggle');
   el.dashCompletionRate = document.getElementById('dashCompletionRate');
   el.dashCurrentStreak = document.getElementById('dashCurrentStreak');
@@ -102,6 +107,8 @@ function initElements() {
 }
 
 export function render() {
+  renderRightSidebarDistribution();
+
   if (state.currentView === 'settings') {
     if (el.tasksView) el.tasksView.style.display = 'none';
     if (el.dashboardView) el.dashboardView.style.display = 'none';
@@ -109,6 +116,7 @@ export function render() {
     if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
     if (el.settingsBtn) el.settingsBtn.classList.add('active');
     renderAccentColorPicker();
+    renderShortcutsUI();
     return;
   }
 
@@ -133,46 +141,100 @@ export function render() {
 
   // Render list description
   const currentFolder = state.folders.find(f => f.id === state.currentFolderId);
-  if (currentFolder) {
+
+  if (state.currentView === 'allTasks') {
     if (el.activeListNameDisplay) {
-      el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
+      el.activeListNameDisplay.textContent = 'Categories';
     }
-    const isLocked = !!currentFolder.locked;
-    if (el.lockToggleIcon) {
-      el.lockToggleIcon.innerHTML = isLocked 
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
-    }
-    if (el.lockToggleText) {
-      el.lockToggleText.textContent = isLocked ? 'Locked' : 'Unlocked';
+    if (el.listDescriptionDisplay) {
+      el.listDescriptionDisplay.textContent = 'Task lists organized by category. Click any list to open it.';
+      el.listDescriptionDisplay.style.display = 'block';
     }
     if (el.lockToggleBtn) {
-      el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
+      el.lockToggleBtn.style.display = 'none';
     }
     if (el.input) {
-      el.input.disabled = isLocked;
-      el.input.placeholder = isLocked 
-        ? 'This list is locked...' 
-        : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
+      el.input.disabled = false;
+      el.input.placeholder = 'Add a task...';
     }
-    const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
-    if (addBtn) {
-      addBtn.disabled = isLocked;
-      addBtn.textContent = currentFolder.type === 'scheduled' ? 'Alarm +' : 'Add Task';
+
+    const addTaskSec = document.querySelector('.add-task');
+    if (addTaskSec) addTaskSec.style.display = 'none';
+
+    if (el.tasks) el.tasks.style.display = 'none';
+    const catContainer = document.getElementById('categoriesContainer');
+    if (catContainer) catContainer.style.display = 'grid';
+    const controlsSec = document.querySelector('.controls');
+    if (controlsSec) controlsSec.style.display = 'none';
+
+    const searchComp = document.querySelector('.expandable-search');
+    if (searchComp) searchComp.style.display = 'none';
+
+    const shareBtn = document.getElementById('shareListBtn');
+    if (shareBtn) shareBtn.style.display = 'none';
+
+    // Update Progress Bar metrics across all tasks (REMOVED)
+
+    renderCategoriesView();
+    return;
+  } else {
+    const addTaskSec = document.querySelector('.add-task');
+    if (addTaskSec) addTaskSec.style.display = 'block';
+
+    if (el.tasks) el.tasks.style.display = 'grid';
+    const catContainer = document.getElementById('categoriesContainer');
+    if (catContainer) catContainer.style.display = 'none';
+    const controlsSec = document.querySelector('.controls');
+    if (controlsSec) controlsSec.style.display = 'flex';
+
+    const searchComp = document.querySelector('.expandable-search');
+    if (searchComp) searchComp.style.display = 'flex';
+
+    const shareBtn = document.getElementById('shareListBtn');
+    if (shareBtn) shareBtn.style.display = 'inline-flex';
+
+    if (el.lockToggleBtn) {
+      el.lockToggleBtn.style.display = 'inline-flex';
     }
-  }
-  if (el.listDescriptionDisplay) {
-    if (currentFolder && currentFolder.description) {
-      el.listDescriptionDisplay.textContent = currentFolder.description;
-      el.listDescriptionDisplay.style.display = 'block';
-    } else {
-      el.listDescriptionDisplay.textContent = '';
-      el.listDescriptionDisplay.style.display = 'none';
+    if (currentFolder) {
+      if (el.activeListNameDisplay) {
+        el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
+      }
+      const isLocked = !!currentFolder.locked;
+      if (el.lockToggleIcon) {
+        el.lockToggleIcon.innerHTML = isLocked 
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+      }
+      if (el.lockToggleText) {
+        el.lockToggleText.textContent = isLocked ? 'Locked' : 'Unlocked';
+      }
+      if (el.lockToggleBtn) {
+        el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
+      }
+      if (el.input) {
+        el.input.disabled = isLocked;
+        el.input.placeholder = isLocked 
+          ? 'This list is locked...' 
+          : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
+      }
+      const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
+      if (addBtn) {
+        addBtn.disabled = isLocked;
+      }
+      if (el.listDescriptionDisplay) {
+        if (currentFolder.description) {
+          el.listDescriptionDisplay.textContent = currentFolder.description;
+          el.listDescriptionDisplay.style.display = 'block';
+        } else {
+          el.listDescriptionDisplay.style.display = 'none';
+        }
+      }
     }
   }
 
   // Route to Scheduled Alarm View if type is 'scheduled'
-  if (currentFolder && currentFolder.type === 'scheduled') {
+  if (state.currentView !== 'allTasks' && currentFolder && currentFolder.type === 'scheduled') {
     renderScheduledView(currentFolder.id);
     return;
   }
@@ -180,11 +242,7 @@ export function render() {
   // Empty state
   el.empty.hidden = filtered.length !== 0 || (state.searchQuery.length > 0 || state.activeFilter !== 'all' || state.selectedMonth);
 
-  // Progress
-  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-  el.progressText.textContent = `${percent}% • ${completed}/${total} completed`;
-  el.progressBar.setAttribute('aria-valuenow', String(percent));
-  el.progressFill.style.width = `${percent}%`;
+  // Progress (REMOVED)
 
   // List
   el.tasks.innerHTML = '';
@@ -200,6 +258,95 @@ export function render() {
 
   // Activity chart
   if (state.currentView === 'dashboard') renderDashboardChart();
+}
+
+function renderRightSidebarDistribution() {
+  const container = document.getElementById('rightSidebarDistribution');
+  const countSpan = document.getElementById('rightSidebarTotalCount');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  let grandTotalTasks = 0;
+  const folderData = [];
+
+  state.folders.forEach(folder => {
+    const listTasks = state.tasksByFolder[folder.id] || [];
+    grandTotalTasks += listTasks.length;
+    const completedCount = listTasks.filter(t => t.completed).length;
+    folderData.push({
+      folder,
+      total: listTasks.length,
+      completed: completedCount
+    });
+  });
+
+  if (countSpan) {
+    countSpan.textContent = `${grandTotalTasks} task${grandTotalTasks !== 1 ? 's' : ''}`;
+  }
+
+  if (folderData.length === 0) {
+    container.innerHTML = '<div style="font-size: 12px; color: var(--text-dim); font-style: italic;">No task lists found.</div>';
+    return;
+  }
+
+  folderData.forEach(({ folder, total, completed }) => {
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const isCurrent = folder.id === state.currentFolderId && state.currentView === 'tasks';
+
+    const item = document.createElement('div');
+    item.className = `right-panel-dist-item${isCurrent ? ' active' : ''}`;
+    item.style.cursor = 'pointer';
+    item.style.padding = '8px 10px';
+    item.style.borderRadius = 'var(--radius)';
+    item.style.border = '1px solid var(--border)';
+    item.style.background = isCurrent ? 'var(--bg-subtle)' : 'var(--bg)';
+    item.style.transition = 'all 0.2s ease';
+    item.title = `Click to switch to ${folder.name}`;
+    item.addEventListener('click', () => switchFolder(folder.id));
+
+    const topRow = document.createElement('div');
+    topRow.style.display = 'flex';
+    topRow.style.justifyContent = 'space-between';
+    topRow.style.alignItems = 'center';
+    topRow.style.fontSize = '12.5px';
+    topRow.style.fontWeight = '500';
+    topRow.style.marginBottom = '6px';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.style.color = isCurrent ? 'var(--accent)' : 'var(--text)';
+    nameSpan.style.fontWeight = isCurrent ? '600' : '500';
+    nameSpan.style.overflow = 'hidden';
+    nameSpan.style.textOverflow = 'ellipsis';
+    nameSpan.style.whiteSpace = 'nowrap';
+    nameSpan.style.maxWidth = '150px';
+    nameSpan.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
+
+    const countLabel = document.createElement('span');
+    countLabel.style.fontSize = '11px';
+    countLabel.style.color = 'var(--text-dim)';
+    countLabel.textContent = `${completed}/${total} (${pct}%)`;
+
+    topRow.append(nameSpan, countLabel);
+
+    const barBg = document.createElement('div');
+    barBg.style.height = '6px';
+    barBg.style.background = 'var(--bg-subtle)';
+    barBg.style.borderRadius = '3px';
+    barBg.style.overflow = 'hidden';
+    barBg.style.width = '100%';
+
+    const barFill = document.createElement('div');
+    barFill.style.height = '100%';
+    barFill.style.width = `${pct}%`;
+    barFill.style.background = isCurrent ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 60%, var(--border))';
+    barFill.style.borderRadius = '3px';
+    barFill.style.transition = 'width 0.3s ease';
+
+    barBg.appendChild(barFill);
+    item.append(topRow, barBg);
+    container.appendChild(item);
+  });
 }
 
 // Theme
@@ -447,6 +594,154 @@ function exportToExcel() {
   XLSX.writeFile(wb, filename);
 }
 
+// Export to Word Document
+function exportToWord(selectedFolderIds = null) {
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  let foldersToExport = [];
+  if (selectedFolderIds && selectedFolderIds.length > 0) {
+    foldersToExport = state.folders.filter(f => selectedFolderIds.includes(f.id));
+  } else if (state.currentView === 'allTasks') {
+    foldersToExport = [...state.folders];
+  } else if (state.currentFolderId) {
+    const curr = state.folders.find(f => f.id === state.currentFolderId);
+    if (curr) foldersToExport = [curr];
+  } else if (state.folders.length > 0) {
+    foldersToExport = [...state.folders];
+  }
+
+  if (foldersToExport.length === 0) {
+    alert('No lists available to export.');
+    return;
+  }
+
+  let totalTasksExported = 0;
+  let htmlSections = '';
+
+  foldersToExport.forEach(folder => {
+    const tasks = state.tasksByFolder[folder.id] || [];
+    if (tasks.length === 0) return;
+
+    totalTasksExported += tasks.length;
+
+    let descHtml = folder.description 
+      ? `<div class="list-description">${escapeHtml(folder.description)}</div>` 
+      : '';
+
+    let rowsHtml = '';
+    tasks.forEach(task => {
+      const statusClass = task.completed ? 'status-completed' : 'status-active';
+      const statusText = task.completed ? 'Completed' : 'Active';
+      const titleClass = task.completed ? 'task-title completed' : 'task-title';
+      const priorityBadge = task.highPriority ? '<span class="priority-badge"> 🚩 High Priority</span>' : '';
+      
+      let subtasksHtml = '';
+      if (Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+        subtasksHtml = '<div style="margin-top: 4px;">';
+        task.subtasks.forEach(sub => {
+          const subSymbol = sub.completed ? '☑' : '☐';
+          subtasksHtml += `<div class="subtask-item">${subSymbol} ${escapeHtml(sub.title)}</div>`;
+        });
+        subtasksHtml += '</div>';
+      }
+
+      rowsHtml += `
+        <tr>
+          <td>
+            <div class="${titleClass}">${escapeHtml(task.title)}${priorityBadge}</div>
+            ${subtasksHtml}
+          </td>
+          <td class="${statusClass}">${statusText}</td>
+          <td>${formatDate(task.createdAt)} ${formatTime(task.createdAt)}</td>
+          <td>${task.completedAt ? `${formatDate(task.completedAt)} ${formatTime(task.completedAt)}` : '-'}</td>
+        </tr>
+      `;
+    });
+
+    htmlSections += `
+      <div class="section-header">${escapeHtml(folder.type === 'scheduled' ? '⏰ ' : '')}${escapeHtml(folder.name)}</div>
+      ${descHtml}
+      <table class="task-table">
+        <thead>
+          <tr>
+            <th style="width: 50%;">Task Name</th>
+            <th style="width: 15%;">Status</th>
+            <th style="width: 17.5%;">Created Date</th>
+            <th style="width: 17.5%;">Completed Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+  });
+
+  if (totalTasksExported === 0) {
+    alert('No tasks found in the selected lists.');
+    return;
+  }
+
+  const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+
+  const wordDocumentHtml = `
+    <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+    <meta charset='utf-8'>
+    <title>Squash Tasks Export</title>
+    <style>
+      body { font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; color: #1f2937; margin: 40px; }
+      .doc-title { font-size: 24pt; font-weight: bold; color: #0f172a; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin-bottom: 24px; }
+      .meta-header { font-size: 10pt; color: #64748b; margin-bottom: 20px; }
+      .section-header { font-size: 18pt; font-weight: bold; color: #1d4ed8; margin-top: 28px; margin-bottom: 8px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; page-break-after: avoid; }
+      .list-description { font-size: 10.5pt; font-style: italic; color: #64748b; margin-bottom: 12px; }
+      .task-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      .task-table th { background-color: #f1f5f9; color: #334155; text-align: left; padding: 8px 10px; font-size: 10.5pt; border-bottom: 2px solid #cbd5e1; font-weight: bold; }
+      .task-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 10.5pt; vertical-align: top; }
+      .status-active { color: #2563eb; font-weight: bold; }
+      .status-completed { color: #16a34a; font-weight: bold; }
+      .task-title { font-weight: 500; }
+      .task-title.completed { text-decoration: line-through; color: #64748b; }
+      .subtask-item { font-size: 9.5pt; color: #475569; margin-left: 12px; margin-top: 3px; }
+      .priority-badge { color: #dc2626; font-weight: bold; font-size: 9pt; }
+    </style>
+    </head>
+    <body>
+      <div class="doc-title">Squash • Task Export</div>
+      <div class="meta-header">Generated on ${dateStr} • ${totalTasksExported} task(s) total</div>
+      ${htmlSections}
+    </body>
+    </html>
+  `;
+
+  const filename = foldersToExport.length === 1 
+    ? `${foldersToExport[0].name.replace(/[^a-z0-9]/gi, '_')}_tasks.doc`
+    : `squash_tasks_${new Date().toISOString().split('T')[0]}.doc`;
+
+  const blob = new Blob(['\ufeff', wordDocumentHtml], {
+    type: 'application/msword'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  if (selectedFolderIds && typeof closeExportMultipleModal === 'function') {
+    closeExportMultipleModal();
+  }
+}
+
 function exportMultipleLists(selectedFolderIds) {
   if (selectedFolderIds.length === 0) {
     alert('Please select at least one list to export.');
@@ -635,8 +930,20 @@ function initImportExport() {
     el.exportBtn.addEventListener('click', exportToExcel);
   }
 
+  if (el.exportWordBtn) {
+    el.exportWordBtn.addEventListener('click', () => exportToWord());
+  }
+
   if (el.exportMultipleBtn) {
     el.exportMultipleBtn.addEventListener('click', openExportMultipleModal);
+  }
+
+  if (el.exportMultipleWord) {
+    el.exportMultipleWord.addEventListener('click', () => {
+      const checkboxes = el.exportListsContainer.querySelectorAll('.export-checkbox:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+      exportToWord(selectedIds);
+    });
   }
 
   if (el.exportMultipleCancel) {
@@ -786,10 +1093,13 @@ function load() {
     persistTasks();
   }
 
+  state.currentView = readStorage('tm_current_view_v2', 'tasks');
   state.currentFolderId = readStorage(STORAGE_KEYS.currentFolder, null);
   if (!state.currentFolderId || !state.folders.find(f => f.id === state.currentFolderId)) {
-    state.currentFolderId = state.folders[0].id;
-    writeStorage(STORAGE_KEYS.currentFolder, state.currentFolderId);
+    if (state.folders.length > 0) {
+      state.currentFolderId = state.folders[0].id;
+      writeStorage(STORAGE_KEYS.currentFolder, state.currentFolderId);
+    }
   }
 
   state.folders.forEach(folder => {
@@ -912,33 +1222,268 @@ function cycleFolder() {
   switchFolder(state.folders[nextIndex].id);
 }
 
-// Keyboard Shortcuts
+// Keyboard Shortcuts & Keybinding Recorder
+const DEFAULT_SHORTCUTS = {
+  newTask: { label: 'New Task', key: 'N' },
+  search: { label: 'Search', key: '/' },
+  filterAll: { label: 'Filter All', key: 'A' },
+  filterActive: { label: 'Filter Active', key: '1' },
+  filterCompleted: { label: 'Filter Completed', key: '2' },
+  toggleLock: { label: 'Toggle Lock', key: 'L' },
+  toggleSidebar: { label: 'Toggle Sidebar', key: 'S' },
+  cycleFolder: { label: 'Cycle List', key: 'Alt+T' },
+  cycleColor: { label: 'Cycle Color', key: 'C' },
+  toggleAmoled: { label: 'Toggle AMOLED', key: 'B' },
+  openCategories: { label: 'Open Categories', key: 'M' }
+};
+
+let recordingActionKey = null;
+
+function getShortcuts() {
+  const saved = readStorage(STORAGE_KEYS.shortcuts, {});
+  const result = {};
+  Object.keys(DEFAULT_SHORTCUTS).forEach(actionId => {
+    result[actionId] = saved[actionId] !== undefined ? saved[actionId] : DEFAULT_SHORTCUTS[actionId].key;
+  });
+  return result;
+}
+
+function formatKeyEvent(e) {
+  const isModifierOnly = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
+  if (isModifierOnly) return null;
+
+  const parts = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.metaKey) parts.push('Meta');
+
+  let rawKey = e.key;
+  if (rawKey === ' ') rawKey = 'Space';
+  
+  let displayKey = rawKey;
+  if (rawKey.length === 1) {
+    displayKey = rawKey.toUpperCase();
+  } else if (rawKey.length > 1) {
+    displayKey = rawKey.charAt(0).toUpperCase() + rawKey.slice(1);
+  }
+
+  return [...parts, displayKey].join('+');
+}
+
+function showShortcutConflictModal(combo, actionLabel) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  
+  const content = document.createElement('div');
+  content.className = 'modal-content';
+  content.style.maxWidth = '400px';
+  content.style.textAlign = 'center';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Shortcut Conflict';
+  
+  const msg = document.createElement('p');
+  msg.style.color = 'var(--text-dim)';
+  msg.style.fontSize = '14px';
+  msg.innerHTML = `The shortcut <strong style="color: var(--text);">${combo}</strong> is already mapped to <strong>${actionLabel}</strong>.<br><br>Please choose a different key combination.`;
+  
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  actions.style.justifyContent = 'center';
+  actions.style.marginTop = '24px';
+  
+  const okBtn = document.createElement('button');
+  okBtn.className = 'primary';
+  okBtn.textContent = 'Understood';
+  okBtn.onclick = () => {
+    modal.remove();
+  };
+  
+  actions.appendChild(okBtn);
+  content.append(title, msg, actions);
+  modal.appendChild(content);
+  
+  document.body.appendChild(modal);
+}
+
+function showRecordingModal(actionId) {
+  if (window.currentRecordingModal) {
+    window.currentRecordingModal.remove();
+  }
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  
+  const content = document.createElement('div');
+  content.className = 'modal-content';
+  content.style.maxWidth = '400px';
+  content.style.textAlign = 'center';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Record Shortcut';
+  
+  const msg = document.createElement('p');
+  msg.style.color = 'var(--text-dim)';
+  msg.style.fontSize = '14px';
+  msg.innerHTML = `Press a key combination for <strong>${DEFAULT_SHORTCUTS[actionId].label}</strong>.<br><br>Or click Clear to disable this shortcut entirely.`;
+  
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  actions.style.justifyContent = 'center';
+  actions.style.marginTop = '24px';
+  actions.style.gap = '12px';
+  
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'ghost-button';
+  clearBtn.style.color = 'var(--danger)';
+  clearBtn.style.borderColor = 'var(--danger)';
+  clearBtn.textContent = 'Clear Shortcut';
+  clearBtn.onclick = () => {
+    const saved = readStorage(STORAGE_KEYS.shortcuts, {});
+    saved[actionId] = ''; // disabled
+    writeStorage(STORAGE_KEYS.shortcuts, saved);
+    recordingActionKey = null;
+    modal.remove();
+    window.currentRecordingModal = null;
+    renderShortcutsUI();
+  };
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'ghost-button';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => {
+    recordingActionKey = null;
+    modal.remove();
+    window.currentRecordingModal = null;
+    renderShortcutsUI();
+  };
+  
+  actions.append(clearBtn, cancelBtn);
+  content.append(title, msg, actions);
+  modal.appendChild(content);
+  
+  document.body.appendChild(modal);
+  window.currentRecordingModal = modal;
+}
+
+function renderShortcutsUI() {
+  const container = document.getElementById('shortcutsContainer');
+  if (!container) return;
+
+  const shortcuts = getShortcuts();
+  container.innerHTML = '';
+
+  Object.keys(DEFAULT_SHORTCUTS).forEach(actionId => {
+    const item = document.createElement('div');
+    item.className = 'shortcut-item';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = DEFAULT_SHORTCUTS[actionId].label;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'shortcut-recorder-btn';
+
+    if (recordingActionKey === actionId) {
+      btn.classList.add('recording');
+      btn.textContent = 'Recording...';
+    } else {
+      btn.textContent = shortcuts[actionId] || 'Disabled';
+    }
+
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (recordingActionKey === actionId) {
+        recordingActionKey = null;
+        if (window.currentRecordingModal) {
+          window.currentRecordingModal.remove();
+          window.currentRecordingModal = null;
+        }
+      } else {
+        recordingActionKey = actionId;
+        showRecordingModal(actionId);
+      }
+      renderShortcutsUI();
+    });
+
+    item.append(labelSpan, btn);
+    container.appendChild(item);
+  });
+}
+
+function initShortcutsUI() {
+  const resetBtn = document.getElementById('resetShortcutsBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      writeStorage(STORAGE_KEYS.shortcuts, {});
+      recordingActionKey = null;
+      renderShortcutsUI();
+    });
+  }
+}
+
 function initKeyboardShortcuts() {
+  initShortcutsUI();
+
   document.addEventListener('keydown', (e) => {
     const active = document.activeElement;
     const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable;
+
+    // Handle recording mode
+    if (recordingActionKey) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.key === 'Escape') {
+        recordingActionKey = null;
+        if (window.currentRecordingModal) {
+          window.currentRecordingModal.remove();
+          window.currentRecordingModal = null;
+        }
+        renderShortcutsUI();
+        return;
+      }
+
+      const combo = formatKeyEvent(e);
+      if (combo) {
+        const currentShortcuts = getShortcuts();
+        const conflictActionId = Object.keys(currentShortcuts).find(
+          a => currentShortcuts[a] && currentShortcuts[a].toLowerCase() === combo.toLowerCase() && a !== recordingActionKey
+        );
+
+        if (conflictActionId) {
+          const actionLabel = DEFAULT_SHORTCUTS[conflictActionId].label;
+          showShortcutConflictModal(combo, actionLabel);
+        } else {
+          const saved = readStorage(STORAGE_KEYS.shortcuts, {});
+          saved[recordingActionKey] = combo;
+          writeStorage(STORAGE_KEYS.shortcuts, saved);
+        }
+        recordingActionKey = null;
+        if (window.currentRecordingModal) {
+          window.currentRecordingModal.remove();
+          window.currentRecordingModal = null;
+        }
+        renderShortcutsUI();
+      }
+      return;
+    }
 
     if (isInput && e.key !== 'Escape') {
       return;
     }
 
-    if (e.altKey && e.key.toLowerCase() === 't') {
-      e.preventDefault();
-      cycleFolder();
-      return;
-    }
-
-    if (e.ctrlKey || e.altKey || e.metaKey) return;
-
-    const key = e.key.toLowerCase();
-    const isModalOpen = !el.folderModal.hidden || !el.exportMultipleModal.hidden || (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || (el.changelogModal && !el.changelogModal.hidden);
+    const isModalOpen = !el.folderModal.hidden || 
+      !el.exportMultipleModal.hidden || 
+      (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || 
+      (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || 
+      (el.changelogModal && !el.changelogModal.hidden) ||
+      (document.getElementById('scheduleModal') && !document.getElementById('scheduleModal').hidden);
 
     if (e.key === 'Enter') {
       const activeModal = document.querySelector('.modal:not([hidden])');
       if (activeModal) {
-        // If focusing a button or inside textarea/input, let standard form submit or click handle it
         if (active.tagName === 'TEXTAREA') return;
-        
         const primaryBtn = activeModal.querySelector('.modal-actions button.primary, .modal-actions button[type="submit"]');
         if (primaryBtn) {
           e.preventDefault();
@@ -968,29 +1513,59 @@ function initKeyboardShortcuts() {
     }
 
     if (isModalOpen) return;
-    if (key === 'n') {
+
+    // Match pressed key combo against user configured shortcuts
+    const combo = formatKeyEvent(e);
+    if (!combo) return;
+
+    const shortcuts = getShortcuts();
+    const normalizedCombo = combo.toLowerCase();
+
+    const matchedAction = Object.keys(shortcuts).find(actionId => shortcuts[actionId] && shortcuts[actionId].toLowerCase() === normalizedCombo);
+
+    if (matchedAction) {
       e.preventDefault();
-      el.input.focus();
-    } else if (key === '/') {
-      e.preventDefault();
-      el.search.focus();
-    } else if (key === 'a') {
-      setFilter('all');
-    } else if (key === '1') {
-      setFilter('active');
-    } else if (key === '2') {
-      setFilter('completed');
-    } else if (key === 'l') {
-      e.preventDefault();
-      toggleCurrentFolderLock();
-    } else if (key === 's') {
-      e.preventDefault();
-      if (el.sidebarToggle) {
-        el.sidebarToggle.click();
+      switch (matchedAction) {
+        case 'newTask':
+          if (el.input) el.input.focus();
+          break;
+        case 'search':
+          if (el.search) el.search.focus();
+          break;
+        case 'filterAll':
+          setFilter('all');
+          break;
+        case 'filterActive':
+          setFilter('active');
+          break;
+        case 'filterCompleted':
+          setFilter('completed');
+          break;
+        case 'toggleLock':
+          toggleCurrentFolderLock();
+          break;
+        case 'toggleSidebar':
+          if (el.sidebarToggle) el.sidebarToggle.click();
+          break;
+        case 'cycleFolder':
+          cycleFolder();
+          break;
+        case 'cycleColor':
+          cycleAccentColor();
+          break;
+        case 'toggleAmoled':
+          const amoledToggle = document.getElementById('amoledToggle');
+          if (amoledToggle) {
+            amoledToggle.click();
+          }
+          break;
+        case 'openCategories':
+          const categoriesBtn = document.getElementById('allTasksBtn');
+          if (categoriesBtn) {
+            categoriesBtn.click();
+          }
+          break;
       }
-    } else if (key === 'c') {
-      e.preventDefault();
-      cycleAccentColor();
     }
   });
 }
@@ -1139,6 +1714,7 @@ function initDashboard() {
   if (!el.dashboardBtn) return;
   el.dashboardBtn.addEventListener('click', () => {
     state.currentView = 'dashboard';
+    writeStorage('tm_current_view_v2', 'dashboard');
     if (el.settingsBtn) el.settingsBtn.classList.remove('active');
     renderFolders();
     render();
@@ -1149,6 +1725,7 @@ function initSettings() {
   if (!el.settingsBtn) return;
   el.settingsBtn.addEventListener('click', () => {
     state.currentView = 'settings';
+    writeStorage('tm_current_view_v2', 'settings');
     if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
     renderFolders();
     render();
@@ -1171,6 +1748,22 @@ function initSettings() {
       purgeOrphanTasks(true);
       render();
     });
+  }
+}
+
+function initCategories() {
+  if (el.categoriesBtn) {
+    el.categoriesBtn.addEventListener('click', () => {
+      state.currentView = 'categories';
+      renderFolders();
+      render();
+    });
+  }
+  if (el.expandAllCategoriesBtn) {
+    el.expandAllCategoriesBtn.addEventListener('click', expandAllCategories);
+  }
+  if (el.collapseAllCategoriesBtn) {
+    el.collapseAllCategoriesBtn.addEventListener('click', collapseAllCategories);
   }
 }
 
@@ -1821,6 +2414,16 @@ function initShareListBtn() {
   });
 }
 
+function initAllTasks() {
+  if (!el.allTasksBtn) return;
+  el.allTasksBtn.addEventListener('click', () => {
+    state.currentView = 'allTasks';
+    writeStorage('tm_current_view_v2', 'allTasks');
+    renderFolders();
+    render();
+  });
+}
+
 // Bootstrap
 async function init() {
   initElements();
@@ -1839,7 +2442,8 @@ async function init() {
   initConfirmDeleteModal();
   initDashboard();
   initSettings();
-  initTimer();
+  initCategories();
+  initAllTasks();
   initDashboardChart();
   initLockToggle();
   initShareListBtn();

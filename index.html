@@ -35,7 +35,18 @@
             </h1>
             <span class="subtitle">Squashing tasks like bugs...</span>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+            <button id="changelogBtn" class="ghost-button" aria-label="View Changelog & Features"
+                style="padding: 6px 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--text); font-size: 13px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Changelog
+            </button>
             <button id="signInBtn" class="sign-in-button" aria-label="Sign in with Google">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -53,6 +64,16 @@
     <main class="container" role="main">
         <div class="left-panel">
             <aside class="folders-sidebar">
+                <button id="allTasksBtn" class="ghost-button sidebar-all-tasks-btn" aria-label="See all tasks"
+                    style="width: 100%; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; justify-content: flex-start; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); font-size: 13.5px; font-weight: 500; color: var(--text);">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>Categories</span>
+                </button>
                 <div class="folders-header">
                     <h2>Lists</h2>
                     <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
@@ -66,39 +87,8 @@
                         style="width: 100%; padding: 8px 4px; font-size: 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);">
                 </div>
                 <ul id="foldersList" class="folders-list" role="list"></ul>
-                <section class="sidebar-actions" aria-label="Actions">
-                    <h3 class="sidebar-actions-title">Actions</h3>
-                    <button id="exportBtn" class="ghost-button" aria-label="Export tasks to Excel"
-                        data-tooltip="Export tasks to Excel">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export
-                    </button>
-                    <button id="exportMultipleBtn" class="ghost-button" aria-label="Export multiple lists to Excel"
-                        data-tooltip="Export multiple lists to Excel">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export Multiple
-                    </button>
-                    <button id="importBtn" class="ghost-button" aria-label="Import tasks from Excel"
-                        data-tooltip="Import tasks from Excel">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Import
-                    </button>
-                    <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
+                <section class="sidebar-actions" aria-label="Navigation">
+                    <h3 class="sidebar-actions-title">Navigation</h3>
 
                     <button id="dashboardBtn" class="ghost-button" aria-label="Open dashboard"
                         data-tooltip="Open dashboard">
@@ -204,17 +194,22 @@
 
 
 
-                <section class="controls" aria-label="Task filters">
+                <section class="controls" aria-label="Task filters" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div class="filters" role="tablist" aria-label="Filters">
                         <button class="chip active" data-filter="all" role="tab" aria-selected="true">All</button>
                         <button class="chip" data-filter="active" role="tab" aria-selected="false">Active</button>
                         <button class="chip" data-filter="completed" role="tab" aria-selected="false">Completed</button>
+                    </div>
+                    <div id="allTasksCategoryControls" style="display: none; gap: 8px; align-items: center;">
+                        <button id="expandAllCategoriesBtn" class="ghost-button" style="font-size: 12px; padding: 4px 10px;">Expand All</button>
+                        <button id="collapseAllCategoriesBtn" class="ghost-button" style="font-size: 12px; padding: 4px 10px;">Collapse All</button>
                     </div>
                 </section>
 
                 <section class="task-list" aria-labelledby="taskListLabel">
                     <h2 id="taskListLabel" class="sr-only">Task list</h2>
                     <ul id="tasks" class="tasks" aria-live="polite"></ul>
+                    <div id="categoriesContainer" style="display: none; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start;"></div>
                     <div id="emptyState" class="empty-state" hidden>
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border)"
                             stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
@@ -349,11 +344,6 @@
                     <div id="dashboardChartTotals" style="font-size: 12px; color: var(--text-dim); text-align: right; margin-top: 8px;">0 tasks completed in the last 365 days</div>
                 </div>
 
-                <!-- List Distribution -->
-                <div class="distribution-section">
-                    <h4>List Task Distribution</h4>
-                    <div id="dashListDistribution"></div>
-                </div>
 
                 <!-- High Priority Tasks -->
                 <div class="priority-section">
@@ -400,6 +390,57 @@
                         <label>Accent Color</label>
                         <div id="accentColorContainer"></div>
                     </div>
+                    <div class="setting-item" style="margin-bottom: 24px; grid-column: 1 / -1;">
+                        <label style="margin-bottom: 8px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Data Export & Import</label>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+                            <button id="exportBtn" class="ghost-button" aria-label="Export tasks to Excel"
+                                data-tooltip="Export active list to Excel (.xlsx)"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Export Excel
+                            </button>
+                            <button id="exportWordBtn" class="ghost-button" aria-label="Export tasks to Word"
+                                data-tooltip="Export active list to Word Document (.doc)"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Export Word
+                            </button>
+                            <button id="exportMultipleBtn" class="ghost-button" aria-label="Export multiple lists"
+                                data-tooltip="Export multiple or all lists"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Export Multiple Lists...
+                            </button>
+                            <button id="importBtn" class="ghost-button" aria-label="Import tasks from Excel"
+                                data-tooltip="Import tasks from Excel file"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Import Spreadsheet
+                            </button>
+                            <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
+                        </div>
+                    </div>
                     <div class="setting-item" style="margin-bottom: 24px;">
                         <label>Bulk Actions</label>
                         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -432,58 +473,16 @@
                             </button>
                         </div>
                     </div>
-                    <div class="setting-item" style="margin-bottom: 24px;">
-                        <label>App Features & Updates</label>
-                        <button id="changelogBtn" class="ghost-button" aria-label="View Changelog & Features"
-                            style="padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--text);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                            </svg>
-                            View Changelog
-                        </button>
-                    </div>
                 </div>
 
                 <div class="dashboard-settings-section" style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
                     <div class="setting-item" style="grid-column: 1 / -1;">
-                        <h4 style="margin-bottom: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Keyboard Shortcuts</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13px; color: var(--text-muted); background: var(--bg-panel); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>New Task</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">N</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Search</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">/</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Toggle Theme</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">T</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Filters (All/Act/Cmp)</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">A / 1 / 2</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Toggle Lock</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">L</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Toggle Sidebar</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">S</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Cycle List</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">Alt+T</kbd>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span>Cycle Color</span>
-                                <kbd style="background: var(--bg-subtle); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--text);">C</kbd>
-                            </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Keyboard Shortcuts</h4>
+                            <button id="resetShortcutsBtn" class="ghost-button" style="font-size: 12px; padding: 4px 10px;" aria-label="Reset shortcuts to defaults">Reset to Defaults</button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px 0;">Click on any shortcut badge to record a new key combination. Press Escape while recording to cancel.</p>
+                        <div id="shortcutsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 13px; color: var(--text-muted); background: var(--bg-panel); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
                         </div>
                     </div>
                 </div>
@@ -492,73 +491,13 @@
 
         <!-- Right Sidebar for Activity Chart -->
         <div class="right-panel" id="rightSidebar" style="overflow: hidden;">
-            <section class="progress" aria-labelledby="progressLabel" style="margin-bottom: 32px;">
-                <div class="progress-header"
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h2 id="progressLabel" style="font-size: 14px; margin: 0;">Progress</h2>
-                    <span id="progressText" aria-live="polite" style="font-size: 12px;">0% • 0/0 completed</span>
-                </div>
-                <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
-                    style="height: 6px; background: var(--bg-subtle); border-radius: var(--radius); overflow: hidden; width: 100%;">
-                    <div class="progress-fill"
-                        style="height: 100%; background: var(--accent); transition: width 0.3s ease; width:0%"></div>
-                </div>
-            </section>
 
-            <section class="pomodoro-section">
-                <h2 style="font-size: 14px; margin: 0; font-weight: 600; color: var(--text);">Timer</h2>
-                <div class="pomodoro-card" id="pomodoroCard">
-                    <div id="pomodoroClockView" style="display: flex; flex-direction: column; height: 100%; justify-content: space-between; flex: 1;">
-                        <div class="pomodoro-ring-container">
-                            <svg class="pomodoro-ring" viewBox="0 0 200 200">
-                                <!-- Background track -->
-                                <circle cx="100" cy="100" r="80" stroke="rgba(255,255,255,0.06)" stroke-width="5" fill="transparent" />
-                                <!-- Active progress bar -->
-                                <circle id="pomodoroProgressRing" cx="100" cy="100" r="80" stroke="var(--accent)" stroke-width="5.5" fill="transparent"
-                                    stroke-dasharray="502.6" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 0.3s ease; filter: drop-shadow(0 0 3px var(--accent));" />
-                            </svg>
-                            <div class="pomodoro-content">
-                                <div id="pomodoroStatusIcon" class="pomodoro-status-icon" style="color: var(--text-dim); opacity: 0.5;">
-                                    <!-- Simple Clock Icon -->
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                </div>
-                                <div id="pomodoroTimeDisplay" class="pomodoro-time">25:00</div>
-                                <div class="pomodoro-label" style="font-size: 9px; opacity: 0.6; font-weight: 500; letter-spacing: 0.5px;">TIME REMAINING</div>
-                            </div>
-                        </div>
-
-                        <!-- Time Adjuster Buttons inside the card -->
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; width: 100%;">
-                            <button class="pomo-adjust-btn pomodoro-control-btn" data-change="-600" style="padding: 4px 6px; font-size: 10px; font-weight: 700; border-radius: 12px; min-width: 40px; height: 26px;" title="Subtract 10 minutes">-10m</button>
-                            <button class="pomo-adjust-btn pomodoro-control-btn" data-change="-300" style="padding: 4px 6px; font-size: 10px; font-weight: 700; border-radius: 12px; min-width: 40px; height: 26px;" title="Subtract 5 minutes">-5m</button>
-                            <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 2px;">Adjust</span>
-                            <button class="pomo-adjust-btn pomodoro-control-btn" data-change="300" style="padding: 4px 6px; font-size: 10px; font-weight: 700; border-radius: 12px; min-width: 40px; height: 26px;" title="Add 5 minutes">+5m</button>
-                            <button class="pomo-adjust-btn pomodoro-control-btn" data-change="600" style="padding: 4px 6px; font-size: 10px; font-weight: 700; border-radius: 12px; min-width: 40px; height: 26px;" title="Add 10 minutes">+10m</button>
-                        </div>
-
-                        <!-- Controls -->
-                        <div class="pomodoro-controls">
-                            <button id="pomodoroResetBtn" class="pomodoro-control-btn round-btn" title="Reset">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                                    <polyline points="3 3 3 8 8 8"></polyline>
-                                </svg>
-                            </button>
-                            <button id="pomodoroStartBtn" class="pomodoro-control-btn pill-btn">START</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- History -->
-                <div class="timer-history-container" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 16px;">
-                    <h3 style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; margin: 0 0 10px 0; letter-spacing: 0.5px; font-weight: 600;">Last 5 Runs</h3>
-                    <ul id="timerHistory" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-dim);">
-                        <li style="font-style: italic;">No runs logged</li>
-                    </ul>
-                </div>
+            <section class="task-distribution-section" style="margin-top: 16px;">
+                <h2 style="font-size: 14px; margin: 0 0 14px 0; font-weight: 600; color: var(--text); display: flex; align-items: center; justify-content: space-between;">
+                    <span>Task List Distribution</span>
+                    <span id="rightSidebarTotalCount" style="font-size: 11px; color: var(--text-dim); font-weight: 500;">0 tasks</span>
+                </h2>
+                <div id="rightSidebarDistribution" style="display: flex; flex-direction: column; gap: 14px;"></div>
             </section>
         </div>
         </div>
@@ -577,6 +516,12 @@
                 <textarea id="folderDescriptionInput" placeholder="List description (optional, max 100 chars)..."
                     aria-label="List description" maxlength="100" rows="2"
                     style="width: 100%; margin-top: 12px; resize: none;"></textarea>
+
+                <div style="margin-top: 12px;">
+                    <input id="folderCategoryInput" type="text" placeholder="Category label (e.g. Work, Personal, Projects)..."
+                        aria-label="Category label" list="categorySuggestions" maxlength="30">
+                    <datalist id="categorySuggestions"></datalist>
+                </div>
                 
                 <div style="margin-top: 16px;">
                     <label style="font-size: 13px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 8px;">List Type</label>
@@ -658,7 +603,8 @@
             <div class="modal-actions">
                 <button type="button" id="exportMultipleCancel" class="ghost-button">Cancel</button>
                 <button type="button" id="exportMultipleSelectAll" class="ghost-button">Select All</button>
-                <button type="button" id="exportMultipleExport" class="primary">Export Selected</button>
+                <button type="button" id="exportMultipleWord" class="ghost-button" style="border-color: var(--accent); color: var(--accent);">Export Word</button>
+                <button type="button" id="exportMultipleExport" class="primary">Export Excel</button>
             </div>
         </div>
     </div>
@@ -700,11 +646,27 @@
             </h3>
 
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 5.6 (Current) -->
+                <!-- Version 6.0 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.6 (Current Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.0 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
+                    </div>
+                    <ul
+                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>📝 Custom Sidebar Reordering</strong>: Drag-and-drop lists in the sidebar to arrange them exactly how you want.</li>
+                        <li><strong>🚫 Prevent Duplicate Shortcuts</strong>: Built-in validation modal blocks identical keybinds from overriding each other.</li>
+                        <li><strong>⌨️ Advanced Shortcuts</strong>: Map dedicated keys for toggling AMOLED mode and quickly returning to Categories. Ability to clear/disable shortcuts during recording.</li>
+                        <li><strong>✨ Interface Decluttering</strong>: Stripped redundant Pomodoro timers, simplified the Dashboard (moved list distribution out), trimmed right-sidebar padding by 25%, and removed unnecessary filters from the Categories view.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 5.6 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v5.6</span>
                         <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
                     </div>
                     <ul

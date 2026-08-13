@@ -16,17 +16,21 @@ export function formatDateTime(ts) {
 }
 
 export function addTask(title) {
-  if (!state.currentFolderId) {
+  let targetFolderId = state.currentFolderId;
+  if (state.currentView === 'allTasks') {
+    targetFolderId = state.currentFolderId || state.folders[0]?.id;
+  }
+  if (!targetFolderId) {
     alert('Please select or create a list first.');
     return;
   }
   const trimmed = title.trim();
   if (!trimmed) return;
   const task = { id: uid(), title: trimmed, completed: false, createdAt: now(), updatedAt: now(), completedAt: null, subtasks: [] };
-  if (!state.tasksByFolder[state.currentFolderId]) {
-    state.tasksByFolder[state.currentFolderId] = [];
+  if (!state.tasksByFolder[targetFolderId]) {
+    state.tasksByFolder[targetFolderId] = [];
   }
-  state.tasksByFolder[state.currentFolderId].unshift(task);
+  state.tasksByFolder[targetFolderId].unshift(task);
   persistTasks();
   render();
 }
@@ -68,32 +72,40 @@ export function updateTaskDOMState(task, tasks) {
 }
 
 export function updateTask(id, updates) {
-  if (!state.currentFolderId || !state.tasksByFolder[state.currentFolderId]) return;
-  const index = state.tasksByFolder[state.currentFolderId].findIndex(t => t.id === id);
+  let targetFolderId = state.currentFolderId;
+  if (!targetFolderId || !state.tasksByFolder[targetFolderId] || !state.tasksByFolder[targetFolderId].some(t => t.id === id)) {
+    targetFolderId = Object.keys(state.tasksByFolder).find(fId => state.tasksByFolder[fId]?.some(t => t.id === id));
+  }
+  if (!targetFolderId || !state.tasksByFolder[targetFolderId]) return;
+  const index = state.tasksByFolder[targetFolderId].findIndex(t => t.id === id);
   if (index === -1) return;
-  const task = { ...state.tasksByFolder[state.currentFolderId][index], ...updates, updatedAt: now() };
-  state.tasksByFolder[state.currentFolderId][index] = task;
+  const task = { ...state.tasksByFolder[targetFolderId][index], ...updates, updatedAt: now() };
+  state.tasksByFolder[targetFolderId][index] = task;
   persistTasks();
   
   const keys = Object.keys(updates);
   const isOnlyCompletion = keys.length <= 2 && keys.every(k => k === 'completed' || k === 'completedAt');
 
-  if (isOnlyCompletion && state.currentView !== 'dashboard') {
-    updateTaskDOMState(task, state.tasksByFolder[state.currentFolderId]);
+  if (isOnlyCompletion && state.currentView === 'tasks') {
+    updateTaskDOMState(task, state.tasksByFolder[targetFolderId]);
   } else {
     render();
   }
 }
 
 export async function deleteTask(id) {
-  if (!state.currentFolderId || !state.tasksByFolder[state.currentFolderId]) return;
-  const task = state.tasksByFolder[state.currentFolderId].find(t => t.id === id);
+  let targetFolderId = state.currentFolderId;
+  if (!targetFolderId || !state.tasksByFolder[targetFolderId] || !state.tasksByFolder[targetFolderId].some(t => t.id === id)) {
+    targetFolderId = Object.keys(state.tasksByFolder).find(fId => state.tasksByFolder[fId]?.some(t => t.id === id));
+  }
+  if (!targetFolderId || !state.tasksByFolder[targetFolderId]) return;
+  const task = state.tasksByFolder[targetFolderId].find(t => t.id === id);
   if (!task) return;
   const confirmed = await showConfirmDeleteModal(`Are you sure you want to delete the task "${task.title}"?`);
   if (!confirmed) return;
-  const next = state.tasksByFolder[state.currentFolderId].filter(t => t.id !== id);
-  if (next.length === state.tasksByFolder[state.currentFolderId].length) return;
-  state.tasksByFolder[state.currentFolderId] = next;
+  const next = state.tasksByFolder[targetFolderId].filter(t => t.id !== id);
+  if (next.length === state.tasksByFolder[targetFolderId].length) return;
+  state.tasksByFolder[targetFolderId] = next;
   persistTasks();
   render();
 }
@@ -222,6 +234,15 @@ export function renderTaskItem(task) {
   meta.className = 'meta';
   const metaText = document.createTextNode(formatDateTime(task.createdAt));
   meta.appendChild(metaText);
+
+  if (task._folderName) {
+    const badge = document.createElement('span');
+    badge.style.color = 'var(--accent)';
+    badge.style.fontWeight = '600';
+    badge.style.marginLeft = '6px';
+    badge.textContent = `• [${task._folderName}]`;
+    meta.appendChild(badge);
+  }
 
   metaRow.append(meta);
 
