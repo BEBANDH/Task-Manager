@@ -1,7 +1,7 @@
 import { el } from './dom.js';
 import { state, getCurrentTasks, isCurrentFolderLocked, persistFolders, persistTasks } from './state.js';
 import { readStorage, writeStorage, readCookieJSON, now, uid, STORAGE_KEYS } from './storage.js';
-import { renderDashboardChart, populateChartDropdown } from './charts.js';
+import { debounce } from './utils.js';
 import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock, shareFolder } from './folders.js';
 import { addTask, initConfirmDeleteModal, closeConfirmDeleteModal, getRenderData, renderTaskItem } from './tasks.js';
 import { loadSchedules, renderScheduledView, createSchedule } from './schedules.js';
@@ -142,93 +142,55 @@ export function render() {
   // Render list description
   const currentFolder = state.folders.find(f => f.id === state.currentFolderId);
 
-  if (state.currentView === 'allTasks') {
+  const addTaskSec = document.querySelector('.add-task');
+  if (addTaskSec) addTaskSec.style.display = 'block';
+
+  if (el.tasks) el.tasks.style.display = 'grid';
+  
+  const controlsSec = document.querySelector('.controls');
+  if (controlsSec) controlsSec.style.display = 'flex';
+
+  const searchComp = document.querySelector('.expandable-search');
+  if (searchComp) searchComp.style.display = 'flex';
+
+  const shareBtn = document.getElementById('shareListBtn');
+  if (shareBtn) shareBtn.style.display = 'inline-flex';
+
+  if (el.lockToggleBtn) {
+    el.lockToggleBtn.style.display = 'inline-flex';
+  }
+  if (currentFolder) {
     if (el.activeListNameDisplay) {
-      el.activeListNameDisplay.textContent = 'Categories';
+      el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
     }
-    if (el.listDescriptionDisplay) {
-      el.listDescriptionDisplay.textContent = 'Task lists organized by category. Click any list to open it.';
-      el.listDescriptionDisplay.style.display = 'block';
+    const isLocked = !!currentFolder.locked;
+    if (el.lockToggleIcon) {
+      el.lockToggleIcon.innerHTML = isLocked 
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+    }
+    if (el.lockToggleText) {
+      el.lockToggleText.textContent = isLocked ? 'Locked' : 'Unlocked';
     }
     if (el.lockToggleBtn) {
-      el.lockToggleBtn.style.display = 'none';
+      el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
     }
     if (el.input) {
-      el.input.disabled = false;
-      el.input.placeholder = 'Add a task...';
+      el.input.disabled = isLocked;
+      el.input.placeholder = isLocked 
+        ? 'This list is locked...' 
+        : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
     }
-
-    const addTaskSec = document.querySelector('.add-task');
-    if (addTaskSec) addTaskSec.style.display = 'none';
-
-    if (el.tasks) el.tasks.style.display = 'none';
-    const catContainer = document.getElementById('categoriesContainer');
-    if (catContainer) catContainer.style.display = 'grid';
-    const controlsSec = document.querySelector('.controls');
-    if (controlsSec) controlsSec.style.display = 'none';
-
-    const searchComp = document.querySelector('.expandable-search');
-    if (searchComp) searchComp.style.display = 'none';
-
-    const shareBtn = document.getElementById('shareListBtn');
-    if (shareBtn) shareBtn.style.display = 'none';
-
-    // Update Progress Bar metrics across all tasks (REMOVED)
-
-    renderCategoriesView();
-    return;
-  } else {
-    const addTaskSec = document.querySelector('.add-task');
-    if (addTaskSec) addTaskSec.style.display = 'block';
-
-    if (el.tasks) el.tasks.style.display = 'grid';
-    const catContainer = document.getElementById('categoriesContainer');
-    if (catContainer) catContainer.style.display = 'none';
-    const controlsSec = document.querySelector('.controls');
-    if (controlsSec) controlsSec.style.display = 'flex';
-
-    const searchComp = document.querySelector('.expandable-search');
-    if (searchComp) searchComp.style.display = 'flex';
-
-    const shareBtn = document.getElementById('shareListBtn');
-    if (shareBtn) shareBtn.style.display = 'inline-flex';
-
-    if (el.lockToggleBtn) {
-      el.lockToggleBtn.style.display = 'inline-flex';
+    const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
+    if (addBtn) {
+      addBtn.disabled = isLocked;
     }
-    if (currentFolder) {
-      if (el.activeListNameDisplay) {
-        el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
-      }
-      const isLocked = !!currentFolder.locked;
-      if (el.lockToggleIcon) {
-        el.lockToggleIcon.innerHTML = isLocked 
-          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
-          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
-      }
-      if (el.lockToggleText) {
-        el.lockToggleText.textContent = isLocked ? 'Locked' : 'Unlocked';
-      }
-      if (el.lockToggleBtn) {
-        el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
-      }
-      if (el.input) {
-        el.input.disabled = isLocked;
-        el.input.placeholder = isLocked 
-          ? 'This list is locked...' 
-          : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
-      }
-      const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
-      if (addBtn) {
-        addBtn.disabled = isLocked;
-      }
-      if (el.listDescriptionDisplay) {
-        if (currentFolder.description) {
-          el.listDescriptionDisplay.textContent = currentFolder.description;
-          el.listDescriptionDisplay.style.display = 'block';
-        } else {
-          el.listDescriptionDisplay.style.display = 'none';
-        }
+    if (el.listDescriptionDisplay) {
+      if (currentFolder.description) {
+        el.listDescriptionDisplay.textContent = currentFolder.description;
+        el.listDescriptionDisplay.style.display = 'block';
+      } else {
+        el.listDescriptionDisplay.style.display = 'none';
       }
     }
   }
@@ -257,7 +219,7 @@ export function render() {
   el.tasks.appendChild(fragment);
 
   // Activity chart
-  if (state.currentView === 'dashboard') renderDashboardChart();
+  if (state.currentView === 'dashboard') lazyRenderDashboardChart();
 }
 
 function renderRightSidebarDistribution() {
@@ -1035,6 +997,19 @@ function load() {
   loadSchedules();
   state.folders = readStorage(STORAGE_KEYS.folders, []);
   if (!Array.isArray(state.folders)) state.folders = [];
+  state.categoryOrder = readStorage('tm_category_order_v2', []);
+  if (!Array.isArray(state.categoryOrder)) state.categoryOrder = [];
+
+  // Migration: category (string) -> labels (array)
+  state.folders.forEach(f => {
+    if (f.category !== undefined) {
+      if (!f.labels) {
+        f.labels = f.category.trim() ? [f.category.trim()] : ['General'];
+      }
+      delete f.category;
+    }
+    if (!f.labels || f.labels.length === 0) f.labels = ['General'];
+  });
 
   state.tasksByFolder = readStorage(STORAGE_KEYS.tasks, {});
   if (typeof state.tasksByFolder !== 'object') state.tasksByFolder = {};
@@ -1191,11 +1166,14 @@ function initSidebarToggle() {
 
   el.sidebarOverlay.addEventListener('click', closeSidebar);
 
-  el.foldersList.addEventListener('click', (e) => {
-    if (e.target.closest('.folder-item') && isMobile()) {
-      setTimeout(closeSidebar, 150);
-    }
-  });
+  const sidebarNavContainer = document.querySelector('.folders-sidebar');
+  if (sidebarNavContainer) {
+    sidebarNavContainer.addEventListener('click', (e) => {
+      if (e.target.closest('.folder-item') && isMobile()) {
+        setTimeout(closeSidebar, 150);
+      }
+    });
+  }
 
   window.addEventListener('resize', () => {
     const wasMobile = el.leftPanel.classList.contains('active');
@@ -1596,25 +1574,17 @@ function initSearch() {
   el.search.value = saved;
   state.searchQuery = saved.toLowerCase();
   
-  let searchDebounceId = null;
-  el.search.addEventListener('input', () => {
-    if (searchDebounceId) clearTimeout(searchDebounceId);
-    searchDebounceId = setTimeout(() => {
-      state.searchQuery = el.search.value.trim().toLowerCase();
-      writeStorage(STORAGE_KEYS.search, el.search.value.trim());
-      render();
-    }, 250);
-  });
+  el.search.addEventListener('input', debounce(() => {
+    state.searchQuery = el.search.value.trim().toLowerCase();
+    writeStorage(STORAGE_KEYS.search, el.search.value.trim());
+    render();
+  }, 250));
 
-  let listSearchDebounceId = null;
   if (el.listSearchInput) {
-    el.listSearchInput.addEventListener('input', () => {
-      if (listSearchDebounceId) clearTimeout(listSearchDebounceId);
-      listSearchDebounceId = setTimeout(() => {
-        state.listSearchQuery = el.listSearchInput.value.trim().toLowerCase();
-        renderFolders();
-      }, 200);
-    });
+    el.listSearchInput.addEventListener('input', debounce(() => {
+      state.listSearchQuery = el.listSearchInput.value.trim().toLowerCase();
+      renderFolders();
+    }, 200));
   }
 }
 
@@ -1768,8 +1738,8 @@ function initCategories() {
 }
 
 function renderDashboard() {
-  populateChartDropdown();
-  renderDashboardChart();
+  lazyPopulateChartDropdown();
+  lazyRenderDashboardChart();
 
   const activeFolderIds = new Set(state.folders.map(f => f.id));
 
@@ -1955,69 +1925,25 @@ function renderDashboard() {
   }
   el.dashBusiestDay.textContent = maxDay !== -1 && maxCount > 0 ? `${weekdayNames[maxDay]} (${maxCount} completed)` : "None this week";
 
-  // Distribution
-  el.dashListDistribution.innerHTML = '';
-  state.folders.forEach(folder => {
-    const listTasks = state.tasksByFolder[folder.id] || [];
-    const count = listTasks.length;
-    const completed = listTasks.filter(t => t.completed).length;
-    const pct = count > 0 ? Math.round((completed / count) * 100) : 0;
-
-    const item = document.createElement('div');
-    item.style.marginBottom = '4px';
-
-    const labelRow = document.createElement('div');
-    labelRow.style.display = 'flex';
-    labelRow.style.justifyContent = 'space-between';
-    labelRow.style.fontSize = '13px';
-    labelRow.style.marginBottom = '6px';
-
-    const folderNameSpan = document.createElement('span');
-    folderNameSpan.textContent = folder.name;
-    folderNameSpan.style.fontWeight = '500';
-
-    const statsSpan = document.createElement('span');
-    statsSpan.textContent = `${pct}% (${completed}/${count})`;
-    statsSpan.style.color = 'var(--text-dim)';
-
-    labelRow.append(folderNameSpan, statsSpan);
-
-    const track = document.createElement('div');
-    track.style.height = '6px';
-    track.style.background = 'var(--bg-subtle)';
-    track.style.borderRadius = '3px';
-    track.style.overflow = 'hidden';
-
-    const bar = document.createElement('div');
-    bar.style.height = '100%';
-    bar.style.width = `${pct}%`;
-    bar.style.background = 'var(--accent)';
-    bar.style.transition = 'width 0.5s ease-out';
-
-    track.appendChild(bar);
-    item.append(labelRow, track);
-    el.dashListDistribution.appendChild(item);
-  });
-
   // High Priority List
-  el.dashPriorityList.innerHTML = '';
-  let priorityCount = 0;
+  if (el.dashPriorityList) {
+    el.dashPriorityList.innerHTML = '';
+    let priorityCount = 0;
 
-  state.folders.forEach(folder => {
-    const listTasks = state.tasksByFolder[folder.id] || [];
-    listTasks.forEach(task => {
-      if (task.highPriority) {
-        priorityCount++;
-        
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.alignItems = 'center';
-        row.style.justifyContent = 'space-between';
-        row.style.padding = '8px 12px';
-        row.style.background = 'var(--bg-subtle)';
-        row.style.borderRadius = 'var(--radius)';
-        row.style.border = '1px solid var(--border)';
-
+    state.folders.forEach(folder => {
+      const listTasks = state.tasksByFolder[folder.id] || [];
+      listTasks.forEach(task => {
+        if (task.highPriority) {
+          priorityCount++;
+          
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.justifyContent = 'space-between';
+          row.style.padding = '8px 12px';
+          row.style.background = 'var(--bg-subtle)';
+          row.style.borderRadius = 'var(--radius)';
+          row.style.border = '1px solid var(--border)';
         const left = document.createElement('div');
         left.style.display = 'flex';
         left.style.alignItems = 'center';
@@ -2100,12 +2026,13 @@ function renderDashboard() {
     emptyMsg.style.margin = '4px 0';
     el.dashPriorityList.appendChild(emptyMsg);
   }
+  }
 }
 
 function initDashboardChart() {
   if (!el.chartListSelector) return;
   el.chartListSelector.addEventListener('change', () => {
-    renderDashboardChart();
+    lazyRenderDashboardChart();
   });
 }
 
@@ -2414,15 +2341,7 @@ function initShareListBtn() {
   });
 }
 
-function initAllTasks() {
-  if (!el.allTasksBtn) return;
-  el.allTasksBtn.addEventListener('click', () => {
-    state.currentView = 'allTasks';
-    writeStorage('tm_current_view_v2', 'allTasks');
-    renderFolders();
-    render();
-  });
-}
+
 
 // Bootstrap
 async function init() {
@@ -2443,7 +2362,6 @@ async function init() {
   initDashboard();
   initSettings();
   initCategories();
-  initAllTasks();
   initDashboardChart();
   initLockToggle();
   initShareListBtn();
@@ -2459,4 +2377,15 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
+}
+
+// Export chart wrappers so other modules can trigger them safely
+export async function lazyRenderDashboardChart() {
+  const { renderDashboardChart } = await import('./charts.js');
+  renderDashboardChart();
+}
+
+export async function lazyPopulateChartDropdown() {
+  const { populateChartDropdown } = await import('./charts.js');
+  populateChartDropdown();
 }

@@ -96,18 +96,22 @@ export async function shareFolder(id) {
   }
 }
 
-export function createFolder(name, description = '', type = 'standard', category = 'General') {
+export function createFolder(name, description = '', type = 'standard', labelsInput = 'General') {
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (state.folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
     alert('A list with this name already exists.');
     return null;
   }
+  
+  const labels = labelsInput.split(',').map(l => l.trim()).filter(Boolean);
+  if (labels.length === 0) labels.push('General');
+
   const folder = { 
     id: uid(), 
     name: trimmed, 
     description: description.trim(), 
-    category: category.trim() || 'General',
+    labels: labels,
     type: type, 
     createdAt: now() 
   };
@@ -123,7 +127,7 @@ export function createFolder(name, description = '', type = 'standard', category
   return folder;
 }
 
-export function renameFolder(id, newName, newDescription = '', newCategory = 'General') {
+export function renameFolder(id, newName, newDescription = '', newLabelsInput = 'General') {
   const trimmed = newName.trim();
   if (!trimmed) return;
   const folder = state.folders.find(f => f.id === id);
@@ -132,9 +136,14 @@ export function renameFolder(id, newName, newDescription = '', newCategory = 'Ge
     alert('A list with this name already exists.');
     return;
   }
+  
+  const labels = newLabelsInput.split(',').map(l => l.trim()).filter(Boolean);
+  if (labels.length === 0) labels.push('General');
+
   folder.name = trimmed;
   folder.description = newDescription.trim();
-  folder.category = newCategory.trim() || 'General';
+  folder.labels = labels;
+  delete folder.category;
   persistFolders();
   renderFolders();
   render();
@@ -190,21 +199,139 @@ export function toggleCurrentFolderLock() {
 }
 
 export function renderFolders() {
-  const allTasksBtn = document.getElementById('allTasksBtn');
-  if (allTasksBtn) {
-    allTasksBtn.classList.toggle('active', state.currentView === 'allTasks');
-  }
-  if (!el.foldersList) return;
-  el.foldersList.innerHTML = '';
-  const fragment = document.createDocumentFragment();
+  const container = document.getElementById('categoriesContainerSidebar');
+  if (!container) return;
+  container.innerHTML = '';
+  
   const filteredFolders = state.folders.filter(folder => {
     if (!state.listSearchQuery) return true;
     const desc = folder.description || '';
-    return desc.toLowerCase().includes(state.listSearchQuery);
+    return desc.toLowerCase().includes(state.listSearchQuery) || folder.name.toLowerCase().includes(state.listSearchQuery);
   });
 
+  if (filteredFolders.length === 0) {
+    container.innerHTML = '<div style="padding: 12px; color: var(--text-dim); font-size: 13px; text-align: center;">No lists found.</div>';
+    return;
+  }
+
+  // Group by labels
+  const categoriesMap = {};
   filteredFolders.forEach(folder => {
-    const li = document.createElement('li');
+    const labels = (folder.labels && folder.labels.length > 0) ? folder.labels : ['General'];
+    labels.forEach(catName => {
+      const trimmedCatName = catName.trim() || 'General';
+      if (!categoriesMap[trimmedCatName]) {
+        categoriesMap[trimmedCatName] = [];
+      }
+      categoriesMap[trimmedCatName].push(folder);
+    });
+  });
+
+  const categoryNames = Object.keys(categoriesMap).sort((a, b) => {
+    const aIdx = state.categoryOrder.indexOf(a);
+    const bIdx = state.categoryOrder.indexOf(b);
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+    if (aIdx !== -1) return -1;
+    if (bIdx !== -1) return 1;
+    if (a === 'General') return 1;
+    if (b === 'General') return -1;
+    return a.localeCompare(b);
+  });
+
+  categoryNames.forEach(catName => {
+    const folders = categoriesMap[catName];
+    const isCategoryCollapsed = state.collapsedCategories.has(catName);
+
+    const accordionSection = document.createElement('div');
+    accordionSection.className = 'sidebar-accordion';
+    accordionSection.dataset.categoryName = catName;
+    
+    accordionSection.draggable = true;
+    accordionSection.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', catName); // Needed for Firefox
+      e.dataTransfer.setData('categoryName', catName);
+      e.dataTransfer.effectAllowed = 'move';
+      accordionSection.style.opacity = '0.5';
+      e.stopPropagation();
+    });
+    accordionSection.addEventListener('dragend', () => {
+      accordionSection.style.opacity = '1';
+    });
+    accordionSection.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'move';
+      accordionSection.style.borderTop = '2px solid var(--accent)';
+    });
+    accordionSection.addEventListener('dragleave', () => {
+      accordionSection.style.borderTop = '';
+    });
+    accordionSection.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      accordionSection.style.borderTop = '';
+      const draggedCat = e.dataTransfer.getData('categoryName');
+      if (draggedCat && draggedCat !== catName && categoriesMap[draggedCat]) {
+        let currentOrder = [...categoryNames];
+        const fromIdx = currentOrder.indexOf(draggedCat);
+        const toIdx = currentOrder.indexOf(catName);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          currentOrder.splice(fromIdx, 1);
+          currentOrder.splice(toIdx, 0, draggedCat);
+          state.categoryOrder = currentOrder;
+          import('./storage.js').then(module => {
+            module.writeStorage('tm_category_order_v2', state.categoryOrder);
+          });
+          renderFolders();
+        }
+      }
+    });
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'sidebar-accordion-header';
+    header.addEventListener('click', () => {
+      if (state.collapsedCategories.has(catName)) {
+        state.collapsedCategories.delete(catName);
+      } else {
+        state.collapsedCategories.add(catName);
+      }
+      renderFolders();
+    });
+
+    const chevron = document.createElement('svg');
+    chevron.setAttribute('width', '14');
+    chevron.setAttribute('height', '14');
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('fill', 'none');
+    chevron.setAttribute('stroke', 'currentColor');
+    chevron.setAttribute('stroke-width', '2');
+    chevron.setAttribute('stroke-linecap', 'round');
+    chevron.setAttribute('stroke-linejoin', 'round');
+    chevron.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+    chevron.style.transform = isCategoryCollapsed ? 'rotate(-90deg)' : 'rotate(0)';
+    chevron.style.transition = 'transform 0.2s ease';
+
+    const title = document.createElement('span');
+    title.textContent = catName;
+    title.style.fontWeight = '600';
+    title.style.fontSize = '12px';
+    title.style.textTransform = 'uppercase';
+    title.style.letterSpacing = '0.5px';
+    title.style.color = 'var(--accent)';
+
+    header.appendChild(chevron);
+    header.appendChild(title);
+    accordionSection.appendChild(header);
+
+    // List Container
+    if (!isCategoryCollapsed) {
+      const listContainer = document.createElement('ul');
+      listContainer.className = 'folders-list';
+      listContainer.style.marginTop = '4px';
+
+      folders.forEach(folder => {
+        const li = document.createElement('li');
     li.className = `folder-item${(folder.id === state.currentFolderId && state.currentView === 'tasks') ? ' active' : ''}`;
     li.dataset.folderId = folder.id;
 
@@ -213,10 +340,10 @@ export function renderFolders() {
     name.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
     name.setAttribute('title', folder.name);
 
-    if (folder.category && folder.category !== 'General') {
+    if (folder.labels && folder.labels.length > 0 && (folder.labels.length > 1 || folder.labels[0] !== 'General')) {
       const catBadge = document.createElement('span');
       catBadge.className = 'category-badge-label';
-      catBadge.textContent = folder.category;
+      catBadge.textContent = folder.labels.join(', ');
       name.appendChild(catBadge);
     }
 
@@ -279,9 +406,13 @@ export function renderFolders() {
       }
     });
 
-    fragment.appendChild(li);
+    listContainer.appendChild(li);
   });
-  el.foldersList.appendChild(fragment);
+  accordionSection.appendChild(listContainer);
+}
+
+container.appendChild(accordionSection);
+});
 }
 
 function reorderFolders(draggedId, targetId) {
@@ -308,7 +439,7 @@ export function openFolderModal(folderId = null, currentName = '') {
   if (folderId) {
     const folder = state.folders.find(f => f.id === folderId);
     currentDescription = folder?.description || '';
-    currentCategory = folder?.category || 'General';
+    currentCategory = folder?.labels ? folder.labels.join(', ') : 'General';
   }
   if (el.folderDescriptionInput) {
     el.folderDescriptionInput.value = currentDescription;
@@ -317,7 +448,7 @@ export function openFolderModal(folderId = null, currentName = '') {
   const categoryInput = document.getElementById('folderCategoryInput');
   const datalist = document.getElementById('categorySuggestions');
   if (datalist) {
-    const existingCats = Array.from(new Set(state.folders.map(f => f.category || 'General'))).filter(Boolean);
+    const existingCats = Array.from(new Set(state.folders.flatMap(f => f.labels || ['General']))).filter(Boolean);
     datalist.innerHTML = existingCats.map(c => `<option value="${c}"></option>`).join('');
   }
   if (categoryInput) {

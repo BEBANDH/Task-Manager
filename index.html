@@ -64,16 +64,8 @@
     <main class="container" role="main">
         <div class="left-panel">
             <aside class="folders-sidebar">
-                <button id="allTasksBtn" class="ghost-button sidebar-all-tasks-btn" aria-label="See all tasks"
-                    style="width: 100%; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; justify-content: flex-start; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); font-size: 13.5px; font-weight: 500; color: var(--text);">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                    <span>Categories</span>
-                </button>
+
+
                 <div class="folders-header">
                     <h2>Lists</h2>
                     <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
@@ -86,10 +78,9 @@
                         aria-label="Search lists by description"
                         style="width: 100%; padding: 8px 4px; font-size: 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);">
                 </div>
-                <ul id="foldersList" class="folders-list" role="list"></ul>
-                <section class="sidebar-actions" aria-label="Navigation">
-                    <h3 class="sidebar-actions-title">Navigation</h3>
+                <div id="categoriesContainerSidebar" style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto;"></div>
 
+                <section class="sidebar-actions" aria-label="Navigation" style="margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
                     <button id="dashboardBtn" class="ghost-button" aria-label="Open dashboard"
                         data-tooltip="Open dashboard">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -109,16 +100,6 @@
                         </svg>
                         Settings
                     </button>
-
-                    <!-- Embossed Small Dark ASCII Art Footer -->
-                    <div class="sidebar-ascii-footer" aria-hidden="true">
-                        <pre>
- ___ ___  _   _ ___ ___ _  _ 
-/ __/ _ \| | | / __/ \ | || |
-\__ \ (_) | |_| \__ \  | __ |
-|___/\__\_\\___/|___/_/|_||_|
-                        </pre>
-                    </div>
                 </section>
             </aside>
         </div>
@@ -209,7 +190,7 @@
                 <section class="task-list" aria-labelledby="taskListLabel">
                     <h2 id="taskListLabel" class="sr-only">Task list</h2>
                     <ul id="tasks" class="tasks" aria-live="polite"></ul>
-                    <div id="categoriesContainer" style="display: none; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start;"></div>
+
                     <div id="emptyState" class="empty-state" hidden>
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border)"
                             stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
@@ -518,8 +499,8 @@
                     style="width: 100%; margin-top: 12px; resize: none;"></textarea>
 
                 <div style="margin-top: 12px;">
-                    <input id="folderCategoryInput" type="text" placeholder="Category label (e.g. Work, Personal, Projects)..."
-                        aria-label="Category label" list="categorySuggestions" maxlength="30">
+                    <input id="folderCategoryInput" type="text" placeholder="Labels (comma-separated, e.g. Work, Personal)..."
+                        aria-label="Labels" list="categorySuggestions" maxlength="100">
                     <datalist id="categorySuggestions"></datalist>
                 </div>
                 
@@ -646,11 +627,26 @@
             </h3>
 
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 6.0 (Current) -->
+                <!-- Version 6.5 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.0 (Current Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.5 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
+                    </div>
+                    <ul
+                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>🎨 UI Modernization</strong>: Bento Grid dashboard layout, glassmorphism cards, and premium sophisticated accent colors.</li>
+                        <li><strong>📁 Folders Sidebar</strong>: Sidebar now features collapsible accordion sections grouped seamlessly by labels.</li>
+                        <li><strong>⚡ Layout Fixes</strong>: Sidebar buttons anchored to the bottom and rendering issues fully resolved.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 6.0 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-top: 16px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
                     </div>
                     <ul

@@ -15,17 +15,18 @@ export const state = {
   collapsedLists: new Set(),
   confirmDeleteResolve: null,
   listSearchQuery: '',
+  categoryOrder: [],
   ACCENT_COLORS: {
-    green: { light: '#22c55e', dark: '#4ade80' },
-    blue: { light: '#3b82f6', dark: '#60a5fa' },
-    indigo: { light: '#6366f1', dark: '#818cf8' },
-    purple: { light: '#a855f7', dark: '#c084fc' },
-    pink: { light: '#ec4899', dark: '#f472b6' },
-    red: { light: '#ef4444', dark: '#f87171' },
-    orange: { light: '#f97316', dark: '#fb923c' },
-    amber: { light: '#f59e0b', dark: '#fbbf24' },
-    teal: { light: '#14b8a6', dark: '#2dd4bf' },
-    cyan: { light: '#06b6d4', dark: '#22d3ee' }
+    blue: { light: '#4A56B3', dark: '#5E6AD2' },
+    purple: { light: '#725BB8', dark: '#8E76D6' },
+    pink: { light: '#B35897', dark: '#D472B7' },
+    red: { light: '#C44C4C', dark: '#E46464' },
+    orange: { light: '#C27040', dark: '#E18A58' },
+    yellow: { light: '#B3893F', dark: '#D4A853' },
+    green: { light: '#3D825E', dark: '#51A176' },
+    cyan: { light: '#4196A3', dark: '#56B5C3' },
+    teal: { light: '#367A73', dark: '#4B9990' },
+    slate: { light: '#5A6370', dark: '#8A94A6' }
   }
 };
 

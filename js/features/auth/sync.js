@@ -10,18 +10,35 @@ export async function syncToCloud(folders, tasksByFolder) {
     if (!user) return;
 
     try {
-        const { db, doc, setDoc } = window.firebaseDb;
+        const { db, doc, setDoc, writeBatch } = window.firebaseDb;
         const userRef = doc(db, 'users', user.uid);
+        
+        // Start a batched write
+        const batch = writeBatch(db);
 
-        await setDoc(userRef, {
+        // Update the root document (folders and metadata)
+        batch.set(userRef, {
             folders: folders,
-            tasks: tasksByFolder,
             lastModified: Date.now(),
             email: user.email,
-            displayName: user.displayName
+            displayName: user.displayName,
+            tasks: null // Nullify the old monolithic tasks field to save space
         }, { merge: true });
 
-        console.log('✅ Data synced to cloud');
+        // Update tasks in the 'lists' subcollection per folder
+        for (const folderId in tasksByFolder) {
+            const listRef = doc(db, 'users', user.uid, 'lists', folderId);
+            batch.set(listRef, {
+                tasks: tasksByFolder[folderId]
+            }, { merge: true });
+        }
+
+        // Optional: We should ideally delete subcollection documents for folders that were deleted, 
+        // but for safety and simplicity, we just overwrite active ones.
+        
+        await batch.commit();
+
+        console.log('✅ Data synced to cloud (subcollections)');
     } catch (error) {
         console.error('❌ Sync to cloud failed:', error);
     }
@@ -33,17 +50,47 @@ export async function loadFromCloud() {
     if (!user) return null;
 
     try {
-        const { db, doc, getDoc } = window.firebaseDb;
+        const { db, doc, getDoc, collection, getDocs } = window.firebaseDb;
         const userRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userRef);
 
         if (docSnap.exists()) {
             const data = docSnap.data();
+            
+            // Check for legacy monolithic tasks
+            let tasks = {};
+            if (data.tasks) {
+                console.log('ℹ️ Found legacy monolithic tasks, preparing to migrate.');
+                tasks = data.tasks;
+            }
+
+            // Migrate category to labels if present
+            if (Array.isArray(data.folders)) {
+                data.folders.forEach(f => {
+                    if (f.category !== undefined) {
+                        if (!f.labels) f.labels = f.category.trim() ? [f.category.trim()] : ['General'];
+                        delete f.category;
+                    }
+                    if (!f.labels || f.labels.length === 0) f.labels = ['General'];
+                });
+            }
+
+            // Load subcollections
+            const listsRef = collection(db, 'users', user.uid, 'lists');
+            const listsSnap = await getDocs(listsRef);
+            
+            listsSnap.forEach(listDoc => {
+                const listData = listDoc.data();
+                if (listData.tasks) {
+                    tasks[listDoc.id] = listData.tasks;
+                }
+            });
+
             console.log('✅ Data loaded from cloud');
             return {
                 folders: data.folders || [],
-                tasks: data.tasks || {},
-                lastModified: data.lastModified
+                tasks: tasks,
+                lastModified: data.lastModified || 0
             };
         }
 
@@ -63,11 +110,24 @@ export function setupRealtimeSync(callback) {
         const { db, doc, onSnapshot } = window.firebaseDb;
         const userRef = doc(db, 'users', user.uid);
 
-        const unsubscribe = onSnapshot(userRef, (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                console.log('🔄 Real-time update received');
-                callback(data.folders, data.tasks);
+        let isInitialLoad = true;
+        const unsubscribe = onSnapshot(userRef, async (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                // Skip initial fire since we already load manually on startup
+                if (isInitialLoad) {
+                    isInitialLoad = false;
+                    return;
+                }
+                
+                // When root document changes (e.g. from another tab), fetch all data
+                // This keeps logic simple without complex subcollection listeners
+                const cloudData = await loadFromCloud();
+                if (cloudData) {
+                    console.log('🔄 Real-time update received');
+                    callback(cloudData.folders, cloudData.tasks, cloudData.lastModified);
+                }
             }
         });
 

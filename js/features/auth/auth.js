@@ -17,16 +17,23 @@ export async function initializeFirebase() {
         const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
         const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } =
             await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-        const { getFirestore, doc, setDoc, getDoc, onSnapshot } =
+        const { getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence, writeBatch, collection, getDocs } =
             await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
+        
+        try {
+            await enableIndexedDbPersistence(db);
+            console.log('✅ Offline persistence enabled');
+        } catch (err) {
+            console.warn('⚠️ Offline persistence could not be enabled:', err);
+        }
 
         window.firebaseAuth = { auth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged };
-        window.firebaseDb = { db, doc, setDoc, getDoc, onSnapshot };
+        window.firebaseDb = { db, doc, setDoc, getDoc, onSnapshot, writeBatch, collection, getDocs };
 
         console.log('✅ Firebase initialized');
         return true;

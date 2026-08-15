@@ -4,7 +4,10 @@
  */
 
 import { initializeFirebase, signInWithGoogle, signOutUser, onAuthChange } from '../features/auth/auth.js';
-import { syncToCloud, loadFromCloud } from '../features/auth/sync.js';
+import { syncToCloud, loadFromCloud, setupRealtimeSync } from '../features/auth/sync.js';
+import { state } from '../state.js';
+import { render } from '../main.js';
+import { renderFolders } from '../folders.js';
 
 export async function initAuthUI() {
     // Check if Firebase config is set
@@ -71,13 +74,33 @@ export async function initAuthUI() {
         }
     });
 
+    let realtimeUnsubscribe = null;
     // Listen to auth state changes
     onAuthChange((user) => {
         updateUIForUser(user);
 
+        if (realtimeUnsubscribe) {
+            realtimeUnsubscribe();
+            realtimeUnsubscribe = null;
+        }
+
         if (user) {
             // Load data from cloud when signed in
-            loadUserData();
+            loadUserData().then(() => {
+                realtimeUnsubscribe = setupRealtimeSync((folders, tasks, lastModified) => {
+                    const localLastModified = localStorage.getItem('tm_last_modified') || '0';
+                    if (lastModified > parseInt(localLastModified)) {
+                        localStorage.setItem('tm_folders_v2', JSON.stringify(folders));
+                        localStorage.setItem('tm_tasks_v2', JSON.stringify(tasks));
+                        localStorage.setItem('tm_last_modified', lastModified.toString());
+                        
+                        state.folders = folders;
+                        state.tasksByFolder = tasks;
+                        renderFolders();
+                        render();
+                    }
+                });
+            });
         }
     });
 
@@ -157,8 +180,11 @@ async function loadUserData() {
             localStorage.setItem('tm_tasks_v2', JSON.stringify(cloudData.tasks));
             localStorage.setItem('tm_last_modified', cloudData.lastModified.toString());
 
-            // Reload the page to apply cloud data
-            window.location.reload();
+            // Reactive UI update instead of reload
+            state.folders = cloudData.folders;
+            state.tasksByFolder = cloudData.tasks;
+            renderFolders();
+            render();
         }
     }
 }

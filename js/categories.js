@@ -16,7 +16,7 @@ export function expandAllCategories() {
 }
 
 export function collapseAllCategories() {
-  const categories = Array.from(new Set(state.folders.map(f => f.category || 'General')));
+  const categories = Array.from(new Set(state.folders.flatMap(f => f.labels || ['General'])));
   categories.forEach(c => state.collapsedCategories.add(c));
   renderCategoriesView();
 }
@@ -32,14 +32,17 @@ export function renderCategoriesView() {
     return;
   }
 
-  // Group folders by category
+  // Group folders by category/label
   const categoriesMap = {};
   state.folders.forEach(folder => {
-    const catName = (folder.category && folder.category.trim()) ? folder.category.trim() : 'General';
-    if (!categoriesMap[catName]) {
-      categoriesMap[catName] = [];
-    }
-    categoriesMap[catName].push(folder);
+    const labels = (folder.labels && folder.labels.length > 0) ? folder.labels : ['General'];
+    labels.forEach(catName => {
+      const trimmedCatName = catName.trim() || 'General';
+      if (!categoriesMap[trimmedCatName]) {
+        categoriesMap[trimmedCatName] = [];
+      }
+      categoriesMap[trimmedCatName].push(folder);
+    });
   });
 
   const categoryNames = Object.keys(categoriesMap).sort((a, b) => {
