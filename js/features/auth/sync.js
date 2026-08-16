@@ -4,10 +4,25 @@
 
 import { getCurrentUser } from './auth.js';
 
+function cleanUndefined(obj) {
+    if (Array.isArray(obj)) {
+        return obj.map(cleanUndefined);
+    } else if (obj !== null && typeof obj === 'object') {
+        const result = {};
+        for (const key in obj) {
+            if (obj[key] !== undefined) {
+                result[key] = cleanUndefined(obj[key]);
+            }
+        }
+        return result;
+    }
+    return obj;
+}
+
 // Sync data to Firestore
 export async function syncToCloud(folders, tasksByFolder) {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user) return false;
 
     try {
         const { db, doc, setDoc, writeBatch } = window.firebaseDb;
@@ -18,7 +33,7 @@ export async function syncToCloud(folders, tasksByFolder) {
 
         // Update the root document (folders and metadata)
         batch.set(userRef, {
-            folders: folders,
+            folders: cleanUndefined(folders),
             lastModified: Date.now(),
             email: user.email,
             displayName: user.displayName,
@@ -26,21 +41,21 @@ export async function syncToCloud(folders, tasksByFolder) {
         }, { merge: true });
 
         // Update tasks in the 'lists' subcollection per folder
-        for (const folderId in tasksByFolder) {
+        const cleanTasksByFolder = cleanUndefined(tasksByFolder);
+        for (const folderId in cleanTasksByFolder) {
             const listRef = doc(db, 'users', user.uid, 'lists', folderId);
             batch.set(listRef, {
-                tasks: tasksByFolder[folderId]
+                tasks: cleanTasksByFolder[folderId]
             }, { merge: true });
         }
 
-        // Optional: We should ideally delete subcollection documents for folders that were deleted, 
-        // but for safety and simplicity, we just overwrite active ones.
-        
         await batch.commit();
 
         console.log('✅ Data synced to cloud (subcollections)');
+        return true;
     } catch (error) {
         console.error('❌ Sync to cloud failed:', error);
+        return false;
     }
 }
 

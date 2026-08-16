@@ -131,14 +131,18 @@ export async function initAuthUI() {
         }
     });
 
-    forcePushBtn?.addEventListener('click', () => {
+    forcePushBtn?.addEventListener('click', async () => {
         if (!window.firebaseAuth?.auth?.currentUser) {
             alert('You must be signed in to push to the cloud.');
             return;
         }
         if (confirm('Are you sure you want to OVERWRITE the cloud backup with your local data? This cannot be undone.')) {
-            syncCurrentData();
-            alert('Data successfully pushed to the cloud!');
+            const success = await syncCurrentData();
+            if (success) {
+                alert('Data successfully pushed to the cloud!');
+            } else {
+                alert('Failed to push data to the cloud. Check console for details.');
+            }
         }
     });
 
@@ -247,13 +251,17 @@ async function loadUserData() {
 }
 
 // Export function to sync current data to cloud
-export function syncCurrentData() {
+export async function syncCurrentData() {
     try {
         const folders = JSON.parse(localStorage.getItem('tm_folders_v2') || '[]');
         const tasks = JSON.parse(localStorage.getItem('tm_tasks_v2') || '{}');
-        syncToCloud(folders, tasks);
-        localStorage.setItem('tm_last_modified', Date.now().toString());
+        const success = await syncToCloud(folders, tasks);
+        if (success) {
+            localStorage.setItem('tm_last_modified', Date.now().toString());
+        }
+        return success;
     } catch (error) {
         // Silently fail if not authenticated
+        return false;
     }
 }
