@@ -66,21 +66,7 @@
             <aside class="folders-sidebar">
 
 
-                <div class="folders-header">
-                    <h2>Lists</h2>
-                    <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
-                        data-tooltip="Create new list">
-                        <span class="icon">+</span>
-                    </button>
-                </div>
-                <div class="folders-search" style="margin: 0 0 12px 0; padding: 0 4px;">
-                    <input id="listSearchInput" type="search" placeholder="Search lists by description..."
-                        aria-label="Search lists by description"
-                        style="width: 100%; padding: 8px 4px; font-size: 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);">
-                </div>
-                <div id="categoriesContainerSidebar" style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto;"></div>
-
-                <section class="sidebar-actions" aria-label="Navigation" style="margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <section class="sidebar-actions" aria-label="Navigation" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
                     <button id="dashboardBtn" class="ghost-button" aria-label="Open dashboard"
                         data-tooltip="Open dashboard">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -101,6 +87,22 @@
                         Settings
                     </button>
                 </section>
+
+                <div class="folders-header">
+                    <h2>Lists</h2>
+                    <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
+                        data-tooltip="Create new list">
+                        <span class="icon">+</span>
+                    </button>
+                </div>
+                <div class="folders-search" style="margin: 0 0 12px 0; padding: 0 4px;">
+                    <input id="listSearchInput" type="search" placeholder="Search lists by description..."
+                        aria-label="Search lists by description"
+                        style="width: 100%; padding: 8px 4px; font-size: 13px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);">
+                </div>
+                <div id="categoriesContainerSidebar" style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto;"></div>
+
+
             </aside>
         </div>
 
