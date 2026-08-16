@@ -185,7 +185,26 @@ async function loadUserData() {
             state.tasksByFolder = cloudData.tasks;
             renderFolders();
             render();
+        } else if (parseInt(localLastModified) > cloudData.lastModified && parseInt(localLastModified) > 0) {
+            // Local data is newer - prompt user
+            const overwrite = confirm("You have local changes that conflict with your cloud backup. Do you want to overwrite your cloud backup with these local changes?\n\nClick 'OK' to upload local data.\nClick 'Cancel' to load your cloud backup.");
+            if (overwrite) {
+                syncCurrentData();
+            } else {
+                // Force load cloud data
+                localStorage.setItem('tm_folders_v2', JSON.stringify(cloudData.folders));
+                localStorage.setItem('tm_tasks_v2', JSON.stringify(cloudData.tasks));
+                localStorage.setItem('tm_last_modified', Date.now().toString());
+                
+                state.folders = cloudData.folders;
+                state.tasksByFolder = cloudData.tasks;
+                renderFolders();
+                render();
+            }
         }
+    } else {
+        // No cloud data - sync local to cloud to seed the database
+        syncCurrentData();
     }
 }
 

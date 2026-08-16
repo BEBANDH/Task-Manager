@@ -1064,8 +1064,8 @@ function load() {
     const defaultFolder = { id: uid(), name: 'My Tasks', createdAt: now() };
     state.folders.push(defaultFolder);
     state.tasksByFolder[defaultFolder.id] = [];
-    persistFolders();
-    persistTasks();
+    writeStorage(STORAGE_KEYS.folders, state.folders);
+    writeStorage(STORAGE_KEYS.tasks, state.tasksByFolder);
   }
 
   state.currentView = readStorage('tm_current_view_v2', 'tasks');
