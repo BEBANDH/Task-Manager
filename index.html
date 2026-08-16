@@ -422,6 +422,33 @@
                             <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
                         </div>
                     </div>
+                    <div class="setting-item" style="margin-bottom: 24px; grid-column: 1 / -1;">
+                        <label style="margin-bottom: 8px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Cloud Synchronization</label>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+                            <button id="forcePullBtn" class="ghost-button" aria-label="Force Pull from Cloud"
+                                data-tooltip="Overwrite your local device data with what is stored in the cloud"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Force Pull from Cloud
+                            </button>
+                            <button id="forcePushBtn" class="ghost-button" aria-label="Force Push to Cloud"
+                                data-tooltip="Overwrite the cloud backup with your current local device data"
+                                style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Force Push to Cloud
+                            </button>
+                        </div>
+                    </div>
                     <div class="setting-item" style="margin-bottom: 24px;">
                         <label>Bulk Actions</label>
                         <div style="display: flex; gap: 12px; flex-wrap: wrap;">

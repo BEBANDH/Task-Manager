@@ -104,6 +104,44 @@ export async function initAuthUI() {
         }
     });
 
+    // Force Cloud Sync Buttons
+    const forcePullBtn = document.getElementById('forcePullBtn');
+    const forcePushBtn = document.getElementById('forcePushBtn');
+
+    forcePullBtn?.addEventListener('click', async () => {
+        if (!window.firebaseAuth?.auth?.currentUser) {
+            alert('You must be signed in to pull from the cloud.');
+            return;
+        }
+        if (confirm('Are you sure you want to OVERWRITE your local data with the cloud backup? This cannot be undone.')) {
+            const cloudData = await loadFromCloud();
+            if (cloudData && cloudData.folders && cloudData.tasks) {
+                localStorage.setItem('tm_folders_v2', JSON.stringify(cloudData.folders));
+                localStorage.setItem('tm_tasks_v2', JSON.stringify(cloudData.tasks));
+                localStorage.setItem('tm_last_modified', Date.now().toString());
+                
+                state.folders = cloudData.folders;
+                state.tasksByFolder = cloudData.tasks;
+                renderFolders();
+                render();
+                alert('Data successfully pulled from the cloud!');
+            } else {
+                alert('No cloud backup found.');
+            }
+        }
+    });
+
+    forcePushBtn?.addEventListener('click', () => {
+        if (!window.firebaseAuth?.auth?.currentUser) {
+            alert('You must be signed in to push to the cloud.');
+            return;
+        }
+        if (confirm('Are you sure you want to OVERWRITE the cloud backup with your local data? This cannot be undone.')) {
+            syncCurrentData();
+            alert('Data successfully pushed to the cloud!');
+        }
+    });
+
     // Expose sync function globally so script.js can use it
     window.syncCurrentData = syncCurrentData;
 }
