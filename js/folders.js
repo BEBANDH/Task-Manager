@@ -96,7 +96,7 @@ export async function shareFolder(id) {
   }
 }
 
-export function createFolder(name, description = '', type = 'standard', labelsInput = 'General') {
+export function createFolder(name, description = '', labelsInput = 'General') {
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (state.folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
@@ -112,14 +112,10 @@ export function createFolder(name, description = '', type = 'standard', labelsIn
     name: trimmed, 
     description: description.trim(), 
     labels: labels,
-    type: type, 
     createdAt: now() 
   };
   state.folders.push(folder);
   state.tasksByFolder[folder.id] = [];
-  if (type === 'scheduled') {
-    state.schedulesByFolder[folder.id] = [];
-  }
   persistFolders();
   persistTasks();
   renderFolders();
@@ -198,6 +194,25 @@ export function toggleCurrentFolderLock() {
   render();
 }
 
+export function toggleCurrentFolderArchive() {
+  if (!state.currentFolderId) return;
+  const folder = state.folders.find(f => f.id === state.currentFolderId);
+  if (!folder) return;
+
+  const isArchived = !!folder.archived || (folder.labels && folder.labels.includes('Archive'));
+  if (isArchived) {
+    folder.archived = false;
+    folder.labels = ['General'];
+  } else {
+    folder.archived = true;
+    folder.labels = ['Archive'];
+  }
+
+  persistFolders();
+  renderFolders();
+  render();
+}
+
 export function renderFolders() {
   const container = document.getElementById('categoriesContainerSidebar');
   if (!container) return;
@@ -209,15 +224,18 @@ export function renderFolders() {
     return desc.toLowerCase().includes(state.listSearchQuery) || folder.name.toLowerCase().includes(state.listSearchQuery);
   });
 
-  if (filteredFolders.length === 0) {
-    container.innerHTML = '<div style="padding: 12px; color: var(--text-dim); font-size: 13px; text-align: center;">No lists found.</div>';
-    return;
-  }
+  // Permanent categories: General and Archive are always present by default
+  const categoriesMap = {
+    'General': [],
+    'Archive': []
+  };
 
-  // Group by labels
-  const categoriesMap = {};
   filteredFolders.forEach(folder => {
-    const labels = (folder.labels && folder.labels.length > 0) ? folder.labels : ['General'];
+    let labels = (folder.labels && folder.labels.length > 0) ? folder.labels : ['General'];
+    if (folder.archived || (labels.length === 1 && labels[0] === 'Archive')) {
+      labels = ['Archive'];
+      folder.archived = true;
+    }
     labels.forEach(catName => {
       const trimmedCatName = catName.trim() || 'General';
       if (!categoriesMap[trimmedCatName]) {
@@ -233,8 +251,10 @@ export function renderFolders() {
     if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
     if (aIdx !== -1) return -1;
     if (bIdx !== -1) return 1;
-    if (a === 'General') return 1;
-    if (b === 'General') return -1;
+    if (a === 'General') return -1;
+    if (b === 'General') return 1;
+    if (a === 'Archive') return 1;
+    if (b === 'Archive') return -1;
     return a.localeCompare(b);
   });
 
@@ -337,7 +357,7 @@ export function renderFolders() {
 
     const name = document.createElement('span');
     name.className = 'folder-name';
-    name.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
+    name.textContent = folder.name;
     name.setAttribute('title', folder.name);
 
     if (folder.labels && folder.labels.length > 0 && (folder.labels.length > 1 || folder.labels[0] !== 'General')) {
@@ -379,28 +399,34 @@ export function renderFolders() {
 
     li.addEventListener('click', () => switchFolder(folder.id));
 
-    // Drag and Drop
+    // Drag and Drop for List Items
     li.draggable = true;
     li.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      e.dataTransfer.setData('folderId', folder.id);
       e.dataTransfer.setData('text/plain', folder.id);
       e.dataTransfer.effectAllowed = 'move';
       li.style.opacity = '0.5';
     });
-    li.addEventListener('dragend', () => {
+    li.addEventListener('dragend', (e) => {
+      e.stopPropagation();
       li.style.opacity = '1';
     });
     li.addEventListener('dragover', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       e.dataTransfer.dropEffect = 'move';
       li.style.borderTop = '2px solid var(--accent)';
     });
-    li.addEventListener('dragleave', () => {
+    li.addEventListener('dragleave', (e) => {
+      e.stopPropagation();
       li.style.borderTop = '';
     });
     li.addEventListener('drop', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       li.style.borderTop = '';
-      const draggedId = e.dataTransfer.getData('text/plain');
+      const draggedId = e.dataTransfer.getData('folderId') || e.dataTransfer.getData('text/plain');
       if (draggedId && draggedId !== folder.id) {
         reorderFolders(draggedId, folder.id);
       }
@@ -413,6 +439,19 @@ export function renderFolders() {
 
 container.appendChild(accordionSection);
 });
+}
+
+export function moveFolderDirection(folderId, dir) {
+  const idx = state.folders.findIndex(f => f.id === folderId);
+  if (idx === -1) return;
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= state.folders.length) return;
+
+  const [folder] = state.folders.splice(idx, 1);
+  state.folders.splice(targetIdx, 0, folder);
+  
+  persistFolders();
+  renderFolders();
 }
 
 function reorderFolders(draggedId, targetId) {
@@ -476,9 +515,7 @@ export function openFolderModal(folderId = null, currentName = '') {
     if (currentModalFolderId) {
       renameFolder(currentModalFolderId, name, description, category);
     } else {
-      const typeRadio = el.folderForm.querySelector('input[name="folderType"]:checked');
-      const selectedType = typeRadio ? typeRadio.value : 'standard';
-      createFolder(name, description, selectedType, category);
+      createFolder(name, description, category);
     }
     closeFolderModal();
   };

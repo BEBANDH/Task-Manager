@@ -2,10 +2,10 @@ import { el } from './dom.js';
 import { state, getCurrentTasks, isCurrentFolderLocked, persistFolders, persistTasks } from './state.js';
 import { readStorage, writeStorage, readCookieJSON, now, uid, STORAGE_KEYS } from './storage.js';
 import { debounce } from './utils.js';
-import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock, shareFolder } from './folders.js';
+import { renderFolders, openFolderModal, closeFolderModal, switchFolder, toggleCurrentFolderLock, toggleCurrentFolderArchive, shareFolder } from './folders.js';
 import { addTask, initConfirmDeleteModal, closeConfirmDeleteModal, getRenderData, renderTaskItem } from './tasks.js';
-import { loadSchedules, renderScheduledView, createSchedule } from './schedules.js';
 import { renderCategoriesView, expandAllCategories, collapseAllCategories } from './categories.js';
+import { initNotes, renderNotes } from './notes.js';
 
 // DOM elements cache builder
 function initElements() {
@@ -60,6 +60,8 @@ function initElements() {
   el.tasksView = document.getElementById('tasksView');
   el.dashboardView = document.getElementById('dashboardView');
   el.settingsView = document.getElementById('settingsView');
+  el.notesView = document.getElementById('notesView');
+  el.notesBtn = document.getElementById('notesBtn');
   el.categoriesView = document.getElementById('categoriesView');
   el.categoriesBtn = document.getElementById('categoriesBtn');
   el.expandAllCategoriesBtn = document.getElementById('expandAllCategoriesBtn');
@@ -79,6 +81,9 @@ function initElements() {
   el.lockToggleBtn = document.getElementById('lockToggleBtn');
   el.lockToggleIcon = document.getElementById('lockToggleIcon');
   el.lockToggleText = document.getElementById('lockToggleText');
+  el.archiveToggleBtn = document.getElementById('archiveToggleBtn');
+  el.archiveToggleIcon = document.getElementById('archiveToggleIcon');
+  el.archiveToggleText = document.getElementById('archiveToggleText');
   el.shareListBtn = document.getElementById('shareListBtn');
   el.activeListNameDisplay = document.getElementById('activeListNameDisplay');
   el.toggleChartBtn = document.getElementById('toggleChartBtn');
@@ -112,8 +117,13 @@ export function render() {
   if (state.currentView === 'settings') {
     if (el.tasksView) el.tasksView.style.display = 'none';
     if (el.dashboardView) el.dashboardView.style.display = 'none';
+    if (el.notesView) el.notesView.style.display = 'none';
     if (el.settingsView) el.settingsView.style.display = 'block';
+    if (el.categoriesView) el.categoriesView.style.display = 'none';
+    if (el.leftPanel) el.leftPanel.style.display = 'flex';
+    if (document.getElementById('rightSidebar')) document.getElementById('rightSidebar').style.display = 'flex';
     if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+    if (el.notesBtn) el.notesBtn.classList.remove('active');
     if (el.settingsBtn) el.settingsBtn.classList.add('active');
     renderAccentColorPicker();
     renderShortcutsUI();
@@ -123,18 +133,62 @@ export function render() {
   if (state.currentView === 'dashboard') {
     if (el.tasksView) el.tasksView.style.display = 'none';
     if (el.settingsView) el.settingsView.style.display = 'none';
+    if (el.notesView) el.notesView.style.display = 'none';
     if (el.dashboardView) el.dashboardView.style.display = 'block';
+    if (el.categoriesView) el.categoriesView.style.display = 'none';
+    if (el.leftPanel) el.leftPanel.style.display = 'flex';
+    if (document.getElementById('rightSidebar')) document.getElementById('rightSidebar').style.display = 'flex';
     if (el.dashboardBtn) el.dashboardBtn.classList.add('active');
+    if (el.notesBtn) el.notesBtn.classList.remove('active');
     if (el.settingsBtn) el.settingsBtn.classList.remove('active');
     renderDashboard();
+    return;
+  }
+
+  if (state.currentView === 'notes') {
+    if (el.tasksView) el.tasksView.style.display = 'none';
+    if (el.settingsView) el.settingsView.style.display = 'none';
+    if (el.dashboardView) el.dashboardView.style.display = 'none';
+    if (el.categoriesView) el.categoriesView.style.display = 'none';
+    if (el.notesView) el.notesView.style.display = 'block';
+    if (el.leftPanel) el.leftPanel.style.display = 'flex';
+    // Hide right sidebar for notes view
+    if (document.getElementById('rightSidebar')) document.getElementById('rightSidebar').style.display = 'none';
+    
+    if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+    if (el.settingsBtn) el.settingsBtn.classList.remove('active');
+    if (el.notesBtn) el.notesBtn.classList.add('active');
+    
+    renderNotes();
+    return;
+  }
+
+  if (state.currentView === 'categories') {
+    if (el.tasksView) el.tasksView.style.display = 'none';
+    if (el.dashboardView) el.dashboardView.style.display = 'none';
+    if (el.settingsView) el.settingsView.style.display = 'none';
+    if (el.notesView) el.notesView.style.display = 'none';
+    if (el.categoriesView) el.categoriesView.style.display = 'block';
+    if (el.leftPanel) el.leftPanel.style.display = 'none';
+    if (document.getElementById('rightSidebar')) document.getElementById('rightSidebar').style.display = 'flex';
+    if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
+    if (el.settingsBtn) el.settingsBtn.classList.remove('active');
+    if (el.notesBtn) el.notesBtn.classList.remove('active');
+    renderCategoriesView();
     return;
   }
 
   if (el.tasksView) el.tasksView.style.display = 'block';
   if (el.dashboardView) el.dashboardView.style.display = 'none';
   if (el.settingsView) el.settingsView.style.display = 'none';
+  if (el.notesView) el.notesView.style.display = 'none';
+  if (el.categoriesView) el.categoriesView.style.display = 'none';
+  if (el.leftPanel) el.leftPanel.style.display = 'flex';
+  if (document.getElementById('rightSidebar')) document.getElementById('rightSidebar').style.display = 'flex';
+  
   if (el.dashboardBtn) el.dashboardBtn.classList.remove('active');
   if (el.settingsBtn) el.settingsBtn.classList.remove('active');
+  if (el.notesBtn) el.notesBtn.classList.remove('active');
 
   const tasks = getCurrentTasks();
   const { total, completed, filtered } = getRenderData(tasks);
@@ -161,7 +215,7 @@ export function render() {
   }
   if (currentFolder) {
     if (el.activeListNameDisplay) {
-      el.activeListNameDisplay.textContent = `${currentFolder.type === 'scheduled' ? '⏰ ' : ''}${currentFolder.name}`;
+      el.activeListNameDisplay.textContent = currentFolder.name;
     }
     const isLocked = !!currentFolder.locked;
     if (el.lockToggleIcon) {
@@ -175,11 +229,25 @@ export function render() {
     if (el.lockToggleBtn) {
       el.lockToggleBtn.title = isLocked ? 'Unlock List (L)' : 'Lock List (L)';
     }
+    if (el.archiveToggleBtn) {
+      const isArchived = !!currentFolder.archived || (currentFolder.labels && currentFolder.labels.includes('Archive'));
+      if (el.archiveToggleText) {
+        el.archiveToggleText.textContent = isArchived ? 'Archived' : 'Archive';
+      }
+      el.archiveToggleBtn.title = isArchived ? 'Unarchive List' : 'Archive List';
+      if (isArchived) {
+        el.archiveToggleBtn.style.borderColor = 'var(--accent)';
+        el.archiveToggleBtn.style.color = 'var(--accent)';
+      } else {
+        el.archiveToggleBtn.style.borderColor = 'var(--border)';
+        el.archiveToggleBtn.style.color = 'var(--text)';
+      }
+    }
     if (el.input) {
       el.input.disabled = isLocked;
       el.input.placeholder = isLocked 
         ? 'This list is locked...' 
-        : (currentFolder.type === 'scheduled' ? 'Add alarm schedule (e.g. 07:30 AM Workout)...' : 'Add a task...');
+        : 'Add a task...';
     }
     const addBtn = el.form ? el.form.querySelector('button[type="submit"]') : null;
     if (addBtn) {
@@ -193,12 +261,6 @@ export function render() {
         el.listDescriptionDisplay.style.display = 'none';
       }
     }
-  }
-
-  // Route to Scheduled Alarm View if type is 'scheduled'
-  if (state.currentView !== 'allTasks' && currentFolder && currentFolder.type === 'scheduled') {
-    renderScheduledView(currentFolder.id);
-    return;
   }
 
   // Empty state
@@ -282,7 +344,7 @@ function renderRightSidebarDistribution() {
     nameSpan.style.textOverflow = 'ellipsis';
     nameSpan.style.whiteSpace = 'nowrap';
     nameSpan.style.maxWidth = '150px';
-    nameSpan.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
+    nameSpan.textContent = folder.name;
 
     const countLabel = document.createElement('span');
     countLabel.style.fontSize = '11px';
@@ -318,24 +380,22 @@ function initTheme() {
 }
 
 const GRADIENT_COLORS = {
-  green: 'linear-gradient(135deg, #34d399, #059669)',
-  blue: 'linear-gradient(135deg, #60a5fa, #2563eb)',
-  indigo: 'linear-gradient(135deg, #818cf8, #4f46e5)',
-  purple: 'linear-gradient(135deg, #a855f7, #7e22ce)',
-  pink: 'linear-gradient(135deg, #f472b6, #db2777)',
-  red: 'linear-gradient(135deg, #f87171, #dc2626)',
-  orange: 'linear-gradient(135deg, #fb923c, #ea580c)',
-  amber: 'linear-gradient(135deg, #fbbf24, #d97706)',
-  teal: 'linear-gradient(135deg, #2dd4bf, #0d9488)',
-  cyan: 'linear-gradient(135deg, #22d3ee, #0891b2)'
+  black: 'linear-gradient(135deg, #ffffff, #e2e8f0)',
+  mustard: 'linear-gradient(135deg, #FFD166, #F4A261)',
+  brown: 'linear-gradient(135deg, #D4AF37, #AA6C39)',
+  sky: 'linear-gradient(135deg, #A4D4EF, #729EBA)',
+  sage: 'linear-gradient(135deg, #C2DEC0, #8AAB86)',
+  rose: 'linear-gradient(135deg, #EFA4B2, #BA707F)',
+  mauve: 'linear-gradient(135deg, #C9B2CC, #98809B)'
 };
 
 function applyAccentColor() {
-  const currentAccent = readStorage('tm_accent_color', 'green');
-  const gradVal = GRADIENT_COLORS[currentAccent] || GRADIENT_COLORS.green;
+  const currentAccent = readStorage('tm_accent_color', 'mustard');
+  document.documentElement.setAttribute('data-accent', currentAccent);
+  const gradVal = GRADIENT_COLORS[currentAccent] || GRADIENT_COLORS.mustard;
   document.documentElement.style.setProperty('--accent-gradient', gradVal);
   
-  const colorVal = state.ACCENT_COLORS[currentAccent] ? state.ACCENT_COLORS[currentAccent].dark : state.ACCENT_COLORS.green.dark;
+  const colorVal = state.ACCENT_COLORS[currentAccent] ? state.ACCENT_COLORS[currentAccent].dark : state.ACCENT_COLORS.mustard.dark;
   document.documentElement.style.setProperty('--accent', colorVal);
   document.documentElement.style.removeProperty('--text');
   
@@ -357,7 +417,7 @@ function applyAccentColor() {
 
 function cycleAccentColor() {
   const keys = Object.keys(state.ACCENT_COLORS);
-  const currentAccent = readStorage('tm_accent_color', 'green');
+  const currentAccent = readStorage('tm_accent_color', 'mustard');
   const idx = keys.indexOf(currentAccent);
   const nextAccent = keys[(idx + 1) % keys.length];
   writeStorage('tm_accent_color', nextAccent);
@@ -373,18 +433,18 @@ function renderAccentColorPicker() {
   if (!container) return;
   container.innerHTML = '';
   
-  const currentAccent = readStorage('tm_accent_color', 'green');
+  const currentAccent = readStorage('tm_accent_color', 'mustard');
   const theme = document.documentElement.getAttribute('data-theme') || 'light';
 
   Object.keys(state.ACCENT_COLORS).forEach(colorKey => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    const colorHex = state.ACCENT_COLORS[colorKey][theme];
+    const colorHex = colorKey === 'black' ? '#18181b' : state.ACCENT_COLORS[colorKey][theme];
     btn.style.width = '36px';
     btn.style.height = '36px';
     btn.style.borderRadius = '50%';
     btn.style.backgroundColor = colorHex;
-    btn.style.border = colorKey === currentAccent ? '3px solid var(--text)' : '1px solid var(--border)';
+    btn.style.border = colorKey === currentAccent ? '3px solid var(--text)' : (colorKey === 'black' ? '2px solid #ffffff' : '1px solid var(--border)');
     btn.style.cursor = 'pointer';
     btn.style.padding = '0';
     btn.style.display = 'inline-flex';
@@ -628,7 +688,7 @@ function exportToWord(selectedFolderIds = null) {
     });
 
     htmlSections += `
-      <div class="section-header">${escapeHtml(folder.type === 'scheduled' ? '⏰ ' : '')}${escapeHtml(folder.name)}</div>
+      <div class="section-header">${escapeHtml(folder.name)}</div>
       ${descHtml}
       <table class="task-table">
         <thead>
@@ -994,7 +1054,6 @@ function initFolders() {
 
 // Load
 function load() {
-  loadSchedules();
   state.folders = readStorage(STORAGE_KEYS.folders, []);
   if (!Array.isArray(state.folders)) state.folders = [];
   state.categoryOrder = readStorage('tm_category_order_v2', []);
@@ -1069,6 +1128,7 @@ function load() {
   }
 
   state.currentView = readStorage('tm_current_view_v2', 'tasks');
+  state.notes = readStorage(STORAGE_KEYS.notes, []);
   state.currentFolderId = readStorage(STORAGE_KEYS.currentFolder, null);
   if (!state.currentFolderId || !state.folders.find(f => f.id === state.currentFolderId)) {
     if (state.folders.length > 0) {
@@ -1455,8 +1515,7 @@ function initKeyboardShortcuts() {
       !el.exportMultipleModal.hidden || 
       (document.getElementById('profileModal') && !document.getElementById('profileModal').hidden) || 
       (el.confirmDeleteModal && !el.confirmDeleteModal.hidden) || 
-      (el.changelogModal && !el.changelogModal.hidden) ||
-      (document.getElementById('scheduleModal') && !document.getElementById('scheduleModal').hidden);
+      (el.changelogModal && !el.changelogModal.hidden);
 
     if (e.key === 'Enter') {
       const activeModal = document.querySelector('.modal:not([hidden])');
@@ -1592,12 +1651,6 @@ function initSearch() {
 function initForm() {
   el.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const currentFolder = state.folders.find(f => f.id === state.currentFolderId);
-    if (currentFolder && currentFolder.type === 'scheduled') {
-      openScheduleModal();
-      return;
-    }
-
     const value = el.input.value.trim();
     if (value.length === 0) {
       el.input.focus();
@@ -1608,74 +1661,6 @@ function initForm() {
     addTask(value);
     el.input.value = '';
     el.input.focus();
-  });
-
-  initScheduleModal();
-}
-
-function openScheduleModal() {
-  const modal = document.getElementById('scheduleModal');
-  if (!modal) return;
-  modal.hidden = false;
-  modal.removeAttribute('hidden');
-  
-  const input = document.getElementById('scheduleTitleInput');
-  if (input) {
-    if (el.input && el.input.value.trim()) {
-      input.value = el.input.value.trim();
-      el.input.value = '';
-    }
-    input.focus();
-  }
-}
-
-function closeScheduleModal() {
-  const modal = document.getElementById('scheduleModal');
-  if (!modal) return;
-  modal.hidden = true;
-  modal.setAttribute('hidden', '');
-}
-
-function initScheduleModal() {
-  const modal = document.getElementById('scheduleModal');
-  const form = document.getElementById('scheduleForm');
-  const cancelBtn = document.getElementById('scheduleModalCancel');
-  const daysContainer = document.getElementById('scheduleDaysContainer');
-
-  if (!modal || !form) return;
-
-  if (cancelBtn) cancelBtn.addEventListener('click', closeScheduleModal);
-
-  if (daysContainer) {
-    daysContainer.querySelectorAll('.day-select-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.classList.toggle('active');
-      });
-    });
-  }
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const titleInput = document.getElementById('scheduleTitleInput');
-    const timeInput = document.getElementById('scheduleTimeInput');
-    const endDateInput = document.getElementById('scheduleEndDateInput');
-
-    const title = titleInput.value.trim();
-    const time = timeInput.value;
-    const endDate = endDateInput ? endDateInput.value : null;
-
-    const activeDayBtns = daysContainer ? daysContainer.querySelectorAll('.day-select-btn.active') : [];
-    const daysOfWeek = Array.from(activeDayBtns).map(btn => parseInt(btn.dataset.day, 10));
-
-    if (!title || !time) return;
-
-    createSchedule(state.currentFolderId, title, time, daysOfWeek, null, endDate);
-    closeScheduleModal();
-    form.reset();
-    if (daysContainer) {
-      daysContainer.querySelectorAll('.day-select-btn').forEach(b => b.classList.add('active'));
-    }
-    render();
   });
 }
 
@@ -1722,6 +1707,18 @@ function initSettings() {
 }
 
 function initCategories() {
+  if (el.notesBtn) {
+    el.notesBtn.addEventListener('click', () => {
+      state.currentView = 'notes';
+      writeStorage('tm_current_view_v2', state.currentView);
+      render();
+      if (window.innerWidth <= 768) {
+        el.leftPanel.classList.remove('show');
+        el.sidebarOverlay.classList.remove('show');
+      }
+    });
+  }
+
   if (el.categoriesBtn) {
     el.categoriesBtn.addEventListener('click', () => {
       state.currentView = 'categories';
@@ -2040,6 +2037,13 @@ function initLockToggle() {
   if (!el.lockToggleBtn) return;
   el.lockToggleBtn.addEventListener('click', () => {
     toggleCurrentFolderLock();
+  });
+}
+
+function initArchiveToggle() {
+  if (!el.archiveToggleBtn) return;
+  el.archiveToggleBtn.addEventListener('click', () => {
+    toggleCurrentFolderArchive();
   });
 }
 
@@ -2362,8 +2366,10 @@ async function init() {
   initDashboard();
   initSettings();
   initCategories();
+  initNotes();
   initDashboardChart();
   initLockToggle();
+  initArchiveToggle();
   initShareListBtn();
   initChartVisibility();
   initChangelog();

@@ -123,7 +123,7 @@ export function renderCategoriesView() {
       fName.style.fontWeight = '600';
       fName.style.fontSize = '14px';
       fName.style.color = 'var(--text)';
-      fName.textContent = `${folder.type === 'scheduled' ? '⏰ ' : ''}${folder.name}`;
+      fName.textContent = folder.name;
 
       leftCol.appendChild(fName);
 

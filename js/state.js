@@ -3,7 +3,7 @@ import { writeStorage, STORAGE_KEYS } from './storage.js';
 export const state = {
   folders: [],
   tasksByFolder: {},
-  schedulesByFolder: {},
+  notes: [],
   currentFolderId: null,
   currentView: 'tasks', // 'tasks' | 'dashboard' | 'settings'
   activeFilter: 'all',  // 'all' | 'active' | 'completed'
@@ -17,17 +17,14 @@ export const state = {
   listSearchQuery: '',
   categoryOrder: [],
   ACCENT_COLORS: {
-    blue: { light: '#4A56B3', dark: '#5E6AD2' },
-    purple: { light: '#725BB8', dark: '#8E76D6' },
-    pink: { light: '#B35897', dark: '#D472B7' },
-    red: { light: '#C44C4C', dark: '#E46464' },
-    orange: { light: '#C27040', dark: '#E18A58' },
-    yellow: { light: '#B3893F', dark: '#D4A853' },
-    green: { light: '#3D825E', dark: '#51A176' },
-    cyan: { light: '#4196A3', dark: '#56B5C3' },
-    teal: { light: '#367A73', dark: '#4B9990' },
-    slate: { light: '#5A6370', dark: '#8A94A6' }
-  }
+    black: { light: '#ffffff', dark: '#ffffff' },
+    mustard: { light: '#E1AD01', dark: '#E1AD01' },
+    brown: { light: '#C19A6B', dark: '#C19A6B' },
+    sky: { light: '#8FBCD3', dark: '#8FBCD3' },
+    sage: { light: '#A9C4A6', dark: '#A9C4A6' },
+    rose: { light: '#D88C9A', dark: '#D88C9A' },
+    mauve: { light: '#B39EB5', dark: '#B39EB5' }
+  },
 };
 
 export const getCurrentTasks = () => {
@@ -86,6 +83,23 @@ export function persistTasks() {
   persistTasksTimeoutId = setTimeout(() => {
     const write = () => {
       writeStorage(STORAGE_KEYS.tasks, state.tasksByFolder);
+      triggerCloudSync();
+    };
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(write);
+    } else {
+      write();
+    }
+  }, 300);
+}
+
+// Persist Notes
+let persistNotesTimeoutId = null;
+export function persistNotes() {
+  if (persistNotesTimeoutId) clearTimeout(persistNotesTimeoutId);
+  persistNotesTimeoutId = setTimeout(() => {
+    const write = () => {
+      writeStorage(STORAGE_KEYS.notes, state.notes);
       triggerCloudSync();
     };
     if (window.requestIdleCallback) {

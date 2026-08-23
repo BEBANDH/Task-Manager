@@ -9,7 +9,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Permanent+Marker&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#ffffff">
@@ -86,6 +86,17 @@
                         </svg>
                         Settings
                     </button>
+                    <button id="notesBtn" class="ghost-button" aria-label="Open notes"
+                        data-tooltip="Open notes">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Notes
+                    </button>
                 </section>
 
                 <div class="folders-header">
@@ -146,6 +157,17 @@
                             </span>
                             <span>Share</span>
                         </button>
+                        <button id="archiveToggleBtn" class="lock-toggle-btn" aria-label="Toggle Archive List" title="Toggle Archive List"
+                            style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span id="archiveToggleIcon" style="display: flex; align-items: center;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                    <rect x="1" y="3" width="22" height="5"></rect>
+                                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                                </svg>
+                            </span>
+                            <span id="archiveToggleText">Archive</span>
+                        </button>
                         <button id="lockToggleBtn" class="lock-toggle-btn" aria-label="Toggle Lock List"
                             style="display: inline-flex; align-items: center; gap: 6px;">
                             <span id="lockToggleIcon" style="display: flex; align-items: center;">
@@ -204,6 +226,80 @@
                             up</h3>
                         <p style="margin: 0 auto; font-size: 14px; color: var(--text-dim); max-width: 300px;">There are
                             no tasks here yet. Add your first task above to get started.</p>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Notes View -->
+            <div id="notesView" style="display: none;">
+                <div class="list-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <h2>Notes</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="expandable-search" style="position: relative; display: flex; align-items: center;">
+                            <button id="notesSearchToggleBtn" class="lock-toggle-btn" aria-label="Toggle Notes Search"
+                                onclick="document.getElementById('notesSearchInput').focus()"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; z-index: 2; position: absolute; right: 0; background: transparent; border: none; cursor: pointer; color: var(--text-dim);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                            <input id="notesSearchInput" type="search" placeholder="Search notes..."
+                                aria-label="Search notes"
+                                style="width: 32px; height: 32px; padding: 0; opacity: 0; transition: all 0.3s ease; border-radius: 16px; border: 1px solid transparent; background: transparent; color: var(--text); z-index: 1;">
+                        </div>
+                        <button id="shareNotesBtn" class="lock-toggle-btn" aria-label="Share Notes" title="Share Notes"
+                            style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: flex; align-items: center;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                    <polyline points="16 6 12 2 8 6"></polyline>
+                                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                                </svg>
+                            </span>
+                            <span>Share</span>
+                        </button>
+                        <button id="lockNotesBtn" class="lock-toggle-btn" aria-label="Toggle Lock Notes"
+                            style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span id="lockNotesIcon" style="display: flex; align-items: center;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                </svg>
+                            </span>
+                            <span id="lockNotesText">Unlocked</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="top-section" style="margin-bottom: 24px;">
+                    <section class="add-task">
+                        <form id="noteForm" autocomplete="off" novalidate class="note-add-form">
+                            <div class="note-add-inputs">
+                                <input id="noteTitleInput" type="text" name="title" placeholder="Title..."
+                                    aria-label="Note Title" class="note-add-title">
+                                <textarea id="noteBodyInput" name="body" placeholder="Take a note..."
+                                    aria-label="Note Body" class="note-add-body"></textarea>
+                            </div>
+                            <button type="submit" class="primary">Add</button>
+                        </form>
+                    </section>
+                </div>
+                <section class="notes-list">
+                    <div id="notesContainer" class="notes-grid"></div>
+                    <div id="emptyNotesState" class="empty-state" hidden>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border)"
+                            stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-bottom: 16px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <h3 style="color: var(--text); font-weight: 500; margin: 0 0 8px 0; font-size: 18px;">No Notes</h3>
+                        <p style="margin: 0 auto; font-size: 14px; color: var(--text-dim); max-width: 300px;">Write down your thoughts here.</p>
                     </div>
                 </section>
             </div>
@@ -532,60 +628,9 @@
                         aria-label="Labels" list="categorySuggestions" maxlength="100">
                     <datalist id="categorySuggestions"></datalist>
                 </div>
-                
-                <div style="margin-top: 16px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 8px;">List Type</label>
-                    <div style="display: flex; gap: 12px;">
-                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text);">
-                            <input type="radio" name="folderType" value="standard" checked> Standard List
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text);">
-                            <input type="radio" name="folderType" value="scheduled"> ⏰ Scheduled List
-                        </label>
-                    </div>
-                </div>
-
                 <div class="modal-actions">
                     <button type="button" id="folderModalCancel" class="ghost-button">Cancel</button>
                     <button type="submit" class="primary">Create</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Create Schedule Modal -->
-    <div id="scheduleModal" class="modal" hidden>
-        <div class="modal-content">
-            <h3>Add Scheduled Task</h3>
-            <form id="scheduleForm">
-                <input id="scheduleTitleInput" type="text" placeholder="Alarm task title (e.g. Take Workout Shake)..." required maxlength="80">
-                
-                <div style="margin-top: 14px;">
-                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600;">Alarm Time</label>
-                    <input id="scheduleTimeInput" type="time" required style="width: 100%; margin-top: 4px; padding: 8px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
-                </div>
-
-                <div style="margin-top: 14px;">
-                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 6px;">Repeat Days</label>
-                    <div id="scheduleDaysContainer" style="display: flex; justify-content: space-between; gap: 4px;">
-                        <button type="button" class="day-select-btn active" data-day="0">S</button>
-                        <button type="button" class="day-select-btn active" data-day="1">M</button>
-                        <button type="button" class="day-select-btn active" data-day="2">T</button>
-                        <button type="button" class="day-select-btn active" data-day="3">W</button>
-                        <button type="button" class="day-select-btn active" data-day="4">T</button>
-                        <button type="button" class="day-select-btn active" data-day="5">F</button>
-                        <button type="button" class="day-select-btn active" data-day="6">S</button>
-                    </div>
-                </div>
-
-                <div style="margin-top: 14px;">
-                    <label style="font-size: 12px; color: var(--text-dim); font-weight: 600;">End Date (Optional)</label>
-                    <input id="scheduleEndDateInput" type="date" style="width: 100%; margin-top: 4px; padding: 8px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" id="scheduleModalCancel" class="ghost-button">Cancel</button>
-                    <button type="submit" class="primary">Add Schedule</button>
                 </div>
             </form>
         </div>
@@ -656,11 +701,28 @@
             </h3>
 
             <div class="changelog-version-list" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Version 6.5 (Current) -->
+                <!-- Version 7.0 (Current) -->
                 <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.5 (Current Version)</span>
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v7.0 (Current Version)</span>
+                        <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
+                    </div>
+                    <ul
+                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        <li><strong>📌 Dedicated Notes System</strong>: Google Keep-inspired freeform notes view accessible from the left sidebar with search, auto-saving, and full text editing.</li>
+                        <li><strong>🎨 Per-Note Custom Colors</strong>: Color picker in the note modal footer allowing individual note cards & expanded overlays to use any theme accent color independently.</li>
+                        <li><strong>✍️ Dual Handwriting Typography</strong>: Custom Permanent Marker font for titles and Outfit font for note body text, visible live while typing.</li>
+                        <li><strong>📖 Expanded Note Modal</strong>: Larger, spacious editing overlay (700px width) with fixed bottom footer displaying note creation date & time.</li>
+                        <li><strong>🎨 Scrapbook UI Refinements</strong>: Tactile rounded card borders, drop shadows, and 95% UI scaling proportionality.</li>
+                    </ul>
+                </div>
+
+                <!-- Version 6.5 -->
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-top: 16px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 15px; color: var(--text);">v6.5</span>
                         <span style="font-size: 12px; color: var(--text-dim);">August 2026</span>
                     </div>
                     <ul
@@ -889,6 +951,19 @@
             <div class="modal-actions">
                 <button type="button" id="signOutBtn" class="ghost-button">Sign Out</button>
                 <button type="button" id="profileModalClose" class="primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Edit Modal -->
+    <div id="noteEditModal" class="modal" hidden>
+        <div class="modal-content note-modal-content">
+            <input type="text" id="noteEditTitle" class="note-edit-title" placeholder="Title" autocomplete="off">
+            <textarea id="noteEditBody" class="note-edit-body" placeholder="Take a note..."></textarea>
+            <div class="note-modal-footer">
+                <span id="noteEditDate" class="note-modal-date"></span>
+                <div id="noteColorPicker" class="note-color-picker"></div>
+                <button type="button" id="noteEditClose" class="primary">Close</button>
             </div>
         </div>
     </div>

@@ -237,8 +237,8 @@ export function renderTaskItem(task) {
 
   if (task._folderName) {
     const badge = document.createElement('span');
-    badge.style.color = 'var(--accent)';
-    badge.style.fontWeight = '600';
+    badge.style.color = '#000000';
+    badge.style.fontWeight = '700';
     badge.style.marginLeft = '6px';
     badge.textContent = `• [${task._folderName}]`;
     meta.appendChild(badge);
@@ -281,8 +281,8 @@ export function renderTaskItem(task) {
   priorityBtn.type = 'button';
   priorityBtn.className = 'priority';
   priorityBtn.innerHTML = task.highPriority 
-    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
-    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #dc2626;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #000000;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
   priorityBtn.title = task.highPriority ? 'Remove high priority' : 'Mark as high priority';
   priorityBtn.style.padding = '6px 8px';
   priorityBtn.style.fontSize = '12px';

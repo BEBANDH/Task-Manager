@@ -161,7 +161,8 @@ function updateUIForUser(user) {
         signInBtn.style.display = 'none';
         profileBtn.style.display = 'inline-flex';
         profilePhoto.src = user.photoURL || '';
-        profileName.textContent = user.displayName?.split(' ')[0] || 'User';
+        const name = user.displayName?.split(' ')[0] || user.displayName || 'User';
+        profileName.textContent = `Hello, ${name}`;
     } else {
         // User is signed out
         signInBtn.style.display = 'inline-flex';
