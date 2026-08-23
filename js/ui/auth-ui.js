@@ -8,6 +8,7 @@ import { syncToCloud, loadFromCloud, setupRealtimeSync } from '../features/auth/
 import { state } from '../state.js';
 import { render } from '../main.js';
 import { renderFolders } from '../folders.js';
+import { renderNotes } from '../notes.js';
 
 export async function initAuthUI() {
     // Check if Firebase config is set
@@ -87,17 +88,20 @@ export async function initAuthUI() {
         if (user) {
             // Load data from cloud when signed in
             loadUserData().then(() => {
-                realtimeUnsubscribe = setupRealtimeSync((folders, tasks, lastModified) => {
+                realtimeUnsubscribe = setupRealtimeSync((folders, tasks, notes, lastModified) => {
                     const localLastModified = localStorage.getItem('tm_last_modified') || '0';
                     if (lastModified > parseInt(localLastModified)) {
                         localStorage.setItem('tm_folders_v2', JSON.stringify(folders));
                         localStorage.setItem('tm_tasks_v2', JSON.stringify(tasks));
+                        localStorage.setItem('tm_notes_v1', JSON.stringify(notes || []));
                         localStorage.setItem('tm_last_modified', lastModified.toString());
                         
                         state.folders = folders;
                         state.tasksByFolder = tasks;
+                        state.notes = notes || [];
                         renderFolders();
                         render();
+                        renderNotes();
                     }
                 });
             });
@@ -221,13 +225,16 @@ async function loadUserData() {
             // Cloud data is newer - load it
             localStorage.setItem('tm_folders_v2', JSON.stringify(cloudData.folders));
             localStorage.setItem('tm_tasks_v2', JSON.stringify(cloudData.tasks));
+            localStorage.setItem('tm_notes_v1', JSON.stringify(cloudData.notes || []));
             localStorage.setItem('tm_last_modified', cloudData.lastModified.toString());
 
             // Reactive UI update instead of reload
             state.folders = cloudData.folders;
             state.tasksByFolder = cloudData.tasks;
+            state.notes = cloudData.notes || [];
             renderFolders();
             render();
+            renderNotes();
         } else if (parseInt(localLastModified) > cloudData.lastModified && parseInt(localLastModified) > 0) {
             // Local data is newer - prompt user
             const overwrite = confirm("You have local changes that conflict with your cloud backup. Do you want to overwrite your cloud backup with these local changes?\n\nClick 'OK' to upload local data.\nClick 'Cancel' to load your cloud backup.");
@@ -237,12 +244,15 @@ async function loadUserData() {
                 // Force load cloud data
                 localStorage.setItem('tm_folders_v2', JSON.stringify(cloudData.folders));
                 localStorage.setItem('tm_tasks_v2', JSON.stringify(cloudData.tasks));
+                localStorage.setItem('tm_notes_v1', JSON.stringify(cloudData.notes || []));
                 localStorage.setItem('tm_last_modified', Date.now().toString());
                 
                 state.folders = cloudData.folders;
                 state.tasksByFolder = cloudData.tasks;
+                state.notes = cloudData.notes || [];
                 renderFolders();
                 render();
+                renderNotes();
             }
         }
     } else {
@@ -256,7 +266,8 @@ export async function syncCurrentData() {
     try {
         const folders = JSON.parse(localStorage.getItem('tm_folders_v2') || '[]');
         const tasks = JSON.parse(localStorage.getItem('tm_tasks_v2') || '{}');
-        const success = await syncToCloud(folders, tasks);
+        const notes = JSON.parse(localStorage.getItem('tm_notes_v1') || '[]');
+        const success = await syncToCloud(folders, tasks, notes);
         if (success) {
             localStorage.setItem('tm_last_modified', Date.now().toString());
         }

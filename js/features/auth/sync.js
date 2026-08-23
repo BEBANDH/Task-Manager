@@ -20,7 +20,7 @@ function cleanUndefined(obj) {
 }
 
 // Sync data to Firestore
-export async function syncToCloud(folders, tasksByFolder) {
+export async function syncToCloud(folders, tasksByFolder, notes = []) {
     const user = getCurrentUser();
     if (!user) return false;
 
@@ -31,9 +31,10 @@ export async function syncToCloud(folders, tasksByFolder) {
         // Start a batched write
         const batch = writeBatch(db);
 
-        // Update the root document (folders and metadata)
+        // Update the root document (folders, notes and metadata)
         batch.set(userRef, {
             folders: cleanUndefined(folders),
+            notes: cleanUndefined(notes),
             lastModified: Date.now(),
             email: user.email,
             displayName: user.displayName,
@@ -105,6 +106,7 @@ export async function loadFromCloud() {
             return {
                 folders: data.folders || [],
                 tasks: tasks,
+                notes: data.notes || [],
                 lastModified: data.lastModified || 0
             };
         }
@@ -141,7 +143,7 @@ export function setupRealtimeSync(callback) {
                 const cloudData = await loadFromCloud();
                 if (cloudData) {
                     console.log('🔄 Real-time update received');
-                    callback(cloudData.folders, cloudData.tasks, cloudData.lastModified);
+                    callback(cloudData.folders, cloudData.tasks, cloudData.notes, cloudData.lastModified);
                 }
             }
         });
