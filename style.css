@@ -2724,38 +2724,38 @@ input[type="checkbox"]:checked {
   border-radius: 3px;
   background: var(--bg-subtle);
   color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  margin-left: 5px;
-  vertical-align: middle;
 }
 
-.category-content {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.alarm-delete-btn:hover {
+  color: var(--danger);
 }
 
-.category-folder-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+/* Custom Alarm Switch Toggle */
+.alarm-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.alarm-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.alarm-slider {
+  position: absolute;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  transition: 0.3s;
+  border-radius: 24px;
 }
 
-.category-folder-item:hover {
-  background: var(--bg-subtle);
-  border-color: var(--accent);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.right-panel-dist-item:hover {
+.alarm-slider:before {
+  position: absolute;
   content: "";
   height: 16px;
   width: 16px;
