@@ -101,14 +101,6 @@ function initElements() {
   el.confirmClearMultipleConfirm = document.getElementById('confirmClearMultipleConfirm');
   el.dashboardContributionChart = document.getElementById('dashboardContributionChart');
   el.chartListSelector = document.getElementById('chartListSelector');
-  el.timerDisplay = document.getElementById('pomodoroTimeDisplay');
-  el.timerStartPauseBtn = document.getElementById('pomodoroStartBtn');
-  el.timerResetBtn = document.getElementById('pomodoroResetBtn');
-  el.timerHistory = document.getElementById('timerHistory');
-  el.pomodoroCard = document.getElementById('pomodoroCard');
-  el.pomodoroClockView = document.getElementById('pomodoroClockView');
-  el.pomodoroStatusIcon = document.getElementById('pomodoroStatusIcon');
-  el.pomodoroProgressRing = document.getElementById('pomodoroProgressRing');
 }
 
 export function render() {
@@ -266,8 +258,6 @@ export function render() {
   // Empty state
   el.empty.hidden = filtered.length !== 0 || (state.searchQuery.length > 0 || state.activeFilter !== 'all' || state.selectedMonth);
 
-  // Progress (REMOVED)
-
   // List
   el.tasks.innerHTML = '';
   const fragment = document.createDocumentFragment();
@@ -380,22 +370,22 @@ function initTheme() {
 }
 
 const GRADIENT_COLORS = {
-  black: 'linear-gradient(135deg, #ffffff, #e2e8f0)',
-  mustard: 'linear-gradient(135deg, #FFD166, #F4A261)',
-  brown: 'linear-gradient(135deg, #D4AF37, #AA6C39)',
-  sky: 'linear-gradient(135deg, #A4D4EF, #729EBA)',
-  sage: 'linear-gradient(135deg, #C2DEC0, #8AAB86)',
-  rose: 'linear-gradient(135deg, #EFA4B2, #BA707F)',
-  mauve: 'linear-gradient(135deg, #C9B2CC, #98809B)'
+  vermilion: 'linear-gradient(135deg, #e8453c, #ff6b35)', // Tokyo Vermilion & Sunset Glow
+  yamabuki: 'linear-gradient(135deg, #ffaa00, #ff7b00)',  // Yamabuki Marigold & Amber
+  matcha: 'linear-gradient(135deg, #48b870, #209952)',    // Tokiwa Matcha & Forest Jade
+  ai: 'linear-gradient(135deg, #38a4ff, #1d68f7)',        // Tokyo Indigo & Cyber Blue
+  sakura: 'linear-gradient(135deg, #ff5c98, #e0246a)',    // Neon Sakura Crimson
+  fuji: 'linear-gradient(135deg, #b86bff, #7e38f3)',      // Fuji Violet & Cyber Murasaki
+  sumi: 'linear-gradient(135deg, #ffffff, #c7c7c7)'       // Silver Shiro Ink
 };
 
 function applyAccentColor() {
-  const currentAccent = readStorage('tm_accent_color', 'mustard');
+  const currentAccent = readStorage('tm_accent_color', 'vermilion');
   document.documentElement.setAttribute('data-accent', currentAccent);
-  const gradVal = GRADIENT_COLORS[currentAccent] || GRADIENT_COLORS.mustard;
+  const gradVal = GRADIENT_COLORS[currentAccent] || GRADIENT_COLORS.vermilion;
   document.documentElement.style.setProperty('--accent-gradient', gradVal);
   
-  const colorVal = state.ACCENT_COLORS[currentAccent] ? state.ACCENT_COLORS[currentAccent].dark : state.ACCENT_COLORS.mustard.dark;
+  const colorVal = state.ACCENT_COLORS[currentAccent] ? state.ACCENT_COLORS[currentAccent].dark : state.ACCENT_COLORS.vermilion.dark;
   document.documentElement.style.setProperty('--accent', colorVal);
   document.documentElement.style.removeProperty('--text');
   
@@ -417,7 +407,7 @@ function applyAccentColor() {
 
 function cycleAccentColor() {
   const keys = Object.keys(state.ACCENT_COLORS);
-  const currentAccent = readStorage('tm_accent_color', 'mustard');
+  const currentAccent = readStorage('tm_accent_color', 'vermilion');
   const idx = keys.indexOf(currentAccent);
   const nextAccent = keys[(idx + 1) % keys.length];
   writeStorage('tm_accent_color', nextAccent);
@@ -433,18 +423,18 @@ function renderAccentColorPicker() {
   if (!container) return;
   container.innerHTML = '';
   
-  const currentAccent = readStorage('tm_accent_color', 'mustard');
-  const theme = document.documentElement.getAttribute('data-theme') || 'light';
+  const currentAccent = readStorage('tm_accent_color', 'vermilion');
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
 
   Object.keys(state.ACCENT_COLORS).forEach(colorKey => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    const colorHex = colorKey === 'black' ? '#18181b' : state.ACCENT_COLORS[colorKey][theme];
+    const colorHex = state.ACCENT_COLORS[colorKey] ? (state.ACCENT_COLORS[colorKey].dark || state.ACCENT_COLORS[colorKey]) : '#e8453c';
     btn.style.width = '36px';
     btn.style.height = '36px';
     btn.style.borderRadius = '50%';
     btn.style.backgroundColor = colorHex;
-    btn.style.border = colorKey === currentAccent ? '3px solid var(--text)' : (colorKey === 'black' ? '2px solid #ffffff' : '1px solid var(--border)');
+    btn.style.border = colorKey === currentAccent ? '3px solid var(--text)' : '1px solid var(--border)';
     btn.style.cursor = 'pointer';
     btn.style.padding = '0';
     btn.style.display = 'inline-flex';

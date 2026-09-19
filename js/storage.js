@@ -2,6 +2,7 @@ export const STORAGE_KEYS = {
   folders: 'tm_folders_v2',
   tasks: 'tm_tasks_v2',
   notes: 'tm_notes_v1',
+  notesLocked: 'tm_notes_locked_v1',
   currentFolder: 'tm_current_folder_v2',
   theme: 'tm_theme_v1',
   filter: 'tm_filter_v1',

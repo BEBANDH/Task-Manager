@@ -6,11 +6,11 @@
 [![Firebase Support](https://img.shields.io/badge/Firebase-Supported-orange.svg)](https://firebase.google.com/)
 [![Platform](https://img.shields.io/badge/platform-web-lightgrey.svg)](#)
 
-A beautiful, premium, and feature-rich task management web application. Engineered with a modular frontend architecture, it supports multiple list folders, subtask trees, robust keyboard shortcuts, data export/import, active analytics, modifications lock, and real-time Firestore database synchronization with Google Sign-in.
+A beautiful, premium, and feature-rich task management web application. Engineered with a modular frontend architecture, it supports multiple list folders, subtask trees, a dedicated notes system, robust keyboard shortcuts, data export/import, active analytics, modifications lock, and real-time Firestore database synchronization with Google Sign-in.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features (v7.0)
 
 ### 🗂️ Core Task Management
 - **Multiple Lists (Folders)**: Seamlessly organize tasks into dedicated list containers (e.g. Work, Personal, Shopping).
@@ -18,21 +18,22 @@ A beautiful, premium, and feature-rich task management web application. Engineer
 - **Full Text Search**: Instantly look up tasks and folders.
 - **Compact Card Layout**: Visual task items rendered as sleek two-column square cards.
 
-### 📊 Productivity Analytics Dashboard
-- **Inline Dashboard Tab**: Switch between task lists and an integrated analytics layout with a single click.
-- **Metrics Tracking**: Symmetrical progress rates of overall task execution, current/max daily streaks, productive weekdays, and list distribution ratios.
-- **Large 365-day Heatmap**: Complete SVG matrix tracking daily completions over a 365-day grid (from Sunday to Saturday) with custom list filtering controls.
+### � Dedicated Notes System
+- **Google Keep-inspired**: A freeform notes view accessible from the left sidebar with search and auto-saving.
+- **Per-Note Custom Colors**: Individually color-code your notes using a built-in color picker.
+- **Dual Handwriting Typography**: Aesthetic font pairings for a scrapbook-like writing experience.
+- **Expanded Editing**: Spacious modal overlays for detailed note-taking and reference.
 
-### ⏱️ Circular Focus Timer
-- **Accent Progress Ring**: A circular Pomodoro countdown timer in the sidebar with a visual progress indicator bounded to the active theme accent color.
-- **Quick Adjusters**: Presets (`-10m`, `-5m`, `+5m`, `+10m`) to easily increment or decrement time without tedious click iterations.
-- **Run Log History**: Displays recent focal records in the right sidebar.
+### 📊 Productivity Analytics Dashboard
+- **Bento Grid Layout**: Modern, glassmorphism-inspired dashboard for tracking performance.
+- **Metrics Tracking**: Progress rates, current/max streaks, priority ratios, and stagnant task warnings.
+- **Large 365-day Heatmap**: Complete SVG matrix tracking daily completions over a 365-day grid with custom list filtering.
 
 ### 🎨 Consolidated Settings Panel
-- **All-in-One Settings**: Control the **AMOLED Black theme toggle**, **Accent Color selectors**, **Bulk Actions** (clear completed from multiple lists), **In-App Changelog**, and **Shortcuts Cheatsheet** in a dedicated tab.
-- **Graphite Dark Default**: Deprecated light theme to provide a high-contrast dark environment.
-- **Backup & Portability**: Direct imports/exports of checklists to/from Microsoft Excel (`.xlsx`) files.
-- **High-Performance Navigation**: Lightning-fast hotkeys for fully mouse-free task management workflows.
+- **All-in-One Settings**: Control the **AMOLED Black theme toggle**, **Accent Color selectors**, **Bulk Actions**, and **Shortcuts Customization**.
+- **Graphite Dark Default**: High-contrast dark environment for maximum focus.
+- **Backup & Portability**: Direct imports/exports of checklists to/from Microsoft Excel (`.xlsx`) and Word (`.doc`) files.
+- **High-Performance Navigation**: Lightning-fast, customizable hotkeys for mouse-free workflows.
 
 ---
 
@@ -46,23 +47,23 @@ Task-Manager-main/
 ├── FIREBASE_SETUP.md       # Firebase setup guidelines
 ├── README.md               # Repository documentation (this file)
 └── js/
-    ├── main.js             # Orchestrator, view controllers, element caches, and startup setups
+    ├── main.js             # Orchestrator, view controllers, and startup setups
     ├── state.js            # Central shared reactive variables and cloud-sync triggers
-    ├── storage.js          # Low-level LocalStorage read/write wrappers and cookie fallbacks
+    ├── storage.js          # Low-level LocalStorage read/write wrappers
     ├── dom.js              # Central shared UI elements cache object
-    ├── timer.js            # Pomodoro countdown algorithms and SVG progress ring bindings
     ├── charts.js           # 365-day horizontal heatmaps and filter population
-    ├── folders.js          # Folder/list CRUD controllers, lock toggling, and modals
-    ├── tasks.js            # Task/subtask CRUD, priority updates, text editing, and item builders
+    ├── notes.js            # Dedicated notes system controllers and sharing logic
+    ├── folders.js          # Folder/list CRUD controllers and modals
+    ├── tasks.js            # Task/subtask CRUD and item builders
     ├── config/
     │   ├── firebase-config.example.js  # Template configurations
-    │   └── firebase-config.js          # Firestore secret credentials (ignored in git)
+    │   └── firebase-config.js          # Firestore secret credentials
     ├── features/
     │   └── auth/
     │       ├── auth.js     # Firebase Authentication and Sign-In operations
-    │       └── sync.js     # Real-time Firestore sync & local state reconciliation
+    │       └── sync.js     # Real-time Firestore sync engine
     └── ui/
-        └── auth-ui.js      # Auth-related states UI update and event bindings
+        └── auth-ui.js      # Auth-related UI update bindings
 ```
 
 ---
@@ -93,23 +94,10 @@ cd task-manager
 
 ### 2. Configure Firebase Database
 1. Create a project in the [Firebase Console](https://console.firebase.google.com/).
-2. Enable **Google Provider** in the Authentication Sign-In methods.
-3. Enable **Firestore Database** in test mode, and apply security rules to restrict users to their own documents:
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
-4. Copy the config template:
-   ```bash
-   cp js/config/firebase-config.example.js js/config/firebase-config.js
-   ```
-5. Replace the placeholder values in `js/config/firebase-config.js` with your active Firebase configuration secrets.
+2. Enable **Google Provider** in Authentication.
+3. Enable **Firestore Database** and apply security rules (see `FIREBASE_SETUP.md`).
+4. Copy `js/config/firebase-config.example.js` to `js/config/firebase-config.js`.
+5. Replace the placeholder values with your active Firebase configuration.
 
 ### 3. Run Locally
 You can run this application locally using any static web server:
@@ -139,8 +127,8 @@ graph TD
     Auth[Auth Engine Features/Auth/Auth.js] --> Sync
 ```
 
-- **Separation of Concerns**: Core list rendering (`main.js`), cloud synchronization (`sync.js`), and user authentication (`auth.js`) are decoupled, ensuring the UI remains active and responsive regardless of network latency.
-- **Offline First**: Squash remains fully functional offline, reading and writing to Browser `LocalStorage`. When a network connection is re-established, the sync manager reconciles changes with Firestore automatically.
+- **Separation of Concerns**: Core list rendering, cloud synchronization, and user authentication are decoupled.
+- **Offline First**: Squash remains fully functional offline, reconciling changes with Firestore automatically once reconnected.
 
 ---
 

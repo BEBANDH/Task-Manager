@@ -4,8 +4,9 @@ export const state = {
   folders: [],
   tasksByFolder: {},
   notes: [],
+  notesLocked: false,
   currentFolderId: null,
-  currentView: 'tasks', // 'tasks' | 'dashboard' | 'settings'
+  currentView: 'tasks', // 'tasks' | 'dashboard' | 'settings' | 'notes'
   activeFilter: 'all',  // 'all' | 'active' | 'completed'
   searchQuery: '',
   selectedMonth: '',
@@ -17,28 +18,17 @@ export const state = {
   listSearchQuery: '',
   categoryOrder: [],
   ACCENT_COLORS: {
-    black: { light: '#ffffff', dark: '#ffffff' },
-    mustard: { light: '#E1AD01', dark: '#E1AD01' },
-    brown: { light: '#C19A6B', dark: '#C19A6B' },
-    sky: { light: '#8FBCD3', dark: '#8FBCD3' },
-    sage: { light: '#A9C4A6', dark: '#A9C4A6' },
-    rose: { light: '#D88C9A', dark: '#D88C9A' },
-    mauve: { light: '#B39EB5', dark: '#B39EB5' }
+    vermilion: { light: '#e8453c', dark: '#e8453c' }, // Shinkou (Tokyo Vermilion / Torii Red)
+    yamabuki: { light: '#ffaa00', dark: '#ffaa00' },  // Yamabuki (Golden Mountain Marigold)
+    matcha: { light: '#48b870', dark: '#48b870' },    // Matcha / Tokiwa (Saturated Bamboo Green)
+    ai: { light: '#38a4ff', dark: '#38a4ff' },        // Ai / Ruri (Lapis Lazuili / Tokyo Cyber Blue)
+    sakura: { light: '#ff5c98', dark: '#ff5c98' },    // Saturated Sakura Pink
+    fuji: { light: '#b86bff', dark: '#b86bff' },      // Fuji / Murasaki (Vibrant Iris Purple)
+    sumi: { light: '#f5f5f5', dark: '#f5f5f5' }       // Sumi Shiro (Bright Silver Ink)
   },
 };
 
 export const getCurrentTasks = () => {
-  if (state.currentView === 'allTasks') {
-    const all = [];
-    state.folders.forEach(folder => {
-      const listTasks = state.tasksByFolder[folder.id] || [];
-      listTasks.forEach(t => {
-        all.push({ ...t, _folderId: folder.id, _folderName: folder.name });
-      });
-    });
-    all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    return all;
-  }
   if (!state.currentFolderId) return [];
   return state.tasksByFolder[state.currentFolderId] || [];
 };
@@ -100,6 +90,7 @@ export function persistNotes() {
   persistNotesTimeoutId = setTimeout(() => {
     const write = () => {
       writeStorage(STORAGE_KEYS.notes, state.notes);
+      writeStorage(STORAGE_KEYS.notesLocked, !!state.notesLocked);
       triggerCloudSync();
     };
     if (window.requestIdleCallback) {

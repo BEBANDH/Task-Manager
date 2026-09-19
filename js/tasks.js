@@ -225,7 +225,22 @@ export function renderTaskItem(task) {
   title.setAttribute('aria-label', 'Task title');
   title.contentEditable = 'false';
 
-  header.append(title);
+  // Hanko Red Seal Stamp for completed tasks
+  const hanko = document.createElement('div');
+  hanko.className = 'hanko-stamp';
+  hanko.title = 'Completed / 完了';
+  hanko.innerHTML = `
+    <svg viewBox="0 0 50 50" width="34" height="34" class="hanko-svg">
+      <rect x="2" y="2" width="46" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <text x="50%" y="42%" text-anchor="middle" fill="currentColor" font-family="var(--font-subheading)" font-size="14" font-weight="bold">完了</text>
+      <text x="50%" y="78%" text-anchor="middle" fill="currentColor" font-family="var(--font-heading)" font-size="11" letter-spacing="1">DONE</text>
+    </svg>
+  `;
+  if (!task.completed) {
+    hanko.style.display = 'none';
+  }
+
+  header.append(title, hanko);
 
   const metaRow = document.createElement('div');
   metaRow.className = 'task-meta-row';
@@ -234,6 +249,14 @@ export function renderTaskItem(task) {
   meta.className = 'meta';
   const metaText = document.createTextNode(formatDateTime(task.createdAt));
   meta.appendChild(metaText);
+
+  if (task.highPriority) {
+    const urgentBadge = document.createElement('span');
+    urgentBadge.className = 'kanji-priority-badge';
+    urgentBadge.title = 'Urgent / 急';
+    urgentBadge.textContent = '急 URGENT';
+    meta.appendChild(urgentBadge);
+  }
 
   if (task._folderName) {
     const badge = document.createElement('span');
@@ -281,10 +304,10 @@ export function renderTaskItem(task) {
   priorityBtn.type = 'button';
   priorityBtn.className = 'priority';
   priorityBtn.innerHTML = task.highPriority 
-    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #dc2626;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>' 
-    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+    ? '<span class="priority-kanji-btn active" title="High Priority / 急">急</span>' 
+    : '<span class="priority-kanji-btn" title="Mark as High Priority / 急">重</span>';
   priorityBtn.title = task.highPriority ? 'Remove high priority' : 'Mark as high priority';
-  priorityBtn.style.padding = '6px 8px';
+  priorityBtn.style.padding = '4px 6px';
   priorityBtn.style.fontSize = '12px';
   priorityBtn.style.border = 'none';
   priorityBtn.style.background = 'transparent';

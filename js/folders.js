@@ -1,6 +1,7 @@
 import { el } from './dom.js';
 import { state, persistFolders, persistTasks, triggerCloudSync } from './state.js';
 import { uid, now, writeStorage, STORAGE_KEYS } from './storage.js';
+import { copyToClipboard } from './utils.js';
 import { render } from './main.js';
 
 let currentModalFolderId = null;
@@ -20,29 +21,6 @@ export async function shareFolder(id) {
     description: folder.description || '',
     tasks: sortedTasks,
     sharedAt: Date.now()
-  };
-
-  const copyToClipboard = async (text) => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (_) {}
-    // Fallback if clipboard API is blocked on unsecure context / localhost
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    let success = false;
-    try {
-      success = document.execCommand('copy');
-    } catch (_) {}
-    document.body.removeChild(textarea);
-    return success;
   };
 
   try {
