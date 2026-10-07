@@ -1,33 +1,58 @@
 :root {
   color-scheme: dark light;
 
-  /* Premium Graphite Gray Soft Theme */
-  --bg: #f4f4f5;
-  --bg-subtle: #e4e4e7;
-  --bg-panel: #ffffff;
-  --text: #18181b;
-  --text-dim: #52525b;
-  --text-muted: #71717a;
+  /* ── Material Design 3 Surface & Elevation Tokens ── */
+  --md-surface:                #ffffff;
+  --md-surface-container-low: #f8f9fa;
+  --md-surface-container:     #f1f3f4;
+  --md-surface-container-high:#e8eaed;
+  --md-surface-dim:           #dadce0;
 
-  --border: rgba(24, 24, 27, 0.08);
-  --border-active: #18181b;
-  --chart-empty: #e4e4e7;
+  /* Legacy aliases */
+  --bg:       var(--md-surface);
+  --bg-subtle: var(--md-surface-container);
+  --bg-panel:  var(--md-surface-container-low);
+  --text: #202124;
+  --text-dim: #5f6368;
+  --text-muted: #80868b;
 
-  --primary: #18181b;
+  --border: #dadce0;
+  --border-active: #1a73e8;
+  --chart-empty: #f1f3f4;
+
+  --primary: #1a73e8;
   --primary-fg: #ffffff;
-  --accent: #e8453c;
-  --accent-gradient: linear-gradient(135deg, #e8453c, #ff6b35);
-  --accent-glow: rgba(232, 69, 60, 0.25);
-  --shadow-sm: 0 1px 3px 0 rgba(24, 24, 27, 0.03), 0 1px 2px -1px rgba(24, 24, 27, 0.03);
-  --shadow-md: 0 4px 12px -1px rgba(24, 24, 27, 0.06), 0 2px 6px -2px rgba(24, 24, 27, 0.06);
+  --accent: #1a73e8;
+  --accent-gradient: linear-gradient(135deg, #1a73e8, #4285f4);
+  --accent-glow: rgba(26, 115, 232, 0.12);
 
-  --danger: #ef4444;
-  --success: #48b870;
+  /* ── M3 Elevation shadows (light) ── */
+  --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  --shadow-md: 0 2px 6px 2px rgba(60,64,67,0.15), 0 1px 2px 0 rgba(60,64,67,0.3);
+  --shadow-lg: 0 4px 8px 3px rgba(60,64,67,0.15), 0 1px 3px 0 rgba(60,64,67,0.3);
 
-  --font-main: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: 'Bebas Neue', Impact, sans-serif;
-  --font-subheading: 'Shippori Mincho', Georgia, serif;
-  --font-body: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  --danger: #d93025;
+  --success: #188038;
+
+  /* ── M3 Typography Scale ── */
+  --type-display-large:   57px/64px 'Google Sans Display', sans-serif;
+  --type-headline-large:  32px/40px 'Google Sans', sans-serif;
+  --type-headline-medium: 28px/36px 'Google Sans', sans-serif;
+  --type-headline-small:  24px/32px 'Google Sans', sans-serif;
+  --type-title-large:     22px/28px 'Google Sans', sans-serif;
+  --type-title-medium:    16px/24px 'Google Sans', sans-serif;
+  --type-title-small:     14px/20px 'Google Sans', sans-serif;
+  --type-body-large:      16px/24px 'Roboto', sans-serif;
+  --type-body-medium:     14px/20px 'Roboto', sans-serif;
+  --type-body-small:      12px/16px 'Roboto', sans-serif;
+  --type-label-large:     14px/20px 'Roboto Medium', sans-serif;
+  --type-label-medium:    12px/16px 'Roboto Medium', sans-serif;
+  --type-label-small:     11px/16px 'Roboto Medium', sans-serif;
+
+  --font-main: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-heading: 'Google Sans', Roboto, -apple-system, sans-serif;
+  --font-subheading: 'Google Sans', Roboto, sans-serif;
+  --font-body: 'Roboto', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   --font-display: var(--font-heading);
   --font-book: var(--font-main);
   --font-marker: var(--font-subheading);
@@ -36,24 +61,37 @@
 }
 
 [data-theme="dark"] {
-  --bg: #1c1c1c;
-  --bg-subtle: #242424;
-  --bg-panel: #2b2b2b;
-  --text: #f3f4f6;
-  --text-dim: #9ca3af;
-  --text-muted: #6b7280;
+  /* ── Pure Neutral Dark Grey Surfaces ── */
+  --md-surface:                #121212;
+  --md-surface-container-low: #1a1a1a;
+  --md-surface-container:     #222222;
+  --md-surface-container-high:#2c2c2c;
+  --md-surface-dim:           #0a0a0a;
 
-  --border: #333333;
-  --border-active: #f3f4f6;
-  --chart-empty: #262626;
+  --bg:       var(--md-surface);
+  --bg-subtle: var(--md-surface-container);
+  --bg-panel:  var(--md-surface-container-low);
+  --text: #e3e3e3;
+  --text-dim: #a8a8a8;
+  --text-muted: #737373;
 
-  --primary: #f3f4f6;
-  --primary-fg: #1c1c1c;
-  --accent: #e8453c;
-  --accent-gradient: linear-gradient(135deg, #e8453c, #ff6b35);
-  --accent-glow: rgba(232, 69, 60, 0.25);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 10px 20px -3px rgba(0, 0, 0, 0.3), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  --border: #2e2e2e;
+  --border-active: #8ab4f8;
+  --chart-empty: #2c2c2c;
+
+  --primary: #8ab4f8;
+  --primary-fg: #121212;
+  --accent: #8ab4f8;
+  --accent-gradient: linear-gradient(135deg, #8ab4f8, #aecbfa);
+  --accent-glow: rgba(138, 180, 248, 0.15);
+
+  /* ── M3 Elevation shadows (dark) ── */
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.5), 0 1px 2px 0 rgba(0,0,0,0.4);
+  --shadow-md: 0 3px 8px 0 rgba(0,0,0,0.5), 0 1px 3px 0 rgba(0,0,0,0.4);
+  --shadow-lg: 0 6px 16px 0 rgba(0,0,0,0.5), 0 2px 6px 0 rgba(0,0,0,0.4);
+
+  --danger: #f2b8b5;
+  --success: #6dd58c;
 }
 
 * {
@@ -62,24 +100,49 @@
   scrollbar-color: var(--accent) transparent;
 }
 
+/* ── M3 Icon Consistency: all inline SVGs default to 24×24 ── */
+svg:not([width]):not([height]) {
+  width: 24px;
+  height: 24px;
+}
+
+/* Force sidebar nav and action SVGs to 24×24 */
+.ghost-button svg,
+.sidebar-actions svg,
+.lock-toggle-btn svg,
+.icon-button svg {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0;
+}
+
+/* ── M3 Typography Utility Classes ── */
+.md-headline-small  { font: var(--type-headline-small);  color: var(--text); }
+.md-title-large     { font: var(--type-title-large);     color: var(--text); }
+.md-title-medium    { font: var(--type-title-medium);    color: var(--text); font-weight: 500; }
+.md-title-small     { font: var(--type-title-small);     color: var(--text); font-weight: 500; }
+.md-body-medium     { font: var(--type-body-medium);     color: var(--text-dim); }
+.md-body-small      { font: var(--type-body-small);      color: var(--text-dim); }
+.md-label-medium    { font: var(--type-label-medium);    color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+.md-label-small     { font: var(--type-label-small);     color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; }
+
 ::selection {
-  background: var(--accent);
-  color: var(--bg);
+  background: rgba(26, 115, 232, 0.2);
+  color: var(--text);
 }
 
 ::-moz-selection {
-  background: var(--accent);
-  color: var(--bg);
+  background: rgba(26, 115, 232, 0.2);
+  color: var(--text);
 }
 
 body {
-  zoom: 0.95;
   margin: 0;
   font-family: var(--font-main);
   background: var(--bg);
   color: var(--text);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -110,48 +173,29 @@ body {
 }
 
 /* ==========================================================================
-   ⛩️ Japanese Editorial & Cyber-Zen Aesthetic System
+   Material Design 3 Typography Hierarchy
    ========================================================================== */
 
-/* 1. Vertical Spine Label */
+/* Spine label — hidden in MD3 */
 .spine-label {
-  position: fixed;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%) translateX(calc(50% - 0.35rem)) rotate(90deg);
-  transform-origin: center center;
-  font-family: var(--font-subheading);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.35em;
-  color: var(--accent);
-  opacity: 0.75;
-  pointer-events: none;
-  z-index: 99;
-  white-space: nowrap;
-  text-transform: uppercase;
+  display: none;
 }
 
-@media (max-width: 900px) {
-  .spine-label {
-    display: none;
-  }
-}
-
-/* 2. Japanese Editorial Typography Hierarchy */
+/* MD3 Type Scale */
 h1, h2, h3, h4, .app-title {
-  font-family: var(--font-heading) !important;
-  letter-spacing: 0.03em;
+  font-family: var(--font-heading);
+  letter-spacing: 0;
+  font-weight: 500;
 }
 
 .kanji-sub {
-  font-family: var(--font-subheading);
+  font-family: var(--font-body);
   font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--accent);
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
   opacity: 0.9;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 500;
   display: block;
   margin-bottom: 2px;
 }
@@ -162,13 +206,13 @@ h1, h2, h3, h4, .app-title {
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 3px;
-  background: rgba(232, 69, 60, 0.15);
-  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: rgba(26, 115, 232, 0.12);
+  border: none;
   color: var(--accent);
-  font-family: var(--font-subheading);
-  font-size: 11px;
-  font-weight: bold;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
   margin-right: 4px;
   flex-shrink: 0;
 }
@@ -176,45 +220,50 @@ h1, h2, h3, h4, .app-title {
 .kanji-sub-icon {
   display: inline-block;
   color: var(--accent);
-  font-family: var(--font-subheading);
+  font-family: var(--font-body);
   font-size: 13px;
   margin-right: 4px;
 }
 
-/* 3. Hanko Red Seal Stamp (判子) */
+/* M3 Priority Delete Button */
 .hanko-stamp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-left: auto;
-  color: var(--accent);
+  color: var(--text-muted);
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .hanko-stamp .hanko-svg {
-  filter: drop-shadow(0 2px 6px var(--accent-glow));
+  filter: none;
 }
 
 .task:hover .hanko-stamp,
 .hanko-stamp:hover {
-  transform: rotate(-5deg) scale(1.1);
+  background: rgba(211, 48, 37, 0.08);
+  color: var(--danger);
+  transform: none;
 }
 
-/* 4. Japanese Kanji Priority Badge */
+/* M3 Priority Badge */
 .kanji-priority-badge {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(232, 69, 60, 0.15);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-family: var(--font-heading);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 16px;
+  background: rgba(211, 48, 37, 0.1);
+  border: none;
+  color: var(--danger);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   margin-left: 8px;
 }
 
@@ -222,21 +271,21 @@ h1, h2, h3, h4, .app-title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
   color: var(--text-dim);
-  font-family: var(--font-subheading);
+  font-family: var(--font-body);
   font-size: 12px;
-  font-weight: bold;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .priority-kanji-btn.active {
-  border-color: var(--accent);
-  background: rgba(232, 69, 60, 0.18);
-  color: var(--accent);
+  background: rgba(211, 48, 37, 0.12);
+  color: var(--danger);
 }
 
 /* 5. Ensō Circle & Empty States */
@@ -331,21 +380,19 @@ body.read-only-share-view .task {
 
 /* Layout */
 .app-header {
-
-
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 20px;
+  background: var(--bg-panel);
+  border-bottom: none;
+  box-shadow: var(--shadow-sm);
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  height: 64px;
 }
 
 .header-left {
@@ -378,30 +425,25 @@ body.read-only-share-view .task {
 }
 
 .app-title {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 500;
   margin: 0;
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-family: var(--font-display);
-  transition: transform 0.2s ease;
-}
-
-.app-header:hover .app-title {
-  transform: scale(1.01);
+  gap: 8px;
+  font-family: var(--font-heading);
+  letter-spacing: 0;
 }
 
 .app-logo {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .subtitle {
   color: var(--text-muted);
   font-weight: 400;
-  font-size: 11px;
-  opacity: 0.6;
+  font-size: 12px;
   margin-left: 4px;
 }
 
@@ -411,48 +453,48 @@ body.read-only-share-view .task {
   gap: 12px;
 }
 
-/* Sign In Button */
+/* Sign In Button - M3 Outlined */
 .sign-in-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 0 24px;
+  height: 40px;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 14px;
-  color: var(--text);
+  font-weight: 500;
+  color: var(--accent);
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
 }
 
 .sign-in-button:hover {
-  background: var(--bg-subtle);
-  border-color: var(--text);
-  transform: translateY(-1px);
+  background: rgba(26, 115, 232, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .sign-in-button svg {
   flex-shrink: 0;
+  stroke: var(--accent);
 }
 
-/* Profile Button */
+/* Profile Button - M3 */
 .profile-button {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 6px;
-  background: var(--bg-subtle);
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  background: transparent;
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .profile-button:hover {
-  background: var(--bg-panel);
-  border-color: var(--text);
-  transform: none;
+  background: var(--bg-subtle);
 }
 
 .profile-photo {
@@ -460,7 +502,6 @@ body.read-only-share-view .task {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--border);
 }
 
 .profile-button span {
@@ -550,7 +591,7 @@ body.read-only-share-view .task {
 .container {
   width: 100%;
   margin: 0;
-  padding: 20px 20px 20px 0;
+  padding: 0 20px 20px 0;
   display: grid;
   grid-template-columns: 280px 1fr 225px;
   /* Sidebar | Main | Right Sidebar */
@@ -558,25 +599,29 @@ body.read-only-share-view .task {
   transition: grid-template-columns 0.3s ease;
 }
 
+.main-content {
+  padding-top: 20px;
+}
+
 .container.sidebar-collapsed {
   grid-template-columns: 0px 1fr 225px;
 }
 
-/* Sidebar Wrapper */
+/* Sidebar Wrapper - M3 Navigation Rail */
 .left-panel {
   position: sticky;
-  top: 80px;
-  height: calc(100vh - 80px);
+  top: 64px;
+  height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease;
   width: 280px;
-  border-right: 1.5px solid rgba(0, 0, 0, 0.4);
-  box-shadow: 4px 0px 0px rgba(0, 0, 0, 0.85);
+  border-right: none;
+  box-shadow: var(--shadow-sm);
   background: var(--bg-panel);
-  border-radius: 0 12px 12px 0;
+  border-radius: 0;
   z-index: 10;
 }
 
@@ -589,8 +634,8 @@ body.read-only-share-view .task {
 /* Right Sidebar */
 .right-panel {
   position: sticky;
-  top: 80px;
-  height: calc(100vh - 80px);
+  top: 64px;
+  height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -616,59 +661,52 @@ body.read-only-share-view .task {
 }
 
 .folders-header h2 {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   color: var(--text-muted);
-  letter-spacing: 2px;
+  letter-spacing: 0.1em;
   margin: 0;
-  font-weight: 700;
+  font-weight: 500;
   text-align: left;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
 }
 
 button#addFolderBtn {
-  background: var(--accent-gradient, var(--accent)) !important;
-  color: #333333 !important;
-  border: 1.5px solid rgba(0, 0, 0, 0.4) !important;
-  border-radius: 8px !important;
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  min-height: 28px !important;
+  background: transparent !important;
+  color: var(--accent) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
   padding: 0 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 16px !important;
-  font-weight: bold !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
   cursor: pointer !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.85) !important;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  box-shadow: none !important;
 }
 
 button#addFolderBtn:hover {
-  transform: translateY(1.5px) translateX(1px) !important;
-  box-shadow: 1px 1.5px 0px rgba(0, 0, 0, 0.85) !important;
+  background: rgba(26, 115, 232, 0.08) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 button#addFolderBtn .icon {
-  color: #333333 !important;
-  font-size: 16px !important;
+  color: var(--accent) !important;
+  font-size: 20px !important;
   line-height: 1 !important;
-  font-weight: bold !important;
-  margin-top: -1px;
-}
-
-button#addFolderBtn:hover {
-  background: var(--accent-gradient, var(--accent)) !important;
-  color: #333333 !important;
-  transform: translateY(-1px) scale(1.1) !important;
-  box-shadow: 0 4px 14px var(--accent-glow, rgba(0, 0, 0, 0.4)) !important;
-  opacity: 0.95 !important;
+  font-weight: 400 !important;
 }
 
 button#addFolderBtn:active {
-  transform: scale(0.95) !important;
+  background: rgba(26, 115, 232, 0.12) !important;
+  transform: scale(0.97) !important;
 }
 
 .folders-list {
@@ -681,30 +719,33 @@ button#addFolderBtn:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 0;
+  padding: 8px 16px;
+  border-radius: 0 24px 24px 0;
   cursor: pointer;
   color: var(--text-dim);
-  margin-bottom: 2px;
+  margin-bottom: 1px;
+  margin-right: 8px;
   position: relative;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
-  border-left: 2px solid transparent;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
+  border-left: none;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .folder-item:hover {
   background: var(--bg-subtle);
   color: var(--text);
   padding-left: 16px;
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: none;
+  box-shadow: none;
 }
 
 .folder-item.active {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(26, 115, 232, 0.12);
   color: var(--accent);
   font-weight: 600;
-  border-left: 2px solid var(--accent);
-  padding-left: 14px;
+  border-left: none;
+  padding-left: 16px;
 }
 
 .folder-actions {
@@ -826,94 +867,103 @@ button#addFolderBtn:active {
   align-items: center;
 }
 
+/* M3 Filled Text Field */
 input[type="text"],
 input[type="search"],
 textarea,
 select {
   flex: 1;
-  background: transparent;
+  background: var(--bg-subtle);
   border: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--text-muted);
+  border-radius: 4px 4px 0 0;
   color: var(--text);
-  padding: 12px 4px;
-  border-radius: 0;
-  font-family: inherit;
-  font-size: 15px;
-  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, color 0.3s ease;
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 input[type="text"]#taskInput {
-  font-family: var(--font-book);
+  font-family: var(--font-body);
   font-weight: 400;
-  border: 1.5px solid rgba(0, 0, 0, 0.4);
-  border-radius: 12px;
-  font-size: 16px;
-  padding: 14px 24px;
-  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.85);
-  transition: all 0.3s ease;
+  background: var(--bg-subtle);
+  border: none;
+  border-bottom: 2px solid var(--text-muted);
+  border-radius: 4px 4px 0 0;
+  font-size: 14px;
+  padding: 14px 16px;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
 }
 
 input[type="text"]#taskInput:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-bottom-color: var(--accent);
   outline: none;
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-1px);
+  background: var(--bg-subtle);
+  transform: none;
+  box-shadow: none;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-bottom: 2px solid var(--primary);
-  padding-bottom: 11px;
+  border-bottom-color: var(--accent);
 }
 
-/* Buttons */
+/* Buttons — Material Design 3 */
 button {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 10px 20px;
-  border-radius: var(--radius);
+  padding: 0 24px;
+  height: 40px;
+  border-radius: 20px;
   cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-main);
   font-size: 14px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 8px;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 button:hover {
   background: var(--bg-subtle);
-  border-color: var(--text);
-  transform: translateY(-1px);
+  transform: none;
 }
 
+/* M3 Filled Tonal (Primary Action) */
 button.primary {
-  background: var(--accent-gradient);
-  color: #333333;
-  border: 1.5px solid rgba(0, 0, 0, 0.4);
-  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.85);
-  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  border-radius: 20px;
 }
 
 button.primary:hover {
-  transform: translateY(1.5px) translateX(1px);
-  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.85);
-  opacity: 0.95;
+  box-shadow: var(--shadow-md);
+  transform: none;
+  opacity: 0.92;
 }
 
+/* M3 Text / Ghost Buttons */
 .icon-button,
 .ghost-button {
   border: none;
-  padding: 8px 12px;
+  padding: 0 16px;
+  height: 36px;
   font-size: 13px;
+  border-radius: 20px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  color: var(--text-dim);
 }
 
 .ghost-button svg {
@@ -922,45 +972,49 @@ button.primary:hover {
 
 .ghost-button:hover {
   background: var(--bg-subtle);
+  color: var(--text);
 }
 
 button.edit,
 button.delete {
-  padding: 6px 12px;
+  padding: 0 16px;
+  height: 32px;
   font-size: 12px;
-  border-radius: 6px;
+  border-radius: 16px;
 }
 
-/* Outline Add Button */
+/* M3 Filled Add Button */
 .add-task button[type="submit"] {
   background: var(--accent);
-  color: #333333;
-  border: 1.5px solid rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.85);
-  transition: all 0.3s ease;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  padding: 0 24px;
+  height: 48px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .add-task button[type="submit"]:hover {
-  transform: translateY(2px) translateX(1.5px);
-  box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.85);
-  filter: brightness(1.1);
+  box-shadow: var(--shadow-md);
+  opacity: 0.92;
+  transform: none;
+  filter: none;
 }
 
-/* Progress */
+/* ── M3 LinearProgressIndicator ── */
 .progress {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .progress-header {
   display: flex;
-  justify-content: flex-end;
-  align-items: baseline;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .progress h2 {
@@ -972,18 +1026,19 @@ button.delete {
   font-family: var(--font-display);
 }
 
+/* M3 Label Small — "62% • 5/8 completed" */
 #progressText {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
-  font-size: 13px;
-  color: var(--text-dim);
-  letter-spacing: 0.5px;
+  font: var(--type-label-small);
+  color: var(--text-muted);
   font-weight: 500;
+  letter-spacing: 0.03em;
 }
 
+/* M3 LinearProgressIndicator: 4dp height, rounded caps, tonal track */
 .progress-bar {
   height: 4px;
-  background: var(--bg-subtle);
-  border-radius: 0;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 100px;   /* fully rounded caps per M3 spec */
   overflow: hidden;
   position: relative;
 }
@@ -992,7 +1047,27 @@ button.delete {
   background: var(--accent);
   height: 100%;
   width: 0%;
+  border-radius: 100px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Shimmer animation when animating */
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  animation: progress-shimmer 1.5s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.progress-fill.animating::after { opacity: 1; }
+
+@keyframes progress-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
 /* Controls - Unified Sticky Header */
@@ -1012,33 +1087,46 @@ button.delete {
   gap: 12px;
 }
 
+/* ── M3 Segmented Button — replaces chip group ── */
 .filters {
-  display: flex;
-  gap: 6px;
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  gap: 0;
+  background: transparent;
 }
 
+/* M3 Filter Chips (as segmented button segments) */
 .chip {
-  border: 1px solid var(--border);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
+  border: none;
+  border-right: 1px solid var(--border);
+  padding: 0 20px;
+  height: 36px;
+  border-radius: 0;
+  font: var(--type-label-large);
+  font-size: 13px;
   background: transparent;
   font-weight: 500;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-dim);
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
+  position: relative;
+}
+
+.chip:last-child {
+  border-right: none;
 }
 
 .chip:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-dim);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
 }
 
+/* Active segment: tonal fill with leading checkmark-like indicator */
 .chip.active {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .search-filters {
@@ -1145,50 +1233,32 @@ button.delete {
   }
 }
 
+/* M3 Task Card */
 .task {
   display: flex;
   align-items: flex-start;
-  padding: 18px 22px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
   background: var(--bg-panel);
-  gap: 16px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 12px;
+  transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
   opacity: 1;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 .task::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 10px;
-  height: 10px;
-  border-top: 2px solid var(--accent);
-  border-right: 2px solid var(--accent);
-  opacity: 0.75;
-  pointer-events: none;
+  content: none;
 }
 
 .task::before {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  width: 10px;
-  height: 10px;
-  border-bottom: 1.5px solid var(--accent);
-  border-left: 1.5px solid var(--accent);
-  opacity: 0.5;
-  pointer-events: none;
+  content: none;
 }
 
 .task:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px var(--accent-glow);
+  box-shadow: var(--shadow-md);
+  transform: none;
 }
 
 .task:hover .drag-handle {
@@ -1445,30 +1515,30 @@ button.delete {
 
 .task.completed .title {
   color: var(--text-muted) !important;
-  text-decoration: line-through;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 1.5px;
+  text-decoration: none;
   opacity: 0.55;
   font-weight: 400 !important;
 }
 
+/* M3 Checkbox */
 .task input[type="checkbox"].checkbox {
   appearance: none;
-  margin-top: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 2px solid var(--accent) !important;
+  -webkit-appearance: none;
+  margin-top: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--text-muted) !important;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
 }
 
 .task input[type="checkbox"].checkbox:hover {
   border-color: var(--accent) !important;
-  background: var(--accent-glow);
+  background: rgba(26, 115, 232, 0.08);
 }
 
 .task input[type="checkbox"].checkbox:checked {
@@ -1481,12 +1551,11 @@ button.delete {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(45deg);
-  width: 5px;
-  height: 9px;
-  border-right: 2.5px solid var(--bg-panel) !important;
-  border-bottom: 2.5px solid var(--bg-panel) !important;
-  margin-top: -1.5px;
+  transform: translate(-50%, -55%) rotate(45deg);
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
 }
 
 .task-content-wrapper {
@@ -1520,11 +1589,11 @@ button.delete {
 }
 
 .task .title {
-  font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 15.5px;
-  font-weight: 500 !important;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400 !important;
   color: var(--text) !important;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
   transition: color 0.2s ease;
@@ -1534,7 +1603,7 @@ button.delete {
 
 .task:hover .title {
   color: var(--text) !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
 }
 
 .task-tags {
@@ -1544,35 +1613,36 @@ button.delete {
   margin-top: 6px;
 }
 
+/* M3 Suggestion Chips */
 .task-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  background: var(--accent-glow);
-  border: 1px solid var(--accent);
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--accent) !important;
+  padding: 2px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  color: var(--text-dim) !important;
 }
 
 .task-tag.priority-high {
-  background: rgba(220, 38, 38, 0.15);
-  border-color: rgba(220, 38, 38, 0.4);
-  color: #dc2626 !important;
+  background: rgba(211, 48, 37, 0.08);
+  border-color: rgba(211, 48, 37, 0.3);
+  color: var(--danger) !important;
 }
 
 .task-tag.priority-medium {
-  background: rgba(217, 119, 6, 0.15);
-  border-color: rgba(217, 119, 6, 0.4);
-  color: #d97706 !important;
+  background: rgba(249, 171, 0, 0.1);
+  border-color: rgba(249, 171, 0, 0.4);
+  color: #e37400 !important;
 }
 
 .task-tag.category {
-  background: var(--accent-glow);
-  border-color: var(--accent);
+  background: rgba(26, 115, 232, 0.08);
+  border-color: rgba(26, 115, 232, 0.3);
   color: var(--accent) !important;
 }
 
@@ -1647,8 +1717,7 @@ button.delete {
 .subtask.completed .sub-title {
   color: var(--text-muted) !important;
   opacity: 0.6;
-  text-decoration: line-through;
-  text-decoration-color: var(--accent);
+  text-decoration: none;
 }
 
 .subtask button svg {
@@ -1791,11 +1860,11 @@ button.delete {
   box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3) !important;
 }
 
-/* Modals */
+/* M3 Dialog */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.32);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1807,126 +1876,67 @@ button.delete {
 }
 
 .modal-content {
-  background: var(--bg);
+  background: var(--bg-panel);
   padding: 24px;
   width: 100%;
-  max-width: 400px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(0, 0, 0, 0.4);
-  box-shadow: 5px 6px 0px rgba(0, 0, 0, 0.85);
+  max-width: 440px;
+  border-radius: 28px;
+  border: none;
+  box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);
   position: relative;
 }
 
 .modal-content::before {
-  content: "";
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%) rotate(2deg);
-  width: 60px;
-  height: 24px;
-  background-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-  border-radius: 2px;
-  backdrop-filter: blur(2px);
-  z-index: 2;
+  display: none;
 }
 
 .modal-actions {
-  margin-top: 16px;
+  margin-top: 24px;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
+/* M3 Dashboard Grid */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
   margin-bottom: 32px;
 }
 
+/* M3 Filled Cards (Surface Container) */
 .stat-card {
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: none;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--bg-subtle);
+  transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
   text-align: left;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-md);
+  transform: none;
+  background: var(--bg-subtle);
 }
 
-/* Dashboard Specific Stat Card Coloring */
-.dashboard-grid .stat-card:nth-child(1) {
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(var(--accent-rgb), 0.02));
-  border-color: rgba(var(--accent-rgb), 0.15);
-}
-.dashboard-grid .stat-card:nth-child(1) svg {
-  color: var(--accent) !important;
-  opacity: 0.8 !important;
-}
-
-.dashboard-grid .stat-card:nth-child(2) {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.02));
-  border-color: rgba(249, 115, 22, 0.15);
-}
-.dashboard-grid .stat-card:nth-child(2) svg {
-  color: #f97316 !important;
-  opacity: 0.8 !important;
-}
-
-.dashboard-grid .stat-card:nth-child(3) {
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(234, 179, 8, 0.02));
-  border-color: rgba(234, 179, 8, 0.15);
-}
-.dashboard-grid .stat-card:nth-child(3) svg {
-  color: #eab308 !important;
-  opacity: 0.8 !important;
-}
-
-.dashboard-grid .stat-card:nth-child(4) {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.02));
-  border-color: rgba(59, 130, 246, 0.15);
-}
-.dashboard-grid .stat-card:nth-child(4) svg {
-  color: #3b82f6 !important;
-  opacity: 0.8 !important;
-}
-
-.dashboard-grid .stat-card:nth-child(5) {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.02));
-  border-color: rgba(168, 85, 247, 0.15);
-}
-.dashboard-grid .stat-card:nth-child(5) svg {
-  color: #a855f7 !important;
-  opacity: 0.8 !important;
-}
-
-.dashboard-grid .stat-card:nth-child(6) {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.02));
-  border-color: rgba(99, 102, 241, 0.15);
-}
-.dashboard-grid .stat-card:nth-child(6) svg {
-  color: #6366f1 !important;
-  opacity: 0.8 !important;
-}
+/* M3 Stat Card Icon Colors */
+.dashboard-grid .stat-card:nth-child(1) svg { color: #1a73e8 !important; opacity: 0.7 !important; }
+.dashboard-grid .stat-card:nth-child(2) svg { color: #ea8600 !important; opacity: 0.7 !important; }
+.dashboard-grid .stat-card:nth-child(3) svg { color: #e37400 !important; opacity: 0.7 !important; }
+.dashboard-grid .stat-card:nth-child(4) svg { color: #1a73e8 !important; opacity: 0.7 !important; }
+.dashboard-grid .stat-card:nth-child(5) svg { color: #d93025 !important; opacity: 0.7 !important; }
+.dashboard-grid .stat-card:nth-child(6) svg { color: #1e8e3e !important; opacity: 0.7 !important; }
 
 .dashboard-grid .stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: transparent !important;
 }
 
 .stat-card .stat-value {
@@ -3631,3 +3641,388 @@ h1, h2, h3, h4, h5, h6,
   border-bottom-color: rgba(255, 255, 255, 0.15);
 }
 
+/* ==========================================================================
+   ✦ Material Design 3 — Supplemental Overrides (appended)
+   ========================================================================== */
+
+/* ── 1. Elevation Tier Overrides ── */
+
+/* App background = Surface (level 0) */
+body {
+  background: var(--md-surface);
+}
+
+/* Header & Sidebar = Surface Container Low (level 1) */
+.app-header,
+.left-panel,
+.folders-sidebar {
+  background: var(--md-surface-container-low) !important;
+}
+
+/* Task cards sit on Surface Container (level 2) — slightly tinted above page */
+.task {
+  background: var(--md-surface-container-low) !important;
+}
+
+/* Active/hover task cards rise to Container High */
+.task:hover {
+  background: var(--md-surface-container-high) !important;
+}
+
+/* Stat cards use Surface Container */
+.stat-card {
+  background: var(--md-surface-container) !important;
+  border: none !important;
+}
+
+/* Modal Dialog = Surface Container High + strongest shadow */
+.modal-content {
+  background: var(--md-surface-container-high) !important;
+  box-shadow: 0 8px 12px 6px rgba(0,0,0,0.15),
+              0 4px 4px 0   rgba(0,0,0,0.3) !important;
+}
+
+/* Right panel = Surface (seamless with task list) */
+.right-panel {
+  background: var(--md-surface) !important;
+}
+
+/* Settings panel = Surface Container Low */
+.settings-panel {
+  background: var(--md-surface-container-low) !important;
+}
+
+/* Controls bar (sticky filter row) stays on Surface */
+.controls {
+  background: var(--md-surface) !important;
+}
+
+/* Note add card = Container Low */
+.note-add-inputs {
+  background: var(--md-surface-container-low) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-radius: 12px !important;
+  transform: none !important;
+}
+
+.note-add-inputs:focus-within {
+  box-shadow: var(--shadow-md) !important;
+  border-color: transparent !important;
+  transform: none !important;
+}
+
+
+/* ── 2. Sidebar Section Dividers — shadows only, no borders ── */
+
+/* Subtle background shift between nav actions and Lists (no border line) */
+.sidebar-actions {
+  border-bottom: none !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Folders header — no border, spacing alone creates separation */
+.folders-header {
+  border-bottom: none;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+/* Activity chart — no top border */
+.activity {
+  border-top: none !important;
+}
+
+/* Sidebar nav button — M3 List Item style */
+.sidebar-actions .ghost-button {
+  justify-content: flex-start;
+  padding: 0 16px;
+  height: 48px;
+  gap: 12px;
+  border-radius: 0 24px 24px 0;
+  margin-right: 8px;
+  font: var(--type-title-medium);
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.sidebar-actions .ghost-button:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
+}
+
+.sidebar-actions .ghost-button.active,
+.sidebar-actions #dashboardBtn.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+  border-left: none;
+  border-radius: 0 24px 24px 0;
+}
+
+
+/* ── 3. M3 Typography Scale Applied ── */
+
+/* Folder/List names in sidebar — Title Small */
+.folder-item .folder-name,
+.folder-item {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-main);
+  line-height: 20px;
+}
+
+/* Section headers (Lists, etc.) — Label Medium */
+.folders-header h2 {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Task meta row (date, category) — Body Small */
+.task-meta-row .meta,
+.task-meta-row .meta span {
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Task title — Title Small */
+.task .title {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  font-weight: 500 !important;
+  font-family: var(--font-main) !important;
+}
+
+/* Active list name header — Headline Small */
+#activeListNameDisplay {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 400;
+  font-family: var(--font-heading);
+  letter-spacing: 0;
+  color: var(--text);
+}
+
+/* Progress text — Label Small */
+#progressText {
+  font-size: 11px !important;
+  line-height: 16px !important;
+  letter-spacing: 0.04em !important;
+}
+
+
+/* ── 4. Google-style Empty State ── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  text-align: center;
+  gap: 0;
+}
+
+/* Hide the old Ensō SVG container */
+.enso-circle-container {
+  display: none !important;
+}
+
+/* Inject a modern Google-style illustration via ::before pseudo + new SVG wrapper */
+.empty-state-illustration {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.empty-state-illustration svg {
+  width: 56px;
+  height: 56px;
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+/* Headline Small — "No tasks yet" */
+.empty-state-title {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 400;
+  font-family: var(--font-heading);
+  color: var(--text);
+  margin: 0 0 8px 0;
+  letter-spacing: 0;
+}
+
+/* Body Medium — supporting text */
+.empty-state-body {
+  font-size: 14px;
+  line-height: 20px;
+  font-family: var(--font-body);
+  color: var(--text-dim);
+  max-width: 280px;
+  margin: 0;
+}
+
+/* Remove old inline styles that conflict */
+.empty-state h3 {
+  display: none;
+}
+
+.empty-state > p:not(.empty-state-body) {
+  display: none;
+}
+
+/* ── 5. M3 Text Fields (Filled) ── */
+.m3-text-field {
+  position: relative;
+  background: var(--md-surface-container);
+  border-radius: 4px 4px 0 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+.m3-text-field input, .m3-text-field textarea {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text) !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  padding: 24px 16px 8px 16px !important;
+  outline: none !important;
+  font-family: var(--font-main) !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+.m3-text-field label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-size: 16px;
+  color: var(--text-dim);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.m3-text-field input:focus ~ label,
+.m3-text-field textarea:focus ~ label,
+.m3-text-field input:not(:placeholder-shown) ~ label,
+.m3-text-field textarea:not(:placeholder-shown) ~ label {
+  top: 6px;
+  font-size: 12px;
+  color: var(--accent);
+}
+.m3-text-field input:not(:focus):not(:placeholder-shown) ~ label,
+.m3-text-field textarea:not(:focus):not(:placeholder-shown) ~ label {
+  color: var(--text-dim);
+}
+.m3-text-field:focus-within {
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── 6. M3 Toast / Snackbar ── */
+.m3-toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.m3-toast {
+  background: var(--text);
+  color: var(--bg);
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: toast-enter 0.3s cubic-bezier(0.0, 0.0, 0.2, 1) forwards;
+  pointer-events: auto;
+}
+.m3-toast.fade-out {
+  animation: toast-exit 0.2s cubic-bezier(0.4, 0.0, 1, 1) forwards;
+}
+@keyframes toast-enter {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-exit {
+  to { opacity: 0; transform: translateY(20px); }
+}
+
+/* Modal Updates for M3 */
+.modal-content {
+  border-radius: 28px !important;
+  padding: 24px !important;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+.modal-actions button.primary {
+  background: transparent !important;
+  color: var(--accent) !important;
+  box-shadow: none !important;
+  font-weight: 500;
+  padding: 10px 24px;
+}
+.modal-actions button.primary:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
+}
+
+/* ── 7. M3 Search Bar ── */
+.m3-search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--md-surface-container-high);
+  border-radius: 28px;
+  padding: 0 16px 0 20px;
+  height: 48px;
+  flex: 1;
+  max-width: 480px;
+  margin: 0 16px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.m3-search-bar:focus-within {
+  background: var(--md-surface-container-high);
+  box-shadow: var(--shadow-sm);
+}
+.m3-search-bar svg {
+  color: var(--text-dim);
+}
+.m3-search-bar input {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text) !important;
+  flex: 1;
+  font-size: 16px;
+  outline: none;
+  margin-left: 12px;
+  width: 100%;
+}
+.m3-search-bar input::placeholder {
+  color: var(--text-dim);
+}

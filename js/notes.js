@@ -34,11 +34,11 @@ export function applyNotesLockUI() {
     if (lockBtn) lockBtn.title = locked ? 'Unlock Notes' : 'Lock Notes';
     if (titleInput) {
         titleInput.disabled = locked;
-        titleInput.placeholder = locked ? 'Notes are locked...' : 'Title / 題名...';
+        titleInput.placeholder = locked ? 'Notes are locked...' : 'Title...';
     }
     if (bodyInput) {
         bodyInput.disabled = locked;
-        bodyInput.placeholder = locked ? 'Notes are locked...' : 'Take a note / 本文...';
+        bodyInput.placeholder = locked ? 'Notes are locked...' : 'Take a note...';
     }
     if (addBtn) addBtn.disabled = locked;
 }

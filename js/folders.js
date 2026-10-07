@@ -51,7 +51,7 @@ export async function shareFolder(id) {
 
     const copied = await copyToClipboard(shareUrl);
     if (copied) {
-      alert(`Read-only link copied to clipboard!\n\n${shareUrl}`);
+      showToast(`Read-only link copied to clipboard!\n\n${shareUrl}`);
     } else {
       prompt('Copy your read-only share link below:', shareUrl);
     }
@@ -64,12 +64,12 @@ export async function shareFolder(id) {
       const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
       const copied = await copyToClipboard(shareUrl);
       if (copied) {
-        alert(`Read-only link copied to clipboard!\n\n${shareUrl}`);
+        showToast(`Read-only link copied to clipboard!\n\n${shareUrl}`);
       } else {
         prompt('Copy your read-only share link below:', shareUrl);
       }
     } catch (fallbackErr) {
-      alert(`Failed to generate share link: ${fallbackErr.message || err.message}`);
+      showToast(`Failed to generate share link: ${fallbackErr.message || err.message}`);
     }
   }
 }
@@ -78,7 +78,7 @@ export function createFolder(name, description = '', labelsInput = 'General') {
   const trimmed = name.trim();
   if (!trimmed) return null;
   if (state.folders.some(f => f.name.toLowerCase() === trimmed.toLowerCase())) {
-    alert('A list with this name already exists.');
+    showToast('A list with this name already exists.');
     return null;
   }
   
@@ -107,7 +107,7 @@ export function renameFolder(id, newName, newDescription = '', newLabelsInput = 
   const folder = state.folders.find(f => f.id === id);
   if (!folder) return;
   if (state.folders.some(f => f.id !== id && f.name.toLowerCase() === trimmed.toLowerCase())) {
-    alert('A list with this name already exists.');
+    showToast('A list with this name already exists.');
     return;
   }
   
@@ -125,7 +125,7 @@ export function renameFolder(id, newName, newDescription = '', newLabelsInput = 
 
 export function deleteFolder(id) {
   if (state.folders.length <= 1) {
-    alert('You must have at least one list.');
+    showToast('You must have at least one list.');
     return;
   }
 

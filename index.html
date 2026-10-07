@@ -9,7 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Display:wght@400;500;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#ffffff">
@@ -66,11 +67,10 @@
             <aside class="folders-sidebar">
 
 
-                <section class="sidebar-actions" aria-label="Navigation" style="margin-top: -8px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
+                <section class="sidebar-actions" aria-label="Navigation" style="margin-top: 0; display: flex; flex-direction: column; gap: 2px;">
                     <button id="dashboardBtn" class="ghost-button" aria-label="Open dashboard"
                         data-tooltip="Open dashboard">
-                        <span class="kanji-nav-badge">盤</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -80,8 +80,7 @@
                     </button>
                     <button id="settingsBtn" class="ghost-button" aria-label="Open settings"
                         data-tooltip="Open settings">
-                        <span class="kanji-nav-badge">設</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -90,8 +89,7 @@
                     </button>
                     <button id="notesBtn" class="ghost-button" aria-label="Open notes"
                         data-tooltip="Open notes">
-                        <span class="kanji-nav-badge">記</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -103,7 +101,7 @@
                 </section>
 
                 <div class="folders-header">
-                    <h2><span class="kanji-sub-icon">項</span> Lists</h2>
+                    <h2> Lists</h2>
                     <button id="addFolderBtn" class="icon-button small" aria-label="Create new list"
                         data-tooltip="Create new list">
                         <span class="icon">+</span>
@@ -135,19 +133,12 @@
                         <span>Download Excel</span>
                     </button>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div class="expandable-search" style="position: relative; display: flex; align-items: center;">
-                            <button id="searchToggleBtn" class="lock-toggle-btn" aria-label="Toggle Search"
-                                onclick="document.getElementById('searchInput').focus()"
-                                style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; z-index: 2; position: absolute; right: 0; background: transparent; border: none; cursor: pointer; color: var(--text-dim);">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                            </button>
-                            <input id="searchInput" type="search" placeholder="Search tasks..."
-                                aria-label="Search tasks"
-                                style="width: 32px; height: 32px; padding: 0; opacity: 0; transition: all 0.3s ease; border-radius: 16px; border: 1px solid transparent; background: transparent; color: var(--text); z-index: 1;">
+                        <div class="m3-search-bar">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input id="searchInput" type="search" placeholder="Search tasks..." aria-label="Search tasks">
                         </div>
                         <button id="shareListBtn" class="lock-toggle-btn" aria-label="Share Read-Only List" title="Share Read-Only List"
                             style="display: inline-flex; align-items: center; gap: 6px;">
@@ -219,15 +210,15 @@
                     <ul id="tasks" class="tasks" aria-live="polite"></ul>
 
                     <div id="emptyState" class="empty-state" hidden>
-                        <div class="enso-circle-container">
-                            <svg class="enso-circle" viewBox="0 0 100 100" width="80" height="80">
-                                <path d="M50 12 A38 38 0 1 1 20 28" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="190 20" opacity="0.35"/>
-                                <text x="50" y="55" text-anchor="middle" fill="var(--accent)" font-family="var(--font-subheading)" font-size="16" opacity="0.6">無</text>
+                        <!-- M3 Google-style empty state illustration -->
+                        <div class="empty-state-illustration">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                             </svg>
                         </div>
-                        <span class="kanji-sub">全完了 · COMPLETED</span>
-                        <h3 style="color: var(--text); font-family: var(--font-heading); letter-spacing: 0.04em; margin: 4px 0 8px 0; font-size: 22px;">ALL CAUGHT UP</h3>
-                        <p style="margin: 0 auto; font-size: 13.5px; color: var(--text-dim); max-width: 320px; font-family: var(--font-body);">There are no tasks here yet. Capture a new task above or select another list.</p>
+                        <p class="empty-state-title">All caught up</p>
+                        <p class="empty-state-body">No tasks here yet. Add one above or pick a different list.</p>
                     </div>
                 </section>
             </div>
@@ -236,7 +227,7 @@
             <div id="notesView" style="display: none;">
                 <div class="list-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                     <div class="title-group">
-                        <span class="kanji-sub">筆記 · MEMOS</span>
+                        
                         <h2>NOTES</h2>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -294,15 +285,18 @@
                 <section class="notes-list">
                     <div id="notesContainer" class="notes-grid"></div>
                     <div id="emptyNotesState" class="empty-state" hidden>
-                        <div class="enso-circle-container">
-                            <svg class="enso-circle" viewBox="0 0 100 100" width="80" height="80">
-                                <path d="M50 12 A38 38 0 1 1 20 28" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="190 20" opacity="0.35"/>
-                                <text x="50" y="55" text-anchor="middle" fill="var(--accent)" font-family="var(--font-subheading)" font-size="16" opacity="0.6">空</text>
+                        <!-- M3 Google-style empty state illustration -->
+                        <div class="empty-state-illustration">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <line x1="10" y1="9" x2="8" y2="9"/>
                             </svg>
                         </div>
-                        <span class="kanji-sub">白紙 · BLANK CANVAS</span>
-                        <h3 style="color: var(--text); font-family: var(--font-heading); letter-spacing: 0.04em; margin: 4px 0 8px 0; font-size: 22px;">NO NOTES YET</h3>
-                        <p style="margin: 0 auto; font-size: 13.5px; color: var(--text-dim); max-width: 320px; font-family: var(--font-body);">Capture your thoughts, ideas, or references in the card above.</p>
+                        <p class="empty-state-title">No notes yet</p>
+                        <p class="empty-state-body">Capture your thoughts, ideas, or references using the form above.</p>
                     </div>
                 </section>
             </div>
@@ -311,7 +305,7 @@
             <div id="dashboardView" style="display: none;">
                 <div class="dashboard-view-header">
                     <div class="title-group">
-                        <span class="kanji-sub">計測 · ANALYTICS</span>
+                        
                         <h2>DASHBOARD</h2>
                     </div>
                     <svg class="brush-stroke" viewBox="0 0 160 8" fill="none" style="width: 140px; height: 6px; margin-top: 4px;">
@@ -448,7 +442,7 @@
             <div id="settingsView" style="display: none;">
                 <div class="dashboard-view-header">
                     <div class="title-group">
-                        <span class="kanji-sub">設定 · PREFERENCES</span>
+                        
                         <h2>SETTINGS</h2>
                     </div>
                     <svg class="brush-stroke" viewBox="0 0 160 8" fill="none" style="width: 140px; height: 6px; margin-top: 4px;">
@@ -614,17 +608,22 @@
     <!-- Folder creation modal -->
     <div id="folderModal" class="modal" hidden>
         <div class="modal-content">
-            <h3 id="folderModalTitle">Create New List</h3>
-            <form id="folderForm">
-                <input id="folderNameInput" type="text" placeholder="List name..." aria-label="List name" required
-                    maxlength="50" autofocus>
-                <textarea id="folderDescriptionInput" placeholder="List description (optional, max 100 chars)..."
-                    aria-label="List description" maxlength="100" rows="2"
-                    style="width: 100%; margin-top: 12px; resize: none;"></textarea>
-
-                <div style="margin-top: 12px;">
-                    <input id="folderCategoryInput" type="text" placeholder="Labels (comma-separated, e.g. Work, Personal)..."
-                        aria-label="Labels" list="categorySuggestions" maxlength="100">
+            <div style="display: flex; justify-content: center; color: var(--text-dim); margin-bottom: 12px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+            </div>
+            <h3 id="folderModalTitle" style="text-align: center; margin-top: 0; font-family: var(--font-heading); font-weight: 400; font-size: 24px;">Create New List</h3>
+            <form id="folderForm" style="display: flex; flex-direction: column; gap: 4px; margin-top: 16px;">
+                <div class="m3-text-field">
+                    <input id="folderNameInput" type="text" placeholder=" " aria-label="List name" required maxlength="50" autofocus>
+                    <label>List name</label>
+                </div>
+                <div class="m3-text-field">
+                    <textarea id="folderDescriptionInput" placeholder=" " aria-label="List description" maxlength="100" rows="2" style="resize: none;"></textarea>
+                    <label>List description (optional)</label>
+                </div>
+                <div class="m3-text-field">
+                    <input id="folderCategoryInput" type="text" placeholder=" " aria-label="Labels" list="categorySuggestions" maxlength="100">
+                    <label>Labels (e.g. Work, Personal)</label>
                     <datalist id="categorySuggestions"></datalist>
                 </div>
                 <div class="modal-actions">
@@ -640,11 +639,14 @@
     <!-- Confirm Delete Modal -->
     <div id="confirmDeleteModal" class="modal" hidden>
         <div class="modal-content">
-            <h3 id="confirmDeleteTitle">Delete Task</h3>
-            <p id="confirmDeleteMessage" style="margin: 16px 0 24px; color: var(--text-dim); font-size: 14px;"></p>
+            <div style="display: flex; justify-content: center; color: var(--danger); margin-bottom: 12px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </div>
+            <h3 id="confirmDeleteTitle" style="text-align: center; margin-top: 0; font-family: var(--font-heading); font-weight: 400; font-size: 24px;">Delete Task</h3>
+            <p id="confirmDeleteMessage" style="margin: 16px 0 24px; color: var(--text-dim); font-size: 14px; text-align: center; line-height: 20px;"></p>
             <div class="modal-actions">
-                <button type="button" id="confirmDeleteCancel" class="ghost-button">No</button>
-                <button type="button" id="confirmDeleteConfirm" class="primary">Yes</button>
+                <button type="button" id="confirmDeleteCancel" class="ghost-button">Cancel</button>
+                <button type="button" id="confirmDeleteConfirm" class="primary" style="color: var(--danger) !important;">Delete</button>
             </div>
         </div>
     </div>
@@ -790,7 +792,7 @@
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul
-                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        style="margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 1.4;">
                         <li><strong>Unified Dark-Only UI</strong>: Completely removed Light Mode, focusing all visuals on a premium Graphite Dark base with toggleable AMOLED Pure Black overrides.</li>
                         <li><strong>Overhauled Progress Timer</strong>: Upgraded the right sidebar timer to a circular progress card. Added inline quick-adjusters (<kbd>-10m</kbd>, <kbd>-5m</kbd>, <kbd>+5m</kbd>, <kbd>+10m</kbd>) for rapid duration setting.</li>
                         <li><strong>Accent-Bound Progress Ring</strong>: Connected the countdown circle's stroke and glow shadow directly to the user's active Accent color selector.</li>
@@ -802,14 +804,14 @@
                 </div>
 
                 <!-- Version 4.0 -->
-                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 8px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 15px; color: var(--text);">v4.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul
-                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        style="margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 1.4;">
                         <li><strong>Dashboard Bulk Actions</strong>: Moved "Clear Completed" to the Dashboard and added
                             selective multi-list clearing.</li>
                         <li><strong>Multi-Sheet Excel Import</strong>: You can now import an Excel file containing
@@ -826,14 +828,14 @@
                 </div>
 
                 <!-- Version 3.0 -->
-                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 8px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 15px; color: var(--text);">v3.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul
-                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        style="margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 1.4;">
                         <li><strong>Premium Visual Overhaul</strong>: Redesigned task lists with card-based layouts,
                             soft hover elevations, and a sleek spotlight "Add Task" input.</li>
                         <li><strong>GitHub-Style Heatmap</strong>: Replaced the legacy bar chart with a responsive
@@ -848,14 +850,14 @@
                 </div>
 
                 <!-- Version 2.0 -->
-                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 8px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 15px; color: var(--text);">v2.0</span>
                         <span style="font-size: 12px; color: var(--text-dim);">July 2026</span>
                     </div>
                     <ul
-                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        style="margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 1.4;">
                         <li><strong>Inline Dashboard & Settings</strong>: Removed popup modal, replacing it with an
                             integrated full tab view for clean layout.</li>
                         <li><strong>Modifications Locking</strong>: Lock toggle button (<kbd>L</kbd> key) to freeze
@@ -872,14 +874,14 @@
                 </div>
 
                 <!-- Version 1.5 -->
-                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                <div class="version-item" style="border-bottom: 1px solid var(--border); padding-bottom: 8px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 15px; color: var(--text);">v1.5</span>
                         <span style="font-size: 12px; color: var(--text-dim);">May 2026</span>
                     </div>
                     <ul
-                        style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6;">
+                        style="margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 1.4;">
                         <li><strong>Activity Progress Chart</strong>: Added SVG line chart showing task completions
                             throughout the current year.</li>
                         <li><strong>Excel Import/Export</strong>: Enabled bulk backups and migrations to/from
@@ -892,7 +894,7 @@
                 <!-- Version 1.0 -->
                 <div class="version-item" style="padding-bottom: 4px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 15px; color: var(--text);">v1.0 (Initial
                             Release)</span>
                         <span style="font-size: 12px; color: var(--text-dim);">Early 2026</span>
@@ -968,7 +970,9 @@
     </div>
 
     <!-- Vertical Spine Label (Japanese Editorial Identity) -->
-    <div class="spine-label" aria-hidden="true">TASKS · NOTES · タスク管理 · 2026</div>
+    
+
+    <div id="toastContainer" class="m3-toast-container"></div>
 
     <script type="module" src="js/main.js"></script>
     <script type="module">

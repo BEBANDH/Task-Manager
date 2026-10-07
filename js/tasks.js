@@ -21,7 +21,7 @@ export function addTask(title) {
     targetFolderId = state.currentFolderId || state.folders[0]?.id;
   }
   if (!targetFolderId) {
-    alert('Please select or create a list first.');
+    showToast('Please select or create a list first.');
     return;
   }
   const trimmed = title.trim();
@@ -225,22 +225,21 @@ export function renderTaskItem(task) {
   title.setAttribute('aria-label', 'Task title');
   title.contentEditable = 'false';
 
-  // Hanko Red Seal Stamp for completed tasks
-  const hanko = document.createElement('div');
-  hanko.className = 'hanko-stamp';
-  hanko.title = 'Completed / 完了';
-  hanko.innerHTML = `
-    <svg viewBox="0 0 50 50" width="34" height="34" class="hanko-svg">
-      <rect x="2" y="2" width="46" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/>
-      <text x="50%" y="42%" text-anchor="middle" fill="currentColor" font-family="var(--font-subheading)" font-size="14" font-weight="bold">完了</text>
-      <text x="50%" y="78%" text-anchor="middle" fill="currentColor" font-family="var(--font-heading)" font-size="11" letter-spacing="1">DONE</text>
+  // Material 3 Done Badge for completed tasks
+  const doneBadge = document.createElement('div');
+  doneBadge.className = 'm3-done-badge';
+  doneBadge.title = 'Completed';
+  doneBadge.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
     </svg>
+    <span>Done</span>
   `;
   if (!task.completed) {
-    hanko.style.display = 'none';
+    doneBadge.style.display = 'none';
   }
 
-  header.append(title, hanko);
+  header.append(title, doneBadge);
 
   const metaRow = document.createElement('div');
   metaRow.className = 'task-meta-row';
@@ -252,9 +251,9 @@ export function renderTaskItem(task) {
 
   if (task.highPriority) {
     const urgentBadge = document.createElement('span');
-    urgentBadge.className = 'kanji-priority-badge';
-    urgentBadge.title = 'Urgent / 急';
-    urgentBadge.textContent = '急 URGENT';
+    urgentBadge.className = 'm3-priority-chip';
+    urgentBadge.title = 'Urgent Priority';
+    urgentBadge.textContent = 'URGENT';
     meta.appendChild(urgentBadge);
   }
 

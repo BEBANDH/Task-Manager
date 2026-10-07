@@ -7,6 +7,20 @@ import { addTask, initConfirmDeleteModal, closeConfirmDeleteModal, getRenderData
 import { renderCategoriesView, expandAllCategories, collapseAllCategories } from './categories.js';
 import { initNotes, renderNotes } from './notes.js';
 
+// Toast Notification System
+window.showToast = function(message, duration = 3000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'm3-toast';
+  toast.innerHTML = `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    toast.addEventListener('animationend', () => toast.remove());
+  }, duration);
+};
+
 // DOM elements cache builder
 function initElements() {
   el.form = document.getElementById('taskForm');
@@ -476,7 +490,7 @@ function initBulk() {
     el.clearMultipleProceed.addEventListener('click', () => {
       const checkboxes = el.clearListsContainer.querySelectorAll('.export-checkbox:checked');
       if (checkboxes.length === 0) {
-        alert('Please select at least one list.');
+        showToast('Please select at least one list.');
         return;
       }
       openConfirmClearMultipleModal();
@@ -571,16 +585,16 @@ function executeClearMultipleLists(selectedIds) {
 // Export to Excel
 function exportToExcel() {
   if (!state.currentFolderId) {
-    alert('Please select a list to export.');
+    showToast('Please select a list to export.');
     return;
   }
   if (typeof XLSX === 'undefined' || !XLSX || !XLSX.utils) {
-    alert('Export library not loaded. Please check your internet connection.');
+    showToast('Export library not loaded. Please check your internet connection.');
     return;
   }
   const tasks = getCurrentTasks();
   if (tasks.length === 0) {
-    alert('No tasks to export in this list.');
+    showToast('No tasks to export in this list.');
     return;
   }
 
@@ -630,7 +644,7 @@ function exportToWord(selectedFolderIds = null) {
   }
 
   if (foldersToExport.length === 0) {
-    alert('No lists available to export.');
+    showToast('No lists available to export.');
     return;
   }
 
@@ -697,7 +711,7 @@ function exportToWord(selectedFolderIds = null) {
   });
 
   if (totalTasksExported === 0) {
-    alert('No tasks found in the selected lists.');
+    showToast('No tasks found in the selected lists.');
     return;
   }
 
@@ -756,7 +770,7 @@ function exportToWord(selectedFolderIds = null) {
 
 function exportMultipleLists(selectedFolderIds) {
   if (selectedFolderIds.length === 0) {
-    alert('Please select at least one list to export.');
+    showToast('Please select at least one list to export.');
     return;
   }
 
@@ -798,7 +812,7 @@ function exportMultipleLists(selectedFolderIds) {
   });
 
   if (sheetCount === 0) {
-    alert('No tasks found in the selected lists.');
+    showToast('No tasks found in the selected lists.');
     return;
   }
 
@@ -807,12 +821,12 @@ function exportMultipleLists(selectedFolderIds) {
 
   XLSX.writeFile(wb, filename);
   closeExportMultipleModal();
-  alert(`Successfully exported ${sheetCount} list(s) to ${filename}`);
+  showToast(`Successfully exported ${sheetCount} list(s) to ${filename}`);
 }
 
 function openExportMultipleModal() {
   if (state.folders.length === 0) {
-    alert('No lists available to export.');
+    showToast('No lists available to export.');
     return;
   }
 
@@ -916,7 +930,7 @@ function importFromExcel(file) {
       });
 
       if (totalImported === 0) {
-        alert('No valid tasks found in the Excel file.');
+        showToast('No valid tasks found in the Excel file.');
         return;
       }
 
@@ -925,14 +939,14 @@ function importFromExcel(file) {
       writeStorage(STORAGE_KEYS.currentFolder, state.currentFolderId);
       renderFolders();
       render();
-      alert(`Successfully imported ${totalImported} task(s) into ${newFoldersCreated} new list(s).`);
+      showToast(`Successfully imported ${totalImported} task(s) into ${newFoldersCreated} new list(s).`);
     } catch (error) {
       console.error('Import error:', error);
-      alert('Error importing file. Please ensure it is a valid Excel file.');
+      showToast('Error importing file. Please ensure it is a valid Excel file.');
     }
   };
   reader.onerror = function () {
-    alert('Error reading file.');
+    showToast('Error reading file.');
   };
   reader.readAsArrayBuffer(file);
 }
@@ -998,7 +1012,7 @@ function initImportExport() {
   if (el.importBtn) {
     el.importBtn.addEventListener('click', () => {
       if (!state.currentFolderId) {
-        alert('Please select a list to import into.');
+        showToast('Please select a list to import into.');
         return;
       }
       el.importFile.click();
@@ -1106,7 +1120,7 @@ function load() {
     state.tasksByFolder[defaultFolder.id] = tasksToMigrate;
     persistFolders();
     persistTasks();
-    alert('We found tasks from a previous version and recovered them into "Recovered Tasks".');
+    showToast('We found tasks from a previous version and recovered them into "Recovered Tasks".');
   }
 
   if (state.folders.length === 0) {
@@ -1159,9 +1173,9 @@ export function purgeOrphanTasks(showAlert = true) {
 
   if (showAlert) {
     if (purgedCount > 0) {
-      alert(`Successfully purged history for ${purgedCount} task(s) from deleted lists.`);
+      showToast(`Successfully purged history for ${purgedCount} task(s) from deleted lists.`);
     } else {
-      alert('No orphan task history found. Your history is clean!');
+      showToast('No orphan task history found. Your history is clean!');
     }
   }
 }
@@ -1960,7 +1974,7 @@ function renderDashboard() {
         const titleSpan = document.createElement('span');
         titleSpan.textContent = task.title;
         titleSpan.style.fontSize = '13px';
-        titleSpan.style.textDecoration = task.completed ? 'line-through' : 'none';
+        titleSpan.style.textDecoration = 'none';
         titleSpan.style.color = task.completed ? 'var(--text-dim)' : 'var(--text)';
         titleSpan.style.overflow = 'hidden';
         titleSpan.style.textOverflow = 'ellipsis';
@@ -2233,12 +2247,12 @@ async function checkSharedUrl() {
           description = data.description || '';
           tasks = Array.isArray(data.tasks) ? data.tasks : [];
         } else {
-          alert('Shared list not found or expired.');
+          showToast('Shared list not found or expired.');
           return false;
         }
       } catch (err) {
         console.error('Failed to load shared list from Firestore:', err);
-        alert('Failed to load shared list.');
+        showToast('Failed to load shared list.');
         return false;
       }
     }
@@ -2261,7 +2275,7 @@ async function checkSharedUrl() {
       });
     } catch (err) {
       console.error('Failed to decode share data:', err);
-      alert('Invalid share link format.');
+      showToast('Invalid share link format.');
       return false;
     }
   }
@@ -2301,7 +2315,7 @@ async function checkSharedUrl() {
     downloadBtn.style.display = 'inline-flex';
     downloadBtn.addEventListener('click', () => {
       if (typeof XLSX === 'undefined' || !XLSX || !XLSX.utils) {
-        alert('Excel library not loaded.');
+        showToast('Excel library not loaded.');
         return;
       }
       const data = tasks.map(t => ({
